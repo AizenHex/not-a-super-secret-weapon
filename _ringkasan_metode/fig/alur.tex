@@ -1,0 +1,14 @@
+% Alur 8 sel notebook NEW-GEN (ATURAN_KODE bagian 3)
+\begin{tikzpicture}[node distance=3mm]
+\node[blok,fill=biru1!8,draw=biru1] (a) {1. Import};
+\node[blok,fill=biru1!8,draw=biru1,right=of a] (b) {2. Konfigurasi\\{\tiny path, kolom, SEED}};
+\node[blok,fill=biru1!8,draw=biru1,right=of b] (c) {3. Baca data\\{\tiny head, shape, missing}};
+\node[blok,fill=biru1!8,draw=biru1,right=of c] (d) {4. EDA};
+\node[blok,fill=hijau1!8,draw=hijau1,below=7mm of d] (e) {5. Split\\{\tiny latih / validasi}};
+\node[blok,fill=hijau1!8,draw=hijau1,left=of e] (f) {6. Model\\{\tiny \texttt{model = ...}}};
+\node[blok,fill=merah1!8,draw=merah1,left=of f] (g) {7. Evaluasi\\{\tiny F1, RMSE, ...}};
+\node[blok,fill=merah1!8,draw=merah1,left=of g] (h) {8. Latih ulang\\+ submission};
+\draw[ar] (a)--(b); \draw[ar] (b)--(c); \draw[ar] (c)--(d); \draw[ar] (d)--(e);
+\draw[ar] (e)--(f); \draw[ar] (f)--(g); \draw[ar] (g)--(h);
+\draw[ar,densely dashed] (g.south) to[bend right=35] node[lbl,below]{ganti baris \texttt{\#}, coba lagi} (f.south);
+\end{tikzpicture}

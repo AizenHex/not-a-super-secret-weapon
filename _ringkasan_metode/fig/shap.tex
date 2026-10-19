@@ -1,0 +1,11 @@
+% SHAP waterfall untuk satu pelanggan
+\begin{tikzpicture}[x=9cm,y=0.55cm]
+\draw[black!20] (0,0.5)--(0,-4.7); \draw[black!20] (1,0.5)--(1,-4.7);
+\foreach \x in {0,0.25,0.5,0.75,1} {\draw[black!12] (\x,0.5)--(\x,-4.7); \node[font=\tiny,black!55] at (\x,-5.1) {\x};}
+\fill[black!35] (0,-0.35) rectangle (0.30,0.35);   \node[lbl,anchor=east] at (-0.02,0) {rata-rata tebakan model};      \node[font=\tiny,anchor=west] at (0.31,0) {0{,}30};
+\fill[merah3] (0.30,-1.35) rectangle (0.55,-0.65);  \node[lbl,anchor=east] at (-0.02,-1) {lama\_langganan = 2 bulan};  \node[font=\tiny,anchor=west] at (0.56,-1) {+0{,}25};
+\fill[merah3] (0.55,-2.35) rectangle (0.67,-1.65);  \node[lbl,anchor=east] at (-0.02,-2) {jumlah\_keluhan = 3};        \node[font=\tiny,anchor=west] at (0.68,-2) {+0{,}12};
+\fill[biru2] (0.59,-3.35) rectangle (0.67,-2.65);   \node[lbl,anchor=east] at (-0.02,-3) {pakai\_promo = ya};           \node[font=\tiny,anchor=west] at (0.68,-3) {$-$0{,}08};
+\fill[black!70] (0,-4.35) rectangle (0.59,-3.65);   \node[lbl,anchor=east] at (-0.02,-4) {\textbf{prediksi pelanggan ini}}; \node[font=\tiny\bfseries,anchor=west] at (0.60,-4) {0{,}59};
+\foreach \y/\x in {-0.35/0.30,-1.35/0.55,-2.35/0.67,-3.35/0.59} \draw[black!40,densely dotted] (\x,\y)--(\x,\y-0.3);
+\end{tikzpicture}

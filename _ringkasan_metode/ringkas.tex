@@ -1,0 +1,727 @@
+\documentclass[10pt,a4paper]{article}
+\input{preamble}
+\newgeometry{a4paper,margin=1.7cm,top=1.6cm,bottom=1.9cm}
+\setlength{\parskip}{3pt}
+\hypersetup{pdftitle={Ringkasan Metode GEMASTIK NEW-GEN}}
+\usepackage{listings}
+\input{angka}
+
+% ---------- kotak versi ringkas (disalin dari Ringkasan Proteksi) ----------
+\newtcolorbox{inti}[1][biru1]{enhanced,breakable,colback=#1!6,colframe=#1,boxrule=0pt,leftrule=3pt,arc=0pt,
+  outer arc=0pt,left=6pt,right=6pt,top=2pt,bottom=2pt,before skip=5pt,after skip=5pt,
+  fontupper=\small,before upper={\textcolor{#1}{\faLightbulb[regular]\ \textbf{Inti.}}\ }}
+\newtcolorbox{kenapa}[1][]{enhanced,breakable,colback=black!3,colframe=black!40,boxrule=0pt,leftrule=3pt,arc=0pt,
+  outer arc=0pt,left=6pt,right=6pt,top=2pt,bottom=2pt,before skip=5pt,after skip=5pt,
+  fontupper=\small,before upper={\textcolor{black!70}{\faCogs\ \textbf{Kenapa begitu?}\if\relax\detokenize{#1}\relax\else\ (#1)\fi}\ }}
+\newtcolorbox{jebak}{enhanced,breakable,colback=white,frame hidden,borderline={0.6pt}{0pt}{merah1!70,dashed},arc=0pt,
+  left=6pt,right=6pt,top=2pt,bottom=2pt,before skip=5pt,after skip=5pt,fontupper=\small,
+  before upper={\textcolor{merah1}{\faExclamationTriangle\ \textbf{Jebakan lomba.}}\ }}
+\newtcolorbox{soal}[1]{enhanced,breakable,colback=white,colframe=black!35,boxrule=0.4pt,arc=1pt,
+  colbacktitle=black!7,coltitle=black,fonttitle=\bfseries\small,title={\faCode\ Di notebook: #1},
+  left=6pt,right=6pt,top=2pt,bottom=2pt,before skip=5pt,after skip=5pt,fontupper=\small}
+\newtcolorbox[auto counter]{diag}[2][]{enhanced,breakable,colback=white,colframe=biru3!70!black,boxrule=0.5pt,arc=1pt,
+  colbacktitle=biru3!12,coltitle=black,fonttitle=\bfseries\small,title={\faPen\ Diagram \thetcbcounter: #2},label={#1},
+  left=6pt,right=6pt,top=3pt,bottom=3pt,before skip=6pt,after skip=6pt,fontupper=\small}
+\renewtcolorbox{luar}{enhanced,breakable,colback=white,frame hidden,borderline={0.6pt}{0pt}{black!55,dotted},arc=0pt,
+  left=6pt,right=6pt,top=2pt,bottom=2pt,before skip=5pt,after skip=5pt,fontupper=\small,
+  before upper={\textcolor{black!70}{\faBook\ \textbf{Kerabatnya.}}\ }}
+\renewcommand{\rumus}[2][]{\par\vspace{-2pt}\begin{center}\kotak{%
+  \if\relax\detokenize{#1}\relax\else{\scriptsize\sffamily\color{black!55}#1}\quad\fi
+  $\displaystyle #2$}\end{center}\vspace{-4pt}\par}
+\newcolumntype{P}[1]{>{\raggedright\arraybackslash}p{#1}}
+
+\newcommand{\rb}[3]{\needspace{12\baselineskip}\section{#1}\vspace{-6pt}{\footnotesize\textcolor{black!55}{\faPalette\ Warna bab ini:}\ #2}\par
+  \vspace{1pt}{\small\emph{#3}}\par}
+\newcommand{\lgd}[2]{\swatch{#1}\,#2\quad}
+\newcommand{\sub}[1]{\par\smallskip{\normalsize\bfseries #1}\par\nopagebreak}
+\titlespacing*{\section}{0pt}{8pt}{4pt}
+\setlist{itemsep=0pt,topsep=2pt,leftmargin=*}
+\newcommand{\figs}[2][0.8]{\par\begin{center}\sbox{\figbox}{\input{fig/#2}}\ifdim\wd\figbox>#1\linewidth
+  \resizebox{#1\linewidth}{!}{\usebox{\figbox}}\else\usebox{\figbox}\fi\end{center}\par}
+
+% kode Python bergaya notebook
+\lstset{language=Python,basicstyle=\ttfamily\scriptsize,commentstyle=\color{hijau1},keywordstyle=\color{biru1},
+  stringstyle=\color{merah1},columns=fullflexible,keepspaces=true,showstringspaces=false,breaklines=true,
+  aboveskip=2pt,belowskip=2pt,upquote=true}
+\newcommand{\kode}[1]{\texttt{\small #1}}
+
+\begin{document}
+
+% ============================================================ JUDUL + CARA PAKAI
+\begin{center}
+{\LARGE\bfseries Ringkasan Metode GEMASTIK NEW-GEN}\\[3pt]
+{\normalsize Model pohon, linear, jarak, neural network, tanpa label, teks, deret waktu, rekomendasi, graf, dan cara menilai model}\\[4pt]
+\begin{tikzpicture}
+  \foreach \c [count=\i] in {biru1,biru2,biru3,biru4,merah1,merah2,merah3,merah4,hijau1,hijau2,hijau3,hijau4,ungu1,ungu2,ungu3,ungu4,coklat1,coklat2,coklat3,coklat4}
+    \fill[\c] ({0.42*\i},0) rectangle ++(0.38,0.22);
+\end{tikzpicture}
+\end{center}
+
+\begin{tcolorbox}[enhanced,colback=black!2,colframe=black!30,boxrule=0.4pt,arc=1pt,fontupper=\small,
+  title={Cara memakai ringkasan ini},colbacktitle=black!7,coltitle=black,fonttitle=\bfseries\small]
+\begin{itemize}
+\item Sumber: notebook di \kode{\_.NEW-GEN/} (199 notebook) dan skor di \kode{KATALOG.md}. Semua gambar dibuat dari
+\textbf{data mainan} dengan \kode{buat\_gambar.py}, jadi angkanya nyata tetapi bukan data lomba.
+\item \textbf{Warna direset tiap bab.} Baris kecil di bawah judul bab menjelaskan arti warnanya. Di gambar 2D:
+\textcolor{biru2}{\textbf{biru}} = kelas 0, \textcolor{merah3}{\textbf{jingga}} = kelas 1, warna latar = tebakan model
+(makin pekat = makin yakin).
+\item Kotak: \textcolor{biru1}{\textbf{Inti}} = ide yang membuat hal lain masuk akal; \kotak{rumus} = cukup paham artinya;
+\textbf{Kenapa begitu?} = alasan bertahap; \textcolor{biru3!70!black}{\textbf{Diagram}} = gambar + cara membaca;
+\textcolor{merah1}{\textbf{Jebakan lomba}} = kesalahan yang sering terjadi; \textbf{Di notebook} = baris kode yang
+benar-benar ada di toolkit; \textbf{Kerabatnya} = metode lain di keluarga yang sama.
+\item \textbf{Aturan emas:} model dinilai pada data yang \emph{belum pernah dilihat}. Semua teknik di sini (split, KFold,
+\kode{max\_depth}, \kode{learning\_rate}, regularisasi) adalah cara menjamin skor validasi jujur dan model tidak menghafal.
+\end{itemize}
+\end{tcolorbox}
+{\small\tableofcontents}
+
+% ============================================================ BAB 1
+\rb{Peta Besar: Dari Soal ke Metode}
+{\lgd{biru1}{menyiapkan data}\lgd{hijau1}{model}\lgd{merah1}{menilai}}
+{Setiap notebook NEW-GEN punya bentuk yang sama: 8 sel berurutan. Yang berubah antar-soal hanya isi sel Model.}
+
+\begin{diag}[dg:alur]{Alur satu notebook}
+\figs[0.95]{alur}
+Sel 1--4 \textcolor{biru1}{menyiapkan data}, sel 5--6 \textcolor{hijau1}{melatih model}, sel 7--8 \textcolor{merah1}{menilai
+dan mengirim}. \textbf{Cara membaca:} panah putus-putus = putaran percobaan; ganti model, jalankan ulang, bandingkan skor.
+\end{diag}
+
+\begin{inti}[hijau1]
+Satu notebook = satu metode. Di sel Model ada \textbf{satu baris} \kode{model = ...} yang aktif, dan alternatifnya ditulis di
+baris \kode{\#}. Mencoba model lain = pindahkan tanda \kode{\#}, lalu \emph{Run All}. Skor tiap alternatif pada data demo
+ada di \kode{KATALOG.md}.
+\end{inti}
+
+\sub{Soal jenis apa, coba metode apa}
+{\small
+\begin{tabularx}{\linewidth}{@{}P{3.0cm}P{3.0cm}XP{3.6cm}@{}}
+\toprule
+Jenis soal & Contoh & Model aktif $\to$ alternatif kuat & Notebook\\ \midrule
+Tabel $\to$ kelas & pelanggan berhenti? & LogisticRegression $\to$ LightGBM, XGBoost, CatBoost & \kode{tabular/klasifikasi}\\
+Tabel $\to$ angka & harga rumah & LightGBM $\to$ XGBoost, Ridge & \kode{tabular/regresi}\\
+Teks $\to$ kelas & sentimen ulasan & TF-IDF + LinearSVC $\to$ embedding, fine-tune IndoBERT & \kode{text/klasifikasi\_tfidf}\\
+Gambar $\to$ kelas & citra medis & CNN pretrained (ResNet) & \kode{medis/klasifikasi\_citra}\\
+Cari objek di gambar & hitung kendaraan & YOLO & \kode{vision/deteksi}\\
+Ramal masa depan & penjualan bulan depan & fitur lag + RandomForest $\to$ LightGBM; SARIMAX & \kode{timeseries/peramalan\_ml}\\
+Kelompok tanpa label & segmen pelanggan & KMeans (+ PCA untuk gambar) & \kode{unsupervised/clustering}\\
+Cari yang aneh & transaksi curang & IsolationForest $\to$ LOF, ECOD & \kode{timeseries/anomali}\\
+Rekomendasi & tebak rating film & SVD (matrix factorization) & \kode{recsys/prediksi\_rating}\\
+Jaringan / graf & komunitas & Louvain & \kode{graph/komunitas}\\ \bottomrule
+\end{tabularx}}
+
+\sub{Empat konsep dasar}
+{\small
+\begin{tabularx}{\linewidth}{@{}>{\bfseries\raggedright\arraybackslash}p{3.2cm}X@{}}
+\toprule
+\cl{biru1}{Fitur dan label} & $X$ = kolom yang kita tahu (umur, gaji, jumlah keluhan); $y$ = yang ingin ditebak (berhenti
+atau tidak). Model mencari hubungan $X \to y$.\\
+\cl{biru1}{Klasifikasi vs regresi} & klasifikasi menebak \textbf{kelas}; regresi menebak \textbf{angka}. Banyak model punya dua
+versi: \kode{XGBClassifier} dan \kode{XGBRegressor}.\\
+\cl{merah1}{Latih vs validasi} & sebagian data disembunyikan dari model; skor dihitung di sana karena di lomba model juga dinilai
+pada data yang belum pernah dilihat.\\
+\cl{merah1}{Overfitting} & model terlalu rumit $\to$ menghafal data latih termasuk noise-nya: skor latih tinggi, skor validasi
+turun (Diagram~\ref{dg:treekurva}).\\ \bottomrule
+\end{tabularx}}
+
+\begin{jebak}
+\textbf{Kebocoran data (leakage).} Skor validasi tinggi sekali tetapi skor lomba jeblok, biasanya karena informasi dari data
+validasi/test bocor ke latihan: \kode{StandardScaler} di-\kode{fit} pada seluruh data, kolom yang sebenarnya hasil dari target
+(misal ``tanggal\_berhenti'' untuk menebak berhenti), atau deret waktu yang diacak. Karena itu toolkit memakai \kode{Pipeline}:
+preprocessing ikut di-\kode{fit} hanya pada data latih.
+\end{jebak}
+
+% ============================================================ BAB 2
+\rb{Model Berbasis Pohon}
+{\lgd{biru2}{kelas 0}\lgd{merah3}{kelas 1}\lgd{biru1}{tebakan model / validasi}\lgd{merah1}{sisa kesalahan / latih}}
+{Keluarga paling sering menang di data tabel. Semuanya dibangun dari satu bahan: pohon keputusan.}
+
+\subsection{Decision Tree}
+\begin{inti}[biru1]
+Model bertanya ya/tidak berulang kali, misalnya ``umur $<$ 30?'' lalu ``gaji $<$ 5 juta?'', sampai isi tiap kotak cukup
+seragam. Setiap pertanyaan memotong ruang data dengan \textbf{garis lurus tegak atau mendatar}. Tebakan = kelas mayoritas
+di kotak tempat titik jatuh.
+\end{inti}
+
+\begin{diag}[dg:tree]{Pohon dangkal vs pohon dalam}
+\figs[1.0]{tree}
+Garis tipis = potongan pohon. \textbf{Cara membaca:} kiri, paling banyak 3 pertanyaan berurutan, kotaknya besar dan agak kasar.
+Kanan, sampai 12 pertanyaan berurutan, banyak kotak kecil yang dibuat hanya untuk satu-dua titik (yang sebenarnya noise).
+Akurasi latih naik ke 100\,\%, tetapi akurasi validasi justru turun.
+\end{diag}
+
+\rumus[Gini (ukuran ``campur aduk'')]{\text{Gini} = 1 - \sum_k p_k^2 \qquad (0 = \text{murni satu kelas},\ 0{,}5 = \text{campur rata 2 kelas})}
+
+\begin{kenapa}[cara memilih potongan]
+(1) Di tiap kotak, model mencoba \emph{semua} garis yang mungkin pada \emph{semua} fitur. (2) Untuk tiap garis, hitung Gini
+kiri dan kanan (dibobot jumlah titik). (3) Pilih garis yang Gini-nya paling kecil. (4) Ulangi di tiap kotak baru sampai
+\kode{max\_depth} tercapai atau kotak sudah murni. Tidak ada rumus ``garis terbaik''; pohon mencoba satu per satu.
+\end{kenapa}
+
+\begin{diag}[dg:treekurva]{Overfitting terlihat di kurva}
+\figs[0.6]{treekurva}
+\textbf{Cara membaca:} garis \textcolor{merah1}{merah} (latih) terus naik mendekati 100\,\% karena pohon makin pandai menghafal.
+Garis \textcolor{biru1}{biru} (validasi) berhenti naik lalu turun. Kedalaman terbaik = puncak garis biru, bukan garis merah.
+\end{diag}
+
+\subsection{Random Forest dan ExtraTrees}
+\begin{inti}[biru1]
+Buat ratusan pohon yang dalam. Tiap pohon hanya melihat \textbf{sampel acak} dari baris data (bootstrap) dan \textbf{fitur acak}
+di tiap potongan, jadi kesalahannya berbeda-beda. Tebakan akhir = \textbf{rata-rata suara} semua pohon.
+\end{inti}
+
+\begin{diag}[dg:forest]{Satu pohon vs hutan 50 pohon}
+\figs[1.0]{forest}
+\textbf{Cara membaca:} satu pohon dalam (kiri) membuat batas kotak-kotak tajam dan percaya diri walaupun salah. Rata-rata 50 pohon
+(kanan) membuat batas halus; warna pudar di perbatasan = pohon-pohon tidak sepakat. Validasi naik dari \rfvalsatu\,\% ke
+\rfvalbanyak\,\%.
+\end{diag}
+
+\begin{kenapa}[kenapa rata-rata pohon lebih baik]
+Satu pohon dalam punya \emph{variansi} tinggi: ganti sedikit datanya, bentuknya berubah jauh. Kalau kesalahan tiap pohon
+acak dan tidak searah, merata-ratakan banyak pohon membuat kesalahan saling meniadakan, sedangkan pola yang benar (yang
+dilihat hampir semua pohon) tetap tinggal. Mirip bertanya ke 500 orang yang masing-masing membaca sebagian berita.
+\end{kenapa}
+
+\begin{luar}
+\kode{ExtraTrees} = Random Forest yang titik potongnya juga diacak (tidak dicari yang terbaik), jadi lebih cepat dan kadang lebih
+tahan noise. Kenop: \kode{n\_estimators} (300--500 cukup; lebih banyak tidak merusak, hanya lebih lambat), \kode{max\_features}.
+\end{luar}
+
+\subsection{Gradient Boosting: XGBoost, LightGBM, CatBoost}
+\begin{inti}[merah1]
+Pohon dibuat \textbf{satu per satu}. Pohon pertama menebak kasar. Pohon kedua \emph{tidak} menebak target, tetapi menebak
+\textbf{sisa kesalahan} (residual) pohon pertama. Pohon ketiga menebak sisa kesalahan berikutnya, dan seterusnya. Tebakan akhir
+= jumlah semua pohon. Setiap pohon dikali \kode{learning\_rate} supaya langkahnya kecil dan hati-hati.
+\end{inti}
+
+\rumus[boosting]{F_m(x) = F_{m-1}(x) + \eta\, h_m(x), \qquad h_m \text{ dilatih menebak } y - F_{m-1}(x)}
+
+\begin{diag}[dg:boost]{Boosting ronde demi ronde (regresi 1 fitur)}
+\figs[1.0]{boost}
+\textbf{Baris atas:} titik abu = data; garis \textcolor{biru1}{biru} = jumlah semua pohon sejauh ini; garis tegak
+\textcolor{merah1}{merah} = sisa kesalahan tiap titik. \textbf{Baris bawah:} sisa kesalahan itu digambar sendiri (titik merah),
+dan garis tangga \textcolor{merah3}{jingga} = pohon kecil berikutnya yang dilatih menebaknya. Dari 1 ke 5 ke 50 pohon, garis
+biru makin menempel ke pola data dan sisa kesalahan makin acak (tidak berpola lagi).
+\end{diag}
+
+\begin{diag}[dg:boostkurva]{Learning rate besar vs kecil}
+\figs[0.62]{boostkurva}
+\textbf{Cara membaca:} putus-putus = latih, garis penuh = validasi. \kode{learning\_rate} 0,3 (merah) turun cepat lalu validasinya
+mulai naik lagi (overfitting). 0,05 (biru) turun pelan, butuh lebih banyak pohon, tetapi titik terendah validasinya
+setara atau lebih baik dan lebih stabil.
+\end{diag}
+
+\begin{kenapa}[kenapa menebak sisa kesalahan]
+(1) Pohon dangkal sendirian lemah, hanya bisa membuat 4--8 anak tangga. (2) Kalau pohon berikutnya fokus ke bagian yang masih
+salah, kemampuan bertambah tepat di tempat yang dibutuhkan. (3) Menjumlahkan ratusan tangga kecil menghasilkan bentuk apa pun.
+(4) \kode{learning\_rate} kecil = tiap pohon hanya memperbaiki sebagian, sehingga satu pohon yang keliru tidak merusak semuanya.
+Nama ``gradient'' karena sisa kesalahan $y - F$ adalah arah turun (gradien) dari error kuadrat.
+\end{kenapa}
+
+{\small
+\begin{tabularx}{\linewidth}{@{}P{2.6cm}XXXX@{}}
+\toprule
+ & \textbf{XGBoost} & \textbf{LightGBM} & \textbf{CatBoost} & \textbf{HistGradient\-Boosting}\\ \midrule
+Cara tumbuh & lapis demi lapis, rata & daun demi daun: yang paling untung dipecah dulu & pohon simetris & mirip LightGBM\\
+Kelebihan & stabil, paling populer & sangat cepat di data besar & kolom kategori tanpa encoding & bawaan sklearn\\
+Kenop & \kode{n\_estimators}, \kode{learning\_rate}, \kode{max\_depth} & \kode{n\_estimators}, \kode{learning\_rate},
+\kode{num\_leaves} & \kode{iterations}, \kode{learning\_rate}, \kode{depth} & \kode{max\_iter}, \kode{learning\_rate}\\ \bottomrule
+\end{tabularx}}
+
+\begin{soal}{tabular/regresi (baris model aktif)}
+\begin{lstlisting}
+model = LGBMRegressor(n_estimators=1000, learning_rate=0.03, random_state=SEED, verbose=-1)
+# model = XGBRegressor(n_estimators=500, learning_rate=0.03, random_state=SEED)
+# model = CatBoostRegressor(iterations=500, random_seed=SEED, verbose=0)
+\end{lstlisting}
+Aturan praktis: \kode{learning\_rate} 0,03--0,1; \kode{n\_estimators} 300--1000; pohon dangkal (depth 3--8 atau
+\kode{num\_leaves} 15--63). Turunkan \kode{learning\_rate} $\Rightarrow$ naikkan \kode{n\_estimators}.
+\end{soal}
+
+\begin{jebak}
+Random Forest dan boosting \emph{terdengar} mirip karena sama-sama ``banyak pohon''. Bedanya: Random Forest = pohon
+\textbf{bersamaan, independen, dirata-rata} (menambah pohon tidak bikin overfitting). Boosting = pohon \textbf{berurutan, saling
+memperbaiki, dijumlah} (terlalu banyak pohon \emph{bisa} overfitting, lihat Diagram~\ref{dg:boostkurva}).
+\end{jebak}
+
+% ============================================================ BAB 3
+\rb{Model Linear dan Model Jarak}
+{\lgd{biru2}{kelas 0}\lgd{merah3}{kelas 1}\lgd{biru1}{bobot dan skor}}
+{Cepat, mudah dijelaskan, dan baseline yang kuat. Andalan untuk teks dan embedding karena fiturnya sangat banyak.}
+
+\subsection{Regresi logistik (dan Ridge, LinearSVC)}
+\begin{inti}[biru1]
+Tiap fitur diberi \textbf{bobot}, lalu dijumlah jadi satu \textbf{skor}. Untuk klasifikasi, skor diubah jadi peluang 0--1 lewat
+kurva S (sigmoid). Batas keputusan = tempat skor $= 0$ (peluang 0,5), dan bentuknya \textbf{selalu garis lurus} (bidang datar
+kalau fiturnya banyak).
+\end{inti}
+
+\rumus[skor]{z = b_1 x_1 + b_2 x_2 + \dots + c} \rumus[sigmoid]{p = \frac{1}{1 + e^{-z}}}
+
+\begin{diag}[dg:logreg]{Garis batas dan kurva S}
+\figs[1.0]{logreg}
+\textbf{Cara membaca:} kiri, garis hitam = semua titik yang skornya 0. Hasil latihan di sini: $b_1 = \lrwa$, $b_2 = \lrwb$,
+$c = \lrc$, akurasi \lracc\,\%. Kanan, tiap titik diletakkan menurut skornya; makin jauh dari 0, makin yakin. Titik biru
+yang jatuh di skor positif (atau jingga di skor negatif) adalah yang salah tebak.
+\end{diag}
+
+\begin{kenapa}[bagaimana bobot dicari]
+(1) Mulai dari bobot sembarang. (2) Hitung kesalahan (\emph{log-loss}: hukuman besar kalau yakin tapi salah). (3) Geser bobot
+sedikit ke arah yang mengurangi kesalahan (\emph{gradient descent}). (4) Ulangi ratusan kali. Sklearn melakukannya otomatis saat
+\kode{fit}; \kode{max\_iter=2000} = batas jumlah langkah.
+\end{kenapa}
+
+\begin{luar}
+\kode{Ridge} dan \kode{Lasso} = versi regresi (tebak angka); Lasso bisa membuat bobot fitur tak berguna jadi tepat 0.
+\kode{LinearSVC} dan \kode{SGDClassifier} = garis lurus juga, cara melatih berbeda. \kode{SVC} dengan kernel bisa melengkung karena
+ruang datanya ``ditekuk'' dulu. Kenop bersama: \kode{C} (atau \kode{alpha} di Ridge). \kode{C} kecil = bobot ditahan, lebih aman dari
+overfitting.
+\end{luar}
+
+\subsection{K-Nearest Neighbors (KNN)}
+\begin{inti}[biru1]
+Tidak ada pelatihan. Untuk menebak titik baru, cari \textbf{$k$ tetangga terdekat} di data latih, lalu ambil suara terbanyak
+(atau rata-rata untuk regresi).
+\end{inti}
+
+\begin{diag}[dg:knn]{Pengaruh $k$}
+\figs[1.0]{knn}
+Bintang = titik yang ditanya; garis = tetangga yang ikut memilih; lingkaran putus-putus = batas tetangga terjauh.
+\textbf{Cara membaca:} $k = 1$ (kiri) membuat batas berliku-liku dan pulau-pulau kecil karena satu titik aneh langsung berpengaruh.
+$k = 15$ (kanan) membuat batas halus. Tebakan untuk bintang yang sama pun bisa berubah.
+\end{diag}
+
+\begin{jebak}
+Model berbasis jarak (KNN, SVC, KMeans, juga regresi logistik saat dilatih) \textbf{wajib} diberi \kode{StandardScaler()} dulu.
+Tanpa itu, kolom ``gaji'' (jutaan) menenggelamkan kolom ``umur'' (puluhan) karena jaraknya dihitung dari angka mentah.
+Model pohon tidak butuh scaler.
+\end{jebak}
+
+% ============================================================ BAB 4
+\rb{Neural Network dan Transfer Learning}
+{\lgd{biru1}{input}\lgd{hijau1}{lapisan tersembunyi}\lgd{merah1}{output}}
+{Dipakai untuk teks, gambar, audio, dan deret waktu. Di toolkit hampir selalu memakai model yang sudah dilatih orang lain.}
+
+\begin{diag}[dg:nn]{MLP: regresi logistik yang disusun berlapis}
+\figs[0.72]{nn}
+Setiap lingkaran = satu neuron = jumlah berbobot dari lapisan sebelumnya, lalu ReLU (angka negatif dijadikan 0). Setiap garis = satu
+bobot. \textbf{Cara membaca:} lapisan awal mendeteksi pola sederhana, lapisan berikutnya menggabungkannya jadi pola rumit. Saat
+\kode{fit}, semua bobot diperbaiki bersama (\emph{backpropagation}), mirip gradient descent di bab regresi logistik.
+\end{diag}
+
+{\small
+\begin{tabularx}{\linewidth}{@{}>{\bfseries\raggedright\arraybackslash}p{3.2cm}XP{4.2cm}@{}}
+\toprule
+Jenis & Idenya & Notebook\\ \midrule
+\cl{hijau1}{MLP} & seperti diagram di atas; untuk tabel atau embedding. \kode{hidden\_layer\_sizes=(256,)} = satu lapisan 256 neuron
+& \kode{tabular/deep\_klasifikasi}\\
+\cl{hijau1}{CNN (ResNet)} & filter kecil 3$\times$3 digeser ke seluruh gambar mencari garis $\to$ sudut $\to$ tekstur $\to$ bentuk
+& \kode{medis/klasifikasi\_citra}\\
+\cl{hijau1}{YOLO} & CNN yang langsung menebak kotak + kelas objek dalam satu kali lihat & \kode{vision/deteksi}\\
+\cl{hijau1}{LSTM} & membaca urutan satu per satu sambil membawa ``ingatan'' & \kode{timeseries/deep\_lstm}\\
+\cl{hijau1}{Transformer} & tiap kata ``melihat'' semua kata lain sekaligus (\emph{attention}); IndoBERT, Chronos
+& \kode{text/klasifikasi\_finetune}\\ \bottomrule
+\end{tabularx}}
+
+\begin{inti}[hijau1]
+\textbf{Transfer learning.} Melatih neural network dari nol butuh jutaan data dan GPU berhari-hari. Toolkit memakai model
+\emph{pretrained}, lalu salah satu dari dua cara: (1) \textbf{ambil embedding} (ringkasan berupa ratusan angka) dan latih
+LogisticRegression di atasnya: cepat dan murah; (2) \textbf{fine-tune}: lanjutkan latihan sebentar dengan data lomba: lebih akurat,
+butuh GPU.
+\end{inti}
+
+\begin{soal}{text/klasifikasi\_embedding (cara 1)}
+\begin{lstlisting}
+encoder = SentenceTransformer(EMBEDDING_MODEL)       # model pretrained, tidak dilatih ulang
+X_train = encoder.encode(train_texts)                # tiap kalimat -> ratusan angka
+model = LogisticRegression(C=1.0, max_iter=2000)     # model biasa di atas embedding
+\end{lstlisting}
+\end{soal}
+
+\begin{kenapa}[kenapa embedding berguna]
+Model pretrained sudah membaca jutaan kalimat atau gambar, sehingga ia ``tahu'' bahwa \emph{murah} dan \emph{terjangkau}
+mirip, atau bahwa telinga runcing + kumis = kucing. Embedding menyimpan pengetahuan itu sebagai posisi: yang mirip
+berdekatan. Model sederhana di atasnya tinggal menarik garis.
+\end{kenapa}
+
+% ============================================================ BAB 5
+\rb{Tanpa Label: Clustering, Reduksi Dimensi, Anomali}
+{\lgd{biru2}{data}\lgd{merah3}{hasil proyeksi / titik terpilih}\lgd{biru3}{potongan acak}}
+{Tidak ada kolom $y$. Model mencari struktur sendiri; kita yang menafsirkan hasilnya.}
+
+\subsection{KMeans}
+\begin{inti}[biru1]
+Taruh $k$ pusat secara acak, lalu ulangi dua langkah: \textbf{(1)} tiap titik ikut pusat terdekat, \textbf{(2)} tiap pusat pindah
+ke tengah (rata-rata) anggotanya. Berhenti saat tidak ada titik yang pindah kelompok.
+\end{inti}
+
+\begin{diag}[dg:kmeans]{KMeans langkah demi langkah ($k = 4$)}
+\figs[0.82]{kmeans}
+$\times$ = pusat klaster. \textbf{Cara membaca:} panel 0, pusat diambil dari titik acak (dua pusat bisa jatuh di kelompok yang
+sama). Panel 1, garis tipis menunjukkan tiap titik memilih pusat terdekat. Panel 2, pusat bergeser ke tengah anggotanya.
+Setelah \kmiter{} putaran, hasilnya stabil.
+\end{diag}
+
+\rumus[inertia]{\text{inertia} = \sum_{\text{titik}} \text{jarak}(\text{titik},\ \text{pusatnya})^2 \quad \text{(makin kecil = makin rapat)}}
+
+\begin{jebak}
+KMeans \textbf{selalu} memberi jawaban, bahkan untuk $k$ yang salah. Memilih $k$ adalah tugas kita: grafik \emph{elbow}
+(inertia vs $k$, cari ``siku'') atau \emph{silhouette score} (makin tinggi makin baik). Skalakan fitur dulu. Nama klaster
+(``pembeli hemat'') kita yang memberi, dengan melihat rata-rata fitur tiap klaster.
+\end{jebak}
+
+\begin{luar}
+\kode{DBSCAN}/\kode{HDBSCAN}: klaster = daerah padat, jumlahnya otomatis, titik sepi diberi label noise ($-1$); cocok untuk bentuk
+tak bulat (GPS, trajektori). \kode{AgglomerativeClustering}: gabung dua kelompok terdekat berulang-ulang (dendrogram).
+\kode{GaussianMixture}: seperti KMeans tetapi tiap titik punya peluang ikut tiap klaster.
+\end{luar}
+
+\subsection{PCA, UMAP, t-SNE}
+\begin{inti}[biru1]
+Meringkas banyak kolom jadi sedikit kolom baru. PCA mencari \textbf{arah tempat data paling menyebar}, lalu memproyeksikan
+(menjatuhkan) setiap titik ke arah itu. Komponen kedua = arah tersebar berikutnya yang tegak lurus dengan yang pertama.
+\end{inti}
+
+\begin{diag}[dg:pca]{Arah yang baik vs arah yang buruk}
+\figs[1.0]{pca}
+Garis tipis = jalur jatuhnya titik ke garis biru; titik jingga = posisi baru. Strip di bawah = data setelah tinggal 1 kolom.
+\textbf{Cara membaca:} di arah PCA (kiri) titik-titik tetap terpisah lebar, \pcasatu\,\% sebaran tersimpan. Di arah tegak lurus
+(kanan) semuanya menumpuk, hanya \pcadua\,\% tersimpan. Di sklearn angka ini ada di \kode{explained\_variance\_ratio\_}.
+\end{diag}
+
+\begin{luar}
+\textbf{UMAP} dan \textbf{t-SNE} hanya untuk \emph{melihat}. Keduanya menjaga agar tetangga dekat tetap dekat, jadi kelompok tampak
+jelas di gambar 2D, tetapi jarak antar-kelompok dan ukuran kelompok di gambar tidak bermakna. PCA juga dipakai untuk
+mengecilkan embedding (misal 768 $\to$ 50 kolom) sebelum clustering.
+\end{luar}
+
+\subsection{Isolation Forest}
+\begin{inti}[merah1]
+Potong data secara acak berulang-ulang. Titik aneh yang jauh dari kerumunan \textbf{cepat terpisah sendirian}; titik normal di
+tengah kerumunan butuh banyak potongan. \textbf{Sedikit potongan = anomali.}
+\end{inti}
+
+\begin{diag}[dg:iforest]{Berapa potongan untuk mengisolasi satu titik}
+\figs[1.0]{iforest}
+Cincin jingga = titik yang sedang diisolasi; garis = potongan acak; kotak berarsir = kotak terakhir yang hanya berisi titik itu.
+\textbf{Cara membaca:} rata-rata 300 kali percobaan, titik terpencil butuh \ifluar{} potongan, titik di tengah butuh \iftengah{}
+potongan. IsolationForest mengulang ini dengan ratusan pohon acak dan mengubah rata-rata panjang jalur jadi skor anomali.
+\end{diag}
+
+\begin{luar}
+\kode{LocalOutlierFactor}: titik yang daerahnya jauh lebih sepi daripada daerah tetangganya. \kode{ECOD}, \kode{HBOS} (pyod): seberapa
+ekstrem nilai tiap kolom. Kenop \kode{contamination} = perkiraan persen data yang anomali; ini tebakan kita, jadi selalu cek
+baris yang ditandai secara manual (\kode{tabular/cek\_outlier\_input} menyimpannya ke \kode{baris\_curiga.csv}).
+\end{luar}
+
+% ============================================================ BAB 6
+\rb{Teks: Dari Kata Menjadi Angka}
+{\lgd{biru1}{nilai TF-IDF}}
+{Model hanya mengerti angka. Langkah pertama setiap notebook teks adalah mengubah kalimat menjadi tabel angka.}
+
+\begin{inti}[biru1]
+\textbf{TF-IDF} memberi nilai tinggi pada kata yang \textbf{sering di dokumen ini} (TF) tetapi \textbf{jarang di dokumen lain}
+(IDF). Kata yang muncul di mana-mana (``dan'', ``barang'') bernilai kecil karena tidak membedakan apa-apa. Setiap kata menjadi
+satu kolom; LogisticRegression/LinearSVC lalu memberi bobot ke tiap kolom.
+\end{inti}
+
+\rumus[seperti sklearn, smooth\_idf]{\text{TF} = \frac{\text{jumlah kata di dokumen}}{\text{panjang dokumen}}, \qquad
+\text{IDF} = \ln\frac{1 + N}{1 + \text{df}} + 1, \qquad \text{TF-IDF} = \text{TF} \times \text{IDF}}
+
+\begin{soal}{4 ulasan, nilai kata di dokumen 4 ``barang bagus harga murah murah''}
+Dokumen: (1) pengiriman cepat dan barang bagus; (2) barang rusak dan pengiriman lambat sekali; (3) pelayanan ramah dan barang
+bagus sekali; (4) barang bagus harga murah murah. $N = 4$; df = berapa dokumen memuat kata itu.\par\smallskip
+\begin{center}
+\begin{tabular}{@{}lccccl@{}}
+\toprule
+kata & TF & df & IDF & TF-IDF & \\ \midrule
+\input{fig/tfidf_tabel}
+\end{tabular}
+\end{center}
+``murah'' paling tinggi: muncul dua kali dan hanya di dokumen ini. ``barang'' paling rendah: ada di semua dokumen.
+\end{soal}
+
+\begin{luar}
+\kode{ngram\_range=(1,2)}: pasangan kata ikut dihitung, sehingga ``tidak bagus'' jadi satu kolom. \kode{min\_df=2}: buang kata yang
+muncul di kurang dari 2 dokumen. \kode{analyzer="char\_wb"}: potongan huruf, tahan salah ketik dan bahasa gaul.
+\kode{sublinear\_tf=True}: kata yang muncul 10 kali tidak dianggap 10 kali lebih penting.
+\end{luar}
+
+\sub{Embedding dan cosine similarity}
+TF-IDF tidak tahu bahwa ``murah'' dan ``terjangkau'' mirip. Embedding (SentenceTransformer) tahu, karena model pretrained-nya sudah
+membaca jutaan kalimat. Kemiripan dua kalimat diukur dari sudut antara dua vektornya:
+\rumus[cosine similarity]{\cos\theta = \frac{\vec a \cdot \vec b}{\lVert \vec a\rVert\, \lVert \vec b\rVert} \qquad
+(1 = \text{searah / sangat mirip},\ 0 = \text{tidak berhubungan})}
+Dipakai di \kode{text/retrieval} (cari dokumen paling mirip pertanyaan), \kode{text/rag\_llm}, dan \kode{preprocessing/peta\_semantik}.
+
+\begin{jebak}
+Jangan \kode{fit} \kode{TfidfVectorizer} pada gabungan latih + test lalu melaporkan skor validasi: IDF ikut ``melihat'' data
+validasi. Masukkan vectorizer ke \kode{Pipeline} atau \kode{fit} pada data latih saja, lalu \kode{transform} yang lain.
+\end{jebak}
+
+% ============================================================ BAB 7
+\rb{Deret Waktu: Meramal dari Masa Lalu}
+{\lgd{biru1}{$\alpha$ kecil}\lgd{merah3}{$\alpha$ besar}\lgd{merah1}{kejadian khusus}}
+{Masa depan ditebak dari masa lalu. Tiga cara di toolkit: smoothing/SARIMAX, fitur lag + model tabel, dan model besar (Chronos).}
+
+\subsection{Exponential smoothing}
+\begin{inti}[biru1]
+Rata-rata yang lebih berat ke data terbaru. \textbf{Level} = perkiraan ``nilai normal saat ini''; ramalan ke depan = level terakhir.
+$\alpha$ mengatur seberapa cepat level mengikuti data baru.
+\end{inti}
+
+\rumus[level]{\ell_t = \alpha\, y_t + (1 - \alpha)\, \ell_{t-1}, \qquad \hat y_{t+1} = \ell_t}
+
+\begin{diag}[dg:es]{Pengaruh $\alpha$}
+\figs[0.9]{es}
+\textbf{Cara membaca:} $\alpha = 0{,}1$ (biru) tenang tetapi selalu tertinggal di belakang data yang terus naik, MAE \esmaekecil.
+$\alpha = 0{,}8$ (jingga) cepat mengikuti, tetapi ikut melonjak di bulan 22, MAE \esmaebesar. Ramalan keduanya datar karena model
+ini tidak mengenal tren.
+\end{diag}
+
+\begin{kenapa}[kenapa ada Holt dan Holt-Winters]
+Simple smoothing hanya punya level, jadi ramalannya datar. \textbf{Holt} menambah komponen \emph{tren} (naik berapa per bulan),
+\textbf{Holt-Winters} menambah komponen \emph{musim} (pola yang berulang tiap 12 bulan atau tiap 7 hari). Di statsmodels:
+\kode{ExponentialSmoothing(trend="add", seasonal="add", seasonal\_periods=12)}.
+\end{kenapa}
+
+\subsection{SARIMAX}
+{\small
+\begin{tabularx}{\linewidth}{@{}>{\bfseries}p{1.6cm}X@{}}
+\toprule
+AR & \emph{autoregressive}: nilai sekarang mirip nilai beberapa periode lalu\\
+I & \emph{integrated}: modelkan selisih ($y_t - y_{t-1}$), bukan nilai mentah, supaya tren hilang\\
+MA & \emph{moving average}: koreksi dari kesalahan ramalan periode lalu\\
+S & \emph{seasonal}: AR/I/MA yang sama tetapi untuk jarak satu musim (12 bulan lalu)\\
+X & \emph{exogenous}: faktor luar yang diketahui (libur, promo, harga)\\ \bottomrule
+\end{tabularx}}
+
+\subsection{Fitur lag + model tabel}
+\begin{inti}[hijau1]
+Cara yang sering paling kuat di lomba: ubah deret jadi \textbf{tabel biasa}. Tiap baris berisi nilai bulan lalu (\kode{lag\_1}),
+tahun lalu (\kode{lag\_12}), rata-rata beberapa bulan sebelumnya, bulan ke berapa, lalu latih RandomForest/LightGBM biasa.
+\end{inti}
+\begin{center}
+\small
+\begin{tabular}{@{}lcccc@{}}
+\toprule
+bulan & jual ($y$) & \kode{lag\_1} & \kode{lag\_12} & \kode{rata\_3}\\ \midrule
+2024-01 & 120 & -- & -- & --\\
+2024-02 & 132 & 120 & -- & --\\
+2024-03 & 128 & 132 & -- & --\\
+2024-04 & 140 & 128 & -- & 126{,}7\\
+\dots & \dots & \dots & \dots & \dots\\
+2025-01 & 151 & 145 & 120 & 143{,}0\\ \bottomrule
+\end{tabular}
+\end{center}
+
+\begin{jebak}
+(1) Deret waktu \textbf{tidak boleh diacak} saat split; validasi harus sesudah data latih (\kode{TimeSeriesSplit},
+Diagram~\ref{dg:kfold}). (2) \kode{rata\_3} harus dihitung dari bulan \emph{sebelumnya} (\kode{shift(1)} dulu, baru
+\kode{rolling(3)}); kalau bulan ini ikut dihitung, model mengintip jawaban. (3) Saat meramal beberapa langkah, \kode{lag\_1} bulan
+depan belum diketahui; pakai hasil ramalan sebelumnya atau model terpisah per horizon.
+\end{jebak}
+
+% ============================================================ BAB 8
+\rb{Rekomendasi dan Graf}
+{\lgd{biru1}{tebakan model}\lgd{biru2}{komunitas 1}\lgd{merah3}{komunitas 2}\lgd{hijau2}{komunitas 3}}
+{Dua jenis data yang bentuknya bukan tabel biasa: matriks orang $\times$ barang, dan jaringan simpul + sisi.}
+
+\subsection{Matrix factorization (SVD)}
+\begin{inti}[biru1]
+Tiap orang dan tiap film diringkas jadi beberapa angka ``selera'' (faktor). Rating tebakan = rata-rata umum + kebiasaan orang
+(pelit/murah memberi nilai) + kebiasaan film (memang disukai/tidak) + kecocokan selera orang dan film.
+\end{inti}
+
+\rumus[seperti \kode{surprise.SVD}]{\hat r_{u,i} = \mu + b_u + b_i + \vec p_u \cdot \vec q_i}
+
+\begin{soal}{5 orang $\times$ 6 film, 2 faktor (dilatih dengan SGD di \kode{buat\_gambar.py})}
+\begin{center}
+\begin{tabular}{@{}lcccccc@{}}
+\toprule
+ & Horor A & Horor B & Komedi A & Komedi B & Drama A & Drama B\\ \midrule
+\input{fig/mf_tabel}
+\end{tabular}
+\end{center}
+Angka tegak = rating asli; angka \textcolor{biru1}{\textbf{\emph{miring biru}}} = tebakan untuk sel kosong. Contoh Ani $\times$
+Komedi B: $\mu + b_u + b_i + \vec p\cdot\vec q = \mfmu + (\mfbu) + (\mfbi) + (\mfpq) = \mfhasil$. Ani suka horor dan memberi
+Komedi A nilai 1, jadi kecocokan seleranya negatif.
+\end{soal}
+
+\begin{luar}
+\kode{KNNBaseline} (orang/film yang mirip), \kode{SVDpp}, \kode{NMF}. Untuk data klik tanpa rating: \kode{ALS} dan \kode{BPR}
+(\kode{recsys/top\_n}). Baseline \textbf{popularitas} (rekomendasikan yang paling banyak dibeli) sering sulit dikalahkan; di data demo
+toolkit ia justru menang (\kode{KATALOG.md}).
+\end{luar}
+
+\subsection{Deteksi komunitas (Louvain)}
+\begin{inti}[biru1]
+Cari kelompok simpul yang \textbf{banyak saling terhubung di dalam} dan \textbf{sedikit ke luar}. Louvain memindah simpul antar
+kelompok selama skor \emph{modularitas} naik, lalu menggabungkan tiap kelompok jadi satu simpul besar dan mengulang.
+\end{inti}
+\begin{center}
+\begin{minipage}{0.42\linewidth}\centering\input{fig/graf}\end{minipage}\hfill
+\begin{minipage}{0.54\linewidth}\small
+\rumus[modularitas]{Q = \sum_c \left[\frac{L_c}{m} - \left(\frac{d_c}{2m}\right)^2\right]}
+$L_c$ = sisi di dalam kelompok $c$; $d_c$ = jumlah derajat simpul di $c$; $m$ = total sisi (\jumlahsisi).
+Pembagian di gambar: $Q = \qgrup$. Semua dijadikan satu kelompok: $Q = \qsatu$. Makin tinggi (maks.\ 1) = kelompok makin jelas.
+\end{minipage}
+\end{center}
+
+\begin{luar}
+Fitur graf untuk model tabel: \textbf{degree} (jumlah teman), \textbf{PageRank} (dihubungi simpul penting), \textbf{betweenness}
+(sering jadi jembatan). Fitur ini lalu masuk LightGBM biasa (\kode{graph/klasifikasi\_node}). \textbf{GCN}: neural network yang
+membuat tiap simpul mengumpulkan informasi dari tetangganya, beberapa lapis (\kode{graph/gcn}).
+\end{luar}
+
+% ============================================================ BAB 9
+\rb{Menilai dan Memeras Skor}
+{\lgd{biru2}{latih / kelas 0}\lgd{merah3}{validasi / kelas 1}\lgd{hijau1}{tebakan benar}\lgd{merah1}{tebakan salah}}
+{Skor validasi menentukan semua keputusan. Kalau cara menghitungnya salah, semua keputusan ikut salah.}
+
+\subsection{Validasi silang (KFold)}
+\begin{inti}[biru1]
+Satu kali split bisa beruntung atau sial. KFold membagi data jadi 5 bagian; model dilatih 5 kali, tiap kali satu bagian berbeda
+jadi validasi. Skor akhir = rata-rata 5 skor, dan simpangannya menunjukkan seberapa stabil model.
+\end{inti}
+
+\begin{diag}[dg:kfold]{KFold vs TimeSeriesSplit}
+\figs[0.85]{kfold}
+\textbf{Cara membaca:} kiri, setiap bagian kebagian jadi validasi tepat satu kali. Kanan, validasi selalu \emph{sesudah} data
+latih dan data latih makin panjang; bagian sesudah validasi tidak dipakai supaya model tidak mengintip masa depan.
+\end{diag}
+
+{\small
+\begin{tabularx}{\linewidth}{@{}>{\bfseries}p{3.2cm}X@{}}
+\toprule
+StratifiedKFold & proporsi kelas di tiap lipatan dijaga sama; wajib bila kelas tidak seimbang (95\,\% normal, 5\,\% fraud)\\
+GroupKFold & satu orang/pasien/toko tidak boleh muncul di latih dan validasi sekaligus\\
+TimeSeriesSplit & untuk deret waktu; validasi selalu sesudah latih\\ \bottomrule
+\end{tabularx}}
+
+\subsection{Precision, recall, F1, dan threshold}
+\begin{inti}[biru1]
+Classifier mengeluarkan \textbf{peluang}. Kita memilih ambang (\emph{threshold}): di atasnya dianggap kelas 1. Menggeser ambang
+\textbf{menukar} dua jenis kesalahan: alarm palsu (FP) dan yang terlewat (FN).
+\end{inti}
+
+\begin{diag}[dg:threshold]{Satu set prediksi, threshold 0,5}
+\figs[0.9]{threshold}
+Titik penuh = tebakan benar; cincin kosong = tebakan salah. \textbf{Cara membaca:} cincin biru di daerah kanan = FP (aslinya 0,
+ditebak 1); cincin jingga di kiri = FN (aslinya 1, ditebak 0). Geser garis ke kiri: FN berkurang, FP bertambah.
+\end{diag}
+
+\rumus{\text{precision} = \frac{TP}{TP + FP}, \qquad \text{recall} = \frac{TP}{TP + FN}, \qquad
+F_1 = \frac{2 \cdot \text{precision} \cdot \text{recall}}{\text{precision} + \text{recall}}}
+
+\begin{center}
+\small
+\begin{tabular}{@{}cccccccc@{}}
+\toprule
+threshold & TP & FP & FN & TN & precision & recall & F1\\ \midrule
+\input{fig/threshold_tabel}
+\end{tabular}
+\end{center}
+
+{\small
+\begin{tabularx}{\linewidth}{@{}>{\bfseries}p{2.4cm}X@{}}
+\toprule
+F1 macro & F1 dihitung per kelas lalu dirata-rata; kelas kecil sama penting dengan kelas besar\\
+AUC & kualitas \emph{urutan} peluang (apakah kelas 1 umumnya diberi peluang lebih tinggi); tidak bergantung threshold\\
+MAE & rata-rata $|y - \hat y|$; mudah dibaca dalam satuan aslinya\\
+RMSE & $\sqrt{\text{rata-rata }(y - \hat y)^2}$; kesalahan besar dihukum lebih berat\\
+$R^2$ & 1 = sempurna, 0 = setara menebak rata-rata, negatif = lebih buruk dari rata-rata\\ \bottomrule
+\end{tabularx}}
+
+\begin{jebak}
+Pakai metrik yang \textbf{persis sama} dengan yang ditulis di soal. Akurasi 95\,\% bisa tidak berarti apa-apa kalau 95\,\% data
+memang kelas 0 (model yang selalu menjawab 0 pun dapat 95\,\%). Untuk F1, threshold 0,5 belum tentu terbaik; cari di data
+validasi (\kode{tabular/imbalanced}), jangan di data test.
+\end{jebak}
+
+\subsection{Ensembling, tuning, dan SHAP}
+{\small
+\begin{tabularx}{\linewidth}{@{}>{\bfseries\raggedright\arraybackslash}p{2.8cm}>{\raggedright\arraybackslash}XP{4.6cm}@{}}
+\toprule
+Ensembling / blending & rata-ratakan peluang beberapa model berbeda jenis (misal LightGBM 0,62, CatBoost 0,48, RandomForest
+0,71 $\to$ 0,60). Kesalahan mereka tidak sama, jadi saling menutupi & \kode{tabular/ensembling\_klasifikasi}, \kode{tabular/blending}\\
+Tuning (Optuna) & mencoba kombinasi kenop dan belajar dari percobaan sebelumnya: area yang skornya bagus dicoba lebih sering.
+Lebih hemat daripada mencoba semua kombinasi & \kode{tabular/tuning\_klasifikasi}\\ \bottomrule
+\end{tabularx}}
+
+\begin{diag}[dg:shap]{SHAP: kenapa pelanggan ini ditebak 59\,\% akan berhenti}
+\figs[0.8]{shap}
+\textbf{Cara membaca:} mulai dari rata-rata tebakan model untuk semua pelanggan (0,30). Tiap fitur pelanggan ini mendorong
+naik (\textcolor{merah3}{jingga}) atau turun (\textcolor{biru2}{biru}); jumlah semua dorongan = prediksi akhir 0,59. Notebook:
+\kode{tabular/explain\_klasifikasi}, \kode{visualisasi/penjelasan\_model}.
+\end{diag}
+
+\begin{kenapa}[ensembling vs tuning, mana dulu]
+Tuning biasanya menaikkan skor sedikit (sering $<$ 1 poin) dan makan waktu. Ensembling 2--3 model yang sudah lumayan dan
+berbeda jenis sering memberi kenaikan serupa dengan usaha lebih kecil. Urutan hemat waktu saat lomba: baseline $\to$ fitur
+yang lebih baik $\to$ ganti model $\to$ ensembling $\to$ tuning.
+\end{kenapa}
+
+% ============================================================ LEMBAR RINGKAS
+\clearpage
+\section*{Lembar ringkas satu halaman}
+\addcontentsline{toc}{section}{Lembar ringkas satu halaman}
+{\small
+\begin{tabularx}{\linewidth}{@{}>{\bfseries\raggedright\arraybackslash}p{3.3cm}XP{4.0cm}@{}}
+\toprule
+Metode & Idenya dalam satu kalimat & Kenop utama\\ \midrule
+Decision Tree & tanya ya/tidak berulang, potong ruang dengan garis lurus & \kode{max\_depth}, \kode{min\_samples\_leaf}\\
+Random Forest & ratusan pohon dalam dari sampel acak, dirata-rata & \kode{n\_estimators}, \kode{max\_features}\\
+XGBoost/LightGBM & pohon dangkal berurutan, tiap pohon menebak sisa kesalahan & \kode{learning\_rate}, \kode{n\_estimators}, \kode{num\_leaves}\\
+CatBoost & boosting yang jago kolom kategori & \kode{iterations}, \kode{depth}\\
+LogisticRegression & jumlah berbobot $\to$ sigmoid $\to$ peluang; batas lurus & \kode{C}\\
+Ridge / Lasso & regresi linear dengan rem bobot & \kode{alpha}\\
+SVC & batas dengan jarak (margin) terbesar; kernel = bisa melengkung & \kode{C}, \kode{kernel}\\
+KNN & suara $k$ tetangga terdekat & \kode{n\_neighbors}\\
+MLP / CNN / Transformer & lapisan neuron; pretrained + embedding atau fine-tune & epoch, learning rate, batch size\\
+KMeans & titik ikut pusat terdekat, pusat pindah ke tengah & \kode{n\_clusters}\\
+DBSCAN & klaster = daerah padat; sisanya noise & \kode{eps}, \kode{min\_samples}\\
+PCA & proyeksi ke arah sebaran terbesar & \kode{n\_components}\\
+IsolationForest & sedikit potongan acak untuk terisolasi = anomali & \kode{contamination}\\
+TF-IDF & sering di dokumen ini, jarang di lainnya & \kode{ngram\_range}, \kode{min\_df}\\
+Exp.\ smoothing & rata-rata berat ke data terbaru & \kode{smoothing\_level} ($\alpha$)\\
+SARIMAX & AR + selisih + koreksi error + musim + faktor luar & \kode{order}, \kode{seasonal\_order}\\
+Fitur lag + LightGBM & deret waktu diubah jadi tabel & lag yang dipakai\\
+SVD (recsys) & orang dan barang jadi vektor selera & \kode{n\_factors}, \kode{reg\_all}\\
+Louvain & kelompok yang padat di dalam, jarang ke luar & \kode{resolution}\\ \bottomrule
+\end{tabularx}}
+
+\vspace{4pt}
+{\small
+\begin{tabularx}{\linewidth}{@{}P{4.2cm}X@{}}
+\toprule
+Rumus & \\ \midrule
+Gini & $1 - \sum_k p_k^2$\\
+Boosting & $F_m(x) = F_{m-1}(x) + \eta\, h_m(x)$, $h_m$ menebak $y - F_{m-1}$\\
+Regresi logistik & $z = b_1x_1 + \dots + c$; \ $p = 1/(1+e^{-z})$\\
+TF-IDF & $\text{TF} \times \left(\ln\frac{1+N}{1+\text{df}} + 1\right)$\\
+Cosine similarity & $\vec a\cdot\vec b / (\lVert\vec a\rVert\lVert\vec b\rVert)$\\
+Exponential smoothing & $\ell_t = \alpha y_t + (1-\alpha)\ell_{t-1}$\\
+Matrix factorization & $\hat r = \mu + b_u + b_i + \vec p_u\cdot\vec q_i$\\
+Modularitas & $\sum_c [L_c/m - (d_c/2m)^2]$\\
+Precision / recall / F1 & $TP/(TP+FP)$; \ $TP/(TP+FN)$; \ $2PR/(P+R)$\\
+RMSE / MAE & $\sqrt{\overline{(y-\hat y)^2}}$; \ $\overline{|y-\hat y|}$\\ \bottomrule
+\end{tabularx}}
+
+\section*{Kesalahan pemula yang perlu diingat}
+\addcontentsline{toc}{section}{Kesalahan pemula yang perlu diingat}
+{\small
+\begin{tabularx}{\linewidth}{@{}P{4.4cm}>{\raggedright\arraybackslash}X>{\raggedright\arraybackslash}X@{}}
+\toprule
+Gejala & Penyebab & Perbaikan\\ \midrule
+skor validasi 0,99, skor lomba jauh lebih rendah & kebocoran data (scaler/TF-IDF di-\kode{fit} pada semua data, kolom turunan target)
+& \kode{Pipeline}; cek kolom satu per satu\\
+KNN/SVC/KMeans hasilnya aneh & fitur tidak diskalakan & \kode{make\_pipeline(StandardScaler(), model)}\\
+skor latih jauh di atas skor validasi & overfitting & kurangi \kode{max\_depth}/\kode{num\_leaves}, naikkan regularisasi\\
+deret waktu skornya terlalu bagus & split diacak / rata-rata bergulir memuat bulan ini & \kode{TimeSeriesSplit}; \kode{shift(1)} sebelum \kode{rolling}\\
+akurasi tinggi tetapi kelas kecil tidak pernah tertebak & kelas tidak seimbang & pakai F1 macro, \kode{class\_weight="balanced"}, atur threshold\\
+\kode{learning\_rate} diturunkan, skor malah turun & jumlah pohon tidak dinaikkan & naikkan \kode{n\_estimators} bersamaan\\
+skor berubah-ubah tiap \emph{Run All} & seed tidak dipasang & \kode{random\_state=SEED} di model dan split\\ \bottomrule
+\end{tabularx}}
+
+\end{document}

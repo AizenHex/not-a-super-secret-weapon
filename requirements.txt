@@ -1,0 +1,98 @@
+# Library untuk notebook _.NEW-GEN. Versi = yang sudah terbukti menjalankan semua notebook
+# (Python 3.13, Windows 64-bit). Pasang dengan setup.bat, atau manual:
+#   python -m pip install -r requirements.txt
+# torch versi CUDA 12.8 diambil dari index PyTorch di bawah. Tanpa GPU NVIDIA tetap jalan (CPU).
+--extra-index-url https://download.pytorch.org/whl/cu128
+
+# Data dan plot
+numpy==2.5.3
+pandas==2.3.3
+scipy==1.18.1
+matplotlib==3.11.2
+seaborn==0.13.2
+plotly==7.1.0
+wordcloud==1.9.6
+python-pptx==1.0.2
+shapely==2.1.2
+regex==2026.9.29
+openpyxl==3.1.5
+
+# Tabular
+scikit-learn==1.9.1
+lightgbm==4.7.0
+xgboost==3.4.1
+catboost==1.2.10
+imbalanced-learn==0.14.2
+optuna==5.0.0
+shap==0.52.0
+lifelines==0.30.3
+
+# Deret waktu
+statsmodels==0.15.0
+sktime==1.2.0
+
+# Unsupervised
+umap-learn==0.5.12
+pyod==3.6.6
+mlxtend==0.25.0
+
+# Teks
+transformers==5.18.0
+sentence-transformers==6.1.0
+rank-bm25==0.2.2
+sklearn-crfsuite==0.5.0
+rapidfuzz==3.14.6            # skor kemiripan string (entity resolution)
+PySastrawi==1.2.1
+laya==0.4.8                  # Laya (alat bantu peta kategori), bobot di pretrained/laya
+
+# Gambar dan audio
+torch==2.11.0+cu128
+torchvision==0.26.0+cu128
+pillow==12.3.0
+scikit-image==0.26.0
+opencv-python==5.0.0.93
+easyocr==1.7.2
+ultralytics==8.4.172
+lap==0.5.13                  # dipakai ultralytics untuk tracking (ByteTrack/BoT-SORT)
+librosa==1.0.0
+soundfile==0.14.0
+imageio-ffmpeg==0.6.0         # ffmpeg bawaan: ambil suara dari mp4/m4a/webm
+
+# Graf dan rekomendasi
+networkx==3.7
+scikit-surprise==1.1.5
+implicit==0.7.3
+
+# Geospasial dan satelit
+geopandas==1.2.0
+pyogrio==0.13.0
+pyproj==3.8.0
+rasterio==1.5.2
+affine==3.0.1                # dipakai rasterio
+libpysal==4.15.0             # bobot tetangga spasial
+esda==2.10.0                 # Moran's I, LISA
+h3==4.5.0                    # binning heksagon spasial
+
+cleanlab==2.9.0              # cari label salah (label berisik)
+pymupdf==1.26.5              # baca/render PDF (import fitz)
+pdfplumber==0.11.7           # tabel dari PDF digital
+
+chronos-forecasting==2.3.2   # Chronos-2 / Chronos-Bolt, peramalan zero-shot
+accelerate==1.15.0           # dipakai chronos
+einops==0.8.2                # dipakai chronos
+
+bertopic==0.17.3             # topic modeling embedding + HDBSCAN
+hdbscan==0.8.44              # dipakai bertopic
+
+imagehash==4.3.2             # hash gambar (phash/dhash), cari gambar kembar
+pywavelets==1.10.0           # dipakai imagehash
+rouge_score==0.1.2           # ROUGE untuk generasi teks
+absl-py==2.5.1               # dipakai rouge_score
+sacrebleu==2.6.0             # BLEU / chrF
+portalocker==4.4.1           # dipakai sacrebleu
+
+# Jupyter
+jupyterlab==4.6.4
+ipykernel==7.4.0
+nbformat==5.11.1
+nbconvert==7.17.1

@@ -1,0 +1,224 @@
+% ============================================================
+%  PREAMBLE -- Proteksi Sistem Tenaga Listrik (disalin dari TILI)
+% ============================================================
+\usepackage[a4paper,margin=2.2cm,top=2.3cm,bottom=2.5cm]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage[indonesian]{babel}
+\usepackage{amsmath,amssymb}
+\usepackage{icomma}
+\usepackage{xcolor}
+\usepackage[most]{tcolorbox}
+\usepackage[american]{circuitikz}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
+\usepgfplotslibrary{fillbetween}
+\usetikzlibrary{arrows.meta,calc,positioning,decorations.pathreplacing,patterns,angles,quotes,shapes.geometric}
+\usepackage{booktabs,array,multirow,longtable,tabularx}
+\usepackage{enumitem}
+\usepackage{etoolbox}
+\usepackage{fontawesome5}
+\usepackage{caption}
+\captionsetup{font=small,labelfont=bf}
+\usepackage{float}
+\usepackage[hidelinks]{hyperref}
+\setlist{itemsep=1pt,topsep=3pt}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{4pt}
+\renewcommand{\arraystretch}{1.18}
+
+% ------------------------------------------------------------
+%  PALET: 5 keluarga warna x 4 gradasi.
+%  Makna tiap warna DITETAPKAN ULANG di awal setiap bab.
+% ------------------------------------------------------------
+\definecolor{biru1}{HTML}{0D47A1}  % biru tua
+\definecolor{biru2}{HTML}{1E88E5}  % biru terang
+\definecolor{biru3}{HTML}{00838F}  % biru kehijauan (sian)
+\definecolor{biru4}{HTML}{3949AB}  % biru nila
+\definecolor{merah1}{HTML}{B71C1C} % merah tua
+\definecolor{merah2}{HTML}{E53935} % merah terang
+\definecolor{merah3}{HTML}{EF6C00} % jingga
+\definecolor{merah4}{HTML}{AD1457} % merah keunguan
+\definecolor{hijau1}{HTML}{1B5E20} % hijau tua
+\definecolor{hijau2}{HTML}{43A047} % hijau terang
+\definecolor{hijau3}{HTML}{827717} % hijau zaitun
+\definecolor{hijau4}{HTML}{00796B} % hijau toska
+\definecolor{ungu1}{HTML}{4A148C}  % ungu tua
+\definecolor{ungu2}{HTML}{8E24AA}  % ungu terang
+\definecolor{ungu3}{HTML}{5E35B1}  % ungu kebiruan
+\definecolor{ungu4}{HTML}{C2185B}  % ungu kemerahan (magenta)
+\definecolor{coklat1}{HTML}{5D4037} % coklat tua
+\definecolor{coklat2}{HTML}{A1572A} % coklat bata
+\definecolor{coklat3}{HTML}{B8860B} % kuning tua / emas
+\definecolor{coklat4}{HTML}{8D6E63} % coklat muda
+
+% ------------------------------------------------------------
+%  Simbol berwarna
+%  \defq{nama}{warna}{simbol}{nama besaran}
+%    -> \nama   : simbol berwarna (bisa di teks maupun rumus)
+%    -> \tnama  : nama besaran, tebal & berwarna sama
+% ------------------------------------------------------------
+\newcommand{\defsym}[3]{\expandafter\gdef\csname #1\endcsname{\ensuremath{\textcolor{#2}{#3}}}}
+\newcommand{\kw}[2]{\textcolor{#1}{\textbf{#2}}}
+\newcommand{\defq}[4]{\defsym{#1}{#2}{#3}\expandafter\gdef\csname t#1\endcsname{\kw{#2}{#4}}}
+\newcommand{\cl}[2]{\textcolor{#1}{#2}}   % warnai potongan rumus apa saja
+
+% ------------------------------------------------------------
+%  Kotak-kotak
+% ------------------------------------------------------------
+% Rumus kunci: bingkai tipis
+\newtcbox{\kotak}{enhanced,colback=white,colframe=black!60,boxrule=0.5pt,arc=0pt,
+  left=6pt,right=6pt,top=3pt,bottom=3pt,nobeforeafter,tcbox raise base}
+% Setiap kotak rumus bernomor (bab.urutan), misalnya (2.5). Pasang \label{r:...} tepat sesudahnya.
+\newcounter{rumus}[section]
+\renewcommand{\therumus}{\thesection.\arabic{rumus}}
+\newcommand{\nomorwarna}{biru1}
+\newsavebox{\rumusbox}
+\newcommand{\rumus}[2][]{\par\refstepcounter{rumus}\sbox{\rumusbox}{\kotak{%
+  {\sffamily\bfseries\color{\nomorwarna}(\therumus)}\quad
+  \if\relax\detokenize{#1}\relax\else{\scriptsize\sffamily\color{black!55}#1}\quad\fi
+  $\displaystyle #2$}}\begin{center}\ifdim\wd\rumusbox>\linewidth
+  \resizebox{\linewidth}{!}{\usebox{\rumusbox}}\else\usebox{\rumusbox}\fi\end{center}\par}
+
+% Pemahaman penting: warna mengikuti keluarga konsepnya
+\newtcolorbox{paham}[2][biru1]{enhanced,breakable,colback=#1!5,colframe=#1,
+  boxrule=0pt,leftrule=3pt,arc=0pt,outer arc=0pt,
+  colbacktitle=#1!13,coltitle=#1!80!black,fonttitle=\bfseries,
+  title={\faLightbulb[regular]\enspace Pemahaman penting: #2},
+  left=7pt,right=7pt,top=4pt,bottom=4pt,before skip=8pt,after skip=8pt}
+
+% Proses di balik layar (penurunan / alasan): netral abu-abu
+\newtcolorbox{balik}[1]{enhanced,breakable,colback=black!2.5,colframe=black!45,
+  boxrule=0pt,leftrule=3pt,arc=0pt,outer arc=0pt,
+  colbacktitle=black!8,coltitle=black!80,fonttitle=\bfseries,
+  title={\faCogs\enspace Proses di balik layar: #1},
+  left=7pt,right=7pt,top=4pt,bottom=4pt,before skip=8pt,after skip=8pt}
+
+% Koreksi / catatan tentang slide: garis putus-putus
+\newtcolorbox{koreksi}[1][Catatan tentang slide]{enhanced,breakable,colback=white,
+  frame hidden,borderline={0.7pt}{0pt}{black!65,dashed},arc=0pt,
+  fonttitle=\bfseries,coltitle=black,colbacktitle=white,
+  title={\faExclamationTriangle\enspace #1},
+  left=7pt,right=7pt,top=3pt,bottom=4pt,before skip=8pt,after skip=8pt}
+
+% Contoh soal
+\newtcolorbox{contoh}[1]{enhanced,breakable,colback=white,colframe=black!40,
+  boxrule=0.5pt,arc=1pt,colbacktitle=black!8,coltitle=black,fonttitle=\bfseries,
+  title={\faEdit[regular]\enspace Contoh Soal: #1},
+  left=7pt,right=7pt,top=4pt,bottom=4pt,before skip=8pt,after skip=8pt}
+\newcommand{\jawab}{\par\smallskip\textbf{Penyelesaian.}\ }
+
+% Prosedur penyelesaian: Diketahui -> Ditanya -> Rencana -> Langkah 1, 2, ...
+% Setiap langkah: \cari{besaran} lalu alasan (kenapa sekarang), rumus dalam simbol, baru angka.
+\newcommand{\prosedurwarna}{biru3!75!black}
+% Diketahui: butir dipisah titik koma (;), tiap butir satu baris.
+\DeclareListParser*{\dkparse}{;}
+\newcommand{\dkitem}[1]{\par\hangindent=2.2em\noindent\makebox[2.2em][l]{\hspace{0.9em}\textcolor{\prosedurwarna}{\textbullet}}\ignorespaces#1}
+\newcommand{\diket}[1]{\par\smallskip\noindent\textbf{\textcolor{\prosedurwarna}{Diketahui.}}\par
+  {\raggedright\dkparse{\dkitem}{#1}\par}}
+\newcommand{\ditanya}[1]{\par\noindent\textbf{\textcolor{\prosedurwarna}{Ditanya.}}\ #1\par}
+\newcommand{\rencana}[1]{\par\noindent\textbf{\textcolor{\prosedurwarna}{Rencana.}}\ #1\par}
+\newcommand{\bagsoal}[1]{\par\smallskip\noindent\textbf{#1}\par}
+% Langkah: judul "Langkah n. Cari X." lalu baris-baris berlabel di bawahnya.
+\newcounter{lkh}
+\newenvironment{langkah}{\par\setcounter{lkh}{0}\raggedright
+  \setlength{\lineskiplimit}{3pt}\setlength{\lineskip}{4pt}
+  \def\item{\par\addvspace{5pt}\stepcounter{lkh}\noindent
+    {\bfseries\color{\prosedurwarna}Langkah \arabic{lkh}.}\ }}{\par\smallskip}
+\newcommand{\cari}[1]{\textbf{Cari #1.}\ }
+\newcommand{\cek}{\textbf{Cek.}\ }
+\newlength{\lblw}\setlength{\lblw}{5.4em}
+\newcommand{\baris}[2]{\par\hangindent=\lblw\hangafter=1\noindent
+  \makebox[\lblw][l]{\hspace{1.3em}{\small\sffamily\color{black!55}#1}}#2\par}
+\newcommand{\alasan}[1]{\baris{Kenapa}{#1}}
+% rumus dari kotak bernomor: nomor + rumus ditulis ulang
+\newcommand{\pakai}[2]{\baris{Rumus}{{\sffamily\bfseries\color{\nomorwarna}(\ref{#1})}\enspace$\displaystyle #2$}}
+% rumus dasar yang tidak berasal dari kotak
+\newcommand{\pakaidasar}[2]{\baris{Rumus}{{\small\sffamily\color{black!60}[#1]}\enspace$\displaystyle #2$}}
+\newcommand{\susun}[2][]{\baris{Susun}{$\displaystyle #2$\if\relax\detokenize{#1}\relax\else
+  \enspace{\small\color{black!60}(#1)}\fi}}
+\newcommand{\angka}[1]{\baris{Angka}{$\displaystyle #1$}}
+\newcommand{\hasil}[1]{\baris{Hasil}{\colorbox{biru3!10}{$\displaystyle #1$}}}
+\newcommand{\hasilt}[1]{\baris{Hasil}{#1}}
+\newcommand{\ceks}[1]{\baris{Cek}{#1}}
+
+% Peta warna bab
+\newcommand{\swatch}[1]{\textcolor{#1}{\rule{0.9em}{0.9em}}}
+\newcommand{\swatches}[1]{\foreach \c in {#1}{\swatch{\c}\,}}
+\newtcolorbox{petawarna}[1]{enhanced,colback=white,colframe=black!25,boxrule=0.4pt,arc=1pt,
+  title={\faPalette\enspace Peta warna #1 \ (berlaku hanya di bab ini)},
+  colbacktitle=black!6,coltitle=black,fonttitle=\bfseries\small,
+  left=4pt,right=4pt,top=2pt,bottom=2pt,fontupper=\small}
+\newenvironment{pw}{\begin{tabular}{@{}l>{\raggedright\arraybackslash}p{0.32\linewidth}>{\raggedright\arraybackslash}p{0.47\linewidth}@{}}}{\end{tabular}}
+\newcommand{\pwrow}[3]{\swatches{#1} & \textbf{#2} & #3 \\}
+
+% Kamus variabel
+\newenvironment{kamus}{\par\medskip\textbf{Kamus variabel}\par\nopagebreak\small
+  \setlength{\LTpre}{3pt}\setlength{\LTpost}{6pt}
+  \begin{longtable}{@{}>{\centering\arraybackslash}p{2.0cm}>{\raggedright\arraybackslash}p{\dimexpr\linewidth-4.8cm-4\tabcolsep\relax}>{\raggedright\arraybackslash}p{2.8cm}@{}}
+  \toprule Simbol & Nama dan arti & Satuan\\ \midrule \endhead
+  \bottomrule \endfoot}{\end{longtable}\normalsize}
+
+% Bab baru selalu di halaman baru
+\newcommand{\bab}[1]{\clearpage\section{#1}}
+
+% Panah fasor
+\tikzset{fasor/.style={-{Stealth[length=2.6mm]},line width=1.1pt},
+         bantu/.style={densely dashed,black!45}}
+
+% Tata letak seksi
+\usepackage{titlesec}
+\titleformat{\section}{\Large\bfseries}{\thesection}{0.8em}{}
+\titleformat{\subsection}{\large\bfseries}{\thesubsection}{0.7em}{}
+\titleformat{\subsubsection}{\normalsize\bfseries}{\thesubsubsection}{0.6em}{}
+\titlespacing*{\section}{0pt}{4pt}{10pt}
+
+% ------------------------------------------------------------
+%  Tambahan (dari TILI, dipakai juga di Proteksi)
+% ------------------------------------------------------------
+\usepackage{graphicx}
+\graphicspath{{img/}}
+\usepackage{needspace}
+\usetikzlibrary{fit,backgrounds,shapes.misc,shapes.symbols}
+\newcommand{\fig}[1]{\input{fig/#1}}
+% beberapa foto sejajar: \fotos{tinggi}{file1/ket1,file2/ket2,...}
+\newcommand{\fotos}[2]{\par\begin{center}\foreach \f/\k in {#2}{\begin{tabular}[b]{@{}c@{}}\includegraphics[height=#1]{\f}\\[-1pt]
+  {\footnotesize\color{black!60}\emph{\k}}\end{tabular}\hspace{6mm}}\end{center}\par}
+% gambar di tengah, diperkecil otomatis bila lebih lebar dari baris
+\newsavebox{\figbox}
+\newcommand{\figc}[1]{\par\begin{center}\sbox{\figbox}{\input{fig/#1}}\ifdim\wd\figbox>\linewidth
+  \resizebox{\linewidth}{!}{\usebox{\figbox}}\else\usebox{\figbox}\fi\end{center}\par}
+% foto slide: \foto[lebar]{file}{keterangan}
+\newcommand{\foto}[3][0.7\linewidth]{\par\begin{center}\begin{minipage}{\linewidth}\centering
+  \includegraphics[width=#1,height=5.6cm,keepaspectratio]{#2}\par\vspace{1pt}
+  {\footnotesize\color{black!60}\emph{#3}}\end{minipage}\end{center}\par}
+% gaya node diagram
+\newcommand{\nohyph}{\hyphenpenalty=10000\exhyphenpenalty=10000\relax}
+\tikzset{
+  blok/.style={draw=black!60,rounded corners=2pt,align=center,font=\footnotesize,minimum height=7mm,inner sep=3pt,fill=black!3,execute at begin node=\nohyph},
+  ar/.style={-{Stealth[length=2.2mm]},black!65,thick},
+  bus/.style={line width=2.2pt},
+  lbl/.style={font=\scriptsize,align=center,execute at begin node=\nohyph},
+}
+% simbol kecil untuk diagram satu garis
+\newcommand{\cbsym}[2]{\draw[thick,fill=white] (#1) ++(-0.13,-0.13) rectangle ++(0.26,0.26); \node[font=\tiny,right] at ($(#1)+(0.15,0)$) {#2};}
+\newcommand{\trafosym}[1]{\draw[thick] ($(#1)+(0,0.17)$) circle (0.2); \draw[thick] ($(#1)+(0,-0.17)$) circle (0.2);}
+
+% ------------------------------------------------------------
+%  Tambahan khusus Proteksi
+% ------------------------------------------------------------
+\usepgfplotslibrary{groupplots}
+% simbol sekering kecil (zig-zag) di garis horizontal: \fusesym{titik}
+\newcommand{\fusesym}[1]{\draw[thick] ($(#1)+(-0.22,0)$) .. controls ($(#1)+(-0.11,0.32)$) and ($(#1)+(-0.02,0.32)$) .. ($(#1)$) .. controls ($(#1)+(0.02,-0.32)$) and ($(#1)+(0.11,-0.32)$) .. ($(#1)+(0.22,0)$);}
+% sekering pada garis vertikal
+\newcommand{\fusesymv}[1]{\draw[thick] ($(#1)+(0,0.22)$) .. controls ($(#1)+(0.32,0.11)$) and ($(#1)+(0.32,0.02)$) .. ($(#1)$) .. controls ($(#1)+(-0.32,-0.02)$) and ($(#1)+(-0.32,-0.11)$) .. ($(#1)+(0,-0.22)$);}
+% gelembung arus gangguan max/min
+\newcommand{\gel}[3]{\node[draw,ellipse,inner sep=0.6pt,font=\tiny,align=center] at (#1) {#2\\[-1pt]\rule{4.5mm}{0.3pt}\\[-1pt]#3};}
+% Pelengkap di luar slide: latar abu-abu, garis kiri tipis
+\newtcolorbox{luar}{enhanced,breakable,colback=black!3,colframe=coklat4,
+  boxrule=0pt,leftrule=1.5pt,arc=0pt,outer arc=0pt,fontupper=\small,
+  title={\faBookOpen\enspace Pelengkap (di luar slide)},colbacktitle=black!3,coltitle=coklat1,
+  fonttitle=\bfseries\small,left=7pt,right=7pt,top=3pt,bottom=3pt,before skip=6pt,after skip=6pt}
+% kilat gangguan
+\newcommand{\kilat}[1]{\draw[merah1,thick,-{Stealth[length=1.6mm]}] ($(#1)+(0.08,0.30)$)--($(#1)+(-0.06,0.05)$)--($(#1)+(0.08,0.02)$)--($(#1)+(-0.05,-0.26)$);}

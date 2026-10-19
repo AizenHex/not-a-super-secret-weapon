@@ -1,0 +1,21 @@
+% KFold 5 lipatan dan TimeSeriesSplit
+\begin{tikzpicture}[x=1.05cm,y=0.42cm]
+\node[font=\scriptsize\bfseries,anchor=west] at (0,1.3) {KFold / StratifiedKFold (diacak)};
+\foreach \f in {1,...,5} {
+  \node[font=\tiny,anchor=east] at (0.95,-\f+0.5) {lipatan \f};
+  \foreach \i in {1,...,5} {
+    \ifnum\i=\f \fill[merah3] (\i,-\f+0.1) rectangle ++(0.95,0.8); \else \fill[biru2!20] (\i,-\f+0.1) rectangle ++(0.95,0.8); \fi }}
+\begin{scope}[shift={(7.2,0)}]
+\node[font=\scriptsize\bfseries,anchor=west] at (0,1.3) {TimeSeriesSplit (urut waktu $\to$)};
+\foreach \f in {1,...,4} {
+  \node[font=\tiny,anchor=east] at (0.95,-\f+0.5) {split \f};
+  \foreach \i in {1,...,5} {
+    \pgfmathtruncatemacro{\v}{\f+1}
+    \ifnum\i<\v \fill[biru2!20] (\i,-\f+0.1) rectangle ++(0.95,0.8); \fi
+    \ifnum\i=\v \fill[merah3] (\i,-\f+0.1) rectangle ++(0.95,0.8); \fi
+    \ifnum\i>\v \draw[black!30,densely dashed] (\i,-\f+0.1) rectangle ++(0.95,0.8); \fi }}
+\end{scope}
+\fill[biru2!20] (1,-6.2) rectangle ++(0.4,0.6); \node[font=\tiny,anchor=west] at (1.45,-5.9) {latih};
+\fill[merah3] (2.6,-6.2) rectangle ++(0.4,0.6); \node[font=\tiny,anchor=west] at (3.05,-5.9) {validasi};
+\draw[black!30,densely dashed] (4.6,-6.2) rectangle ++(0.4,0.6); \node[font=\tiny,anchor=west] at (5.05,-5.9) {belum dipakai};
+\end{tikzpicture}

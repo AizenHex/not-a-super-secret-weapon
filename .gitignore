@@ -1,0 +1,29 @@
+_alat/log/
+__pycache__/
+.ipynb_checkpoints/
+catboost_info/
+.venv/
+
+# hasil Run All di folder notebook (dibuat ulang otomatis): simpan notebook-nya saja
+/[a-z]*/*
+!/[a-z]*/*.ipynb
+
+# sisa kompilasi LaTeX
+_ringkasan_metode/*.aux
+_ringkasan_metode/*.log
+_ringkasan_metode/*.out
+_ringkasan_metode/*.toc
+
+# catatan kerja pribadi (tidak di-share)
+KRITIK.md
+RENCANA_PENGISIAN.md
+PETA_TOOLKIT.xlsx
+handoff.md
+_alat/BRIEF_*.md
+_alat/katalog/
+_alat/peta.py
+_alat/peta_data.py
+_alat/cek_peta.py
+_alat/show.py
+_alat/uji_varian.py
+_alat/sosialisasi2025.txt
