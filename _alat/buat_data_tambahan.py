@@ -10,7 +10,7 @@ import pandas as pd
 import soundfile
 from PIL import Image, ImageDraw, ImageFilter, ImageFont
 
-ROOT = Path("Z:/GEMASTIK-DATABASE")
+ROOT = Path(__file__).resolve().parents[2]   # folder di atas _.NEW-GEN
 DL = ROOT / "data_latihan"
 FONT = Path("C:/Windows/Fonts")
 SEED = 42

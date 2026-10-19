@@ -21,13 +21,13 @@ from sklearn.metrics import mean_absolute_error, mean_absolute_percentage_error
 # ## Konfigurasi
 
 # %%
-SINGLE_CSV = "Z:/GEMASTIK-DATABASE/data_latihan/timeseries/forecasting/co2_monthly.csv"
-DATA_FOLDER = "Z:/GEMASTIK-DATABASE/data_latihan/timeseries/global"   # GANTI saat lomba
+SINGLE_CSV = "../../data_latihan/timeseries/forecasting/co2_monthly.csv"
+DATA_FOLDER = "../../data_latihan/timeseries/global"   # GANTI saat lomba
 TRAIN_CSV = f"{DATA_FOLDER}/harga_pangan_SINTETIS_train.csv"
 TEST_CSV = f"{DATA_FOLDER}/harga_pangan_SINTETIS_test.csv"
 TEST_KEY_CSV = f"{DATA_FOLDER}/harga_pangan_SINTETIS_test_labels.csv"   # hanya di data latihan
-CHRONOS_2 = "Z:/GEMASTIK-DATABASE/pretrained/chronos_2"
-CHRONOS_BOLT = "Z:/GEMASTIK-DATABASE/pretrained/chronos_bolt_small"
+CHRONOS_2 = "../../pretrained/chronos_2"
+CHRONOS_BOLT = "../../pretrained/chronos_bolt_small"
 
 DATE_COL = "date"
 VALUE_COL = "value"              # bagian 1

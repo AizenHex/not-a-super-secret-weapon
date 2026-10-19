@@ -35,9 +35,9 @@ from sklearn.pipeline import make_pipeline
 # ## Konfigurasi
 
 # %%
-DATA_FOLDER = "Z:/GEMASTIK-DATABASE/data_latihan/text/classification"   # GANTI saat lomba
+DATA_FOLDER = "../../data_latihan/text/classification"   # GANTI saat lomba
 TRAIN_CSV = f"{DATA_FOLDER}/emot_train.csv"
-DICTIONARY_FOLDER = "Z:/GEMASTIK-DATABASE/data_latihan/preprocessing"
+DICTIONARY_FOLDER = "../../data_latihan/preprocessing"
 PUBLIC_SLANG_CSV = f"{DICTIONARY_FOLDER}/kamus_alay_salsabila.csv"
 OWN_SLANG_CSV = f"{DICTIONARY_FOLDER}/kamus_slang.csv"
 

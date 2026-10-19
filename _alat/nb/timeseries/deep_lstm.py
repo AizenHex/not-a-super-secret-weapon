@@ -22,7 +22,7 @@ from torch.nn import functional
 # ## Konfigurasi
 
 # %%
-DATA_FOLDER = "Z:/GEMASTIK-DATABASE/data_latihan/timeseries/forecasting"   # GANTI saat lomba
+DATA_FOLDER = "../../data_latihan/timeseries/forecasting"   # GANTI saat lomba
 SERIES_CSV = f"{DATA_FOLDER}/co2_monthly.csv"
 
 DATE_COL = "date"

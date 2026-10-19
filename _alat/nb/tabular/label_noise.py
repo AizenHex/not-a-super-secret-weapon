@@ -24,10 +24,10 @@ from sklearn.preprocessing import LabelEncoder
 # ## Konfigurasi
 
 # %%
-DATA_FOLDER = "Z:/GEMASTIK-DATABASE/data_latihan/tabular_extra/label_noise"   # GANTI saat lomba
+DATA_FOLDER = "../../data_latihan/tabular_extra/label_noise"   # GANTI saat lomba
 TRAIN_CSV = f"{DATA_FOLDER}/covertype_noisy_SINTETIS_train.csv"
 KEY_CSV = f"{DATA_FOLDER}/covertype_noisy_SINTETIS_kunci.csv"     # hanya ada di data latihan
-TEST_FOLDER = "Z:/GEMASTIK-DATABASE/data_latihan/tabular_extra/multiclass"
+TEST_FOLDER = "../../data_latihan/tabular_extra/multiclass"
 TEST_CSV = f"{TEST_FOLDER}/covertype_test.csv"
 
 TARGET = "Cover_Type"

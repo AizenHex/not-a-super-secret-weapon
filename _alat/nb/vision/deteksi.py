@@ -21,8 +21,8 @@ from ultralytics import YOLO
 # ## Konfigurasi
 
 # %%
-DATA_FOLDER = "Z:/GEMASTIK-DATABASE/data_latihan/vision/detection/coco8"   # GANTI saat lomba
-WEIGHTS = "Z:/GEMASTIK-DATABASE/pretrained/yolov8n/yolov8n.pt"
+DATA_FOLDER = "../../data_latihan/vision/detection/coco8"   # GANTI saat lomba
+WEIGHTS = "../../pretrained/yolov8n/yolov8n.pt"
 IMAGE_PATTERN = "*.jpg"     # GANTI bila gambar .png
 
 EPOCHS = 3
@@ -61,7 +61,8 @@ print("jumlah kelas:", len(model.names), "| contoh:", model.names[0], model.name
 # Nama kelas diambil dari model. Saat lomba dengan kelas sendiri, tulis daftar kelas soal.
 
 # %%
-yaml_text = f"path: {DATA_FOLDER}\ntrain: images/train\nval: images/val\nnames:\n"
+dataset_path = os.path.abspath(DATA_FOLDER).replace("\\", "/")   # YOLO butuh path lengkap
+yaml_text = f"path: {dataset_path}\ntrain: images/train\nval: images/val\nnames:\n"
 for class_number in model.names:
     yaml_text = yaml_text + f"  {class_number}: {model.names[class_number]}\n"
 with open("data.yaml", "w") as file:

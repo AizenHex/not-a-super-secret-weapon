@@ -23,14 +23,14 @@ from transformers import get_linear_schedule_with_warmup
 # `LABELS`: urutan label → nomor kelas 0, 1, 2 di dalam model.
 
 # %%
-DATA_FOLDER = "Z:/GEMASTIK-DATABASE/data_latihan/text/sentiment"   # GANTI saat lomba
+DATA_FOLDER = "../../data_latihan/text/sentiment"   # GANTI saat lomba
 TRAIN_CSV = f"{DATA_FOLDER}/smsa_train.csv"
 TEST_CSV = f"{DATA_FOLDER}/smsa_test.csv"
 
-PRETRAINED = "Z:/GEMASTIK-DATABASE/pretrained/indobert"
-# PRETRAINED = "Z:/GEMASTIK-DATABASE/pretrained/distilbert_id"   # lebih ringan
-# PRETRAINED = "Z:/GEMASTIK-DATABASE/pretrained/minilm"          # multibahasa, kecil
-# PRETRAINED = "Z:/GEMASTIK-DATABASE/pretrained/distilbert_en"   # teks bahasa Inggris
+PRETRAINED = "../../pretrained/indobert"
+# PRETRAINED = "../../pretrained/distilbert_id"   # lebih ringan
+# PRETRAINED = "../../pretrained/minilm"          # multibahasa, kecil
+# PRETRAINED = "../../pretrained/distilbert_en"   # teks bahasa Inggris
 
 TEXT_COL = "text"
 TARGET = "label"

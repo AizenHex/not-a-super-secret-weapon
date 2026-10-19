@@ -23,7 +23,7 @@ from statsmodels.tsa.statespace.sarimax import SARIMAX
 # ## Konfigurasi
 
 # %%
-DATA_FOLDER = "Z:/GEMASTIK-DATABASE/data_latihan/timeseries"   # GANTI saat lomba
+DATA_FOLDER = "../../data_latihan/timeseries"   # GANTI saat lomba
 TAXI_CSV = f"{DATA_FOLDER}/anomaly/nyc_taxi.csv"
 FLIGHTS_CSV = f"{DATA_FOLDER}/forecasting/flights_monthly.csv"
 

@@ -25,9 +25,9 @@ import torch
 # Saat lomba: ganti `DATA_FOLDER`, nama file CSV, dan pola regex sesuai dokumen soal.
 
 # %%
-DATA_FOLDER = "Z:/GEMASTIK-DATABASE/data_latihan/vision/ocr"            # GANTI saat lomba
+DATA_FOLDER = "../../data_latihan/vision/ocr"            # GANTI saat lomba
 LABEL_CSV = f"{DATA_FOLDER}/struk.csv"       # kolom: path gambar + kunci jawaban tiap field
-OCR_MODEL_FOLDER = "Z:/GEMASTIK-DATABASE/pretrained/easyocr"            # bobot EasyOCR offline
+OCR_MODEL_FOLDER = "../../pretrained/easyocr"            # bobot EasyOCR offline
 
 LANGUAGES = ["en", "id"]     # bahasa teks di dokumen
 

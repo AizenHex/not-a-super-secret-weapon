@@ -21,7 +21,7 @@ from scipy.stats import chi2_contingency
 # ## Konfigurasi
 
 # %%
-DATA_FOLDER = "Z:/GEMASTIK-DATABASE/data_latihan"   # GANTI saat lomba
+DATA_FOLDER = "../../data_latihan"   # GANTI saat lomba
 DIAMONDS_CSV = f"{DATA_FOLDER}/tabular/regression/diamonds_train.csv"
 CARS_CSV = f"{DATA_FOLDER}/tabular_extra/grouped/mpg_train.csv"
 TITANIC_CSV = f"{DATA_FOLDER}/tabular/classification/titanic_train.csv"

@@ -27,7 +27,7 @@ from sklearn.preprocessing import OneHotEncoder, StandardScaler
 # ## Konfigurasi
 
 # %%
-DATA_FOLDER = "Z:/GEMASTIK-DATABASE/data_latihan/tabular_extra/ids"   # GANTI saat lomba
+DATA_FOLDER = "../../data_latihan/tabular_extra/ids"   # GANTI saat lomba
 TRAIN_CSV = f"{DATA_FOLDER}/kdd_train.csv"
 TEST_CSV = f"{DATA_FOLDER}/kdd_test.csv"
 TEST_KEY_CSV = f"{DATA_FOLDER}/kdd_test_labels.csv"   # hanya ada di data latihan

@@ -21,7 +21,7 @@ import seaborn as sns
 # ## Konfigurasi
 
 # %%
-DATA_FOLDER = "Z:/GEMASTIK-DATABASE/data_latihan/graph"   # GANTI saat lomba
+DATA_FOLDER = "../../data_latihan/graph"   # GANTI saat lomba
 KARATE_EDGES_CSV = f"{DATA_FOLDER}/karate/edges.csv"
 KARATE_NODES_CSV = f"{DATA_FOLDER}/karate/nodes.csv"
 CORA_EDGES_CSV = f"{DATA_FOLDER}/cora/edges.csv"

@@ -37,11 +37,11 @@ from torchvision import models
 # ## Konfigurasi
 
 # %%
-DATA_FOLDER = "Z:/GEMASTIK-DATABASE/data_latihan/video"   # GANTI saat lomba
+DATA_FOLDER = "../../data_latihan/video"   # GANTI saat lomba
 TRAIN_CSV = f"{DATA_FOLDER}/train.csv"
 TEST_CSV = f"{DATA_FOLDER}/test.csv"
 TEST_KEY_CSV = f"{DATA_FOLDER}/test_labels.csv"   # hanya ada di data latihan
-PRETRAINED = "Z:/GEMASTIK-DATABASE/pretrained"
+PRETRAINED = "../../pretrained"
 
 ID_COL = "id"
 PATH_COL = "path"       # path video, relatif terhadap DATA_FOLDER

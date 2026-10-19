@@ -27,14 +27,14 @@ from ultralytics import YOLO
 # ## Konfigurasi
 
 # %%
-DATA_FOLDER = "Z:/GEMASTIK-DATABASE/data_latihan/vision/detection/coco8"   # GANTI saat lomba
+DATA_FOLDER = "../../data_latihan/vision/detection/coco8"   # GANTI saat lomba
 IMAGE_FOLDER = f"{DATA_FOLDER}/images/train"
 LABEL_FOLDER = f"{DATA_FOLDER}/labels/train"
 IMAGE_EXTENSION = ".jpg"
-PENNFUDAN_FOLDER = "Z:/GEMASTIK-DATABASE/data_latihan/vision/detection/PennFudanPed"
+PENNFUDAN_FOLDER = "../../data_latihan/vision/detection/PennFudanPed"
 MASK_FILE = f"{PENNFUDAN_FOLDER}/PedMasks/FudanPed00001_mask.png"
 MASK_IMAGE_FILE = f"{PENNFUDAN_FOLDER}/PNGImages/FudanPed00001.png"
-YOLO_WEIGHTS = "Z:/GEMASTIK-DATABASE/pretrained/yolov8n/yolov8n.pt"
+YOLO_WEIGHTS = "../../pretrained/yolov8n/yolov8n.pt"
 VOC_FOLDER = "voc"                 # hasil konversi (di folder notebook)
 YOLO_BACK_FOLDER = "yolo_kembali"
 

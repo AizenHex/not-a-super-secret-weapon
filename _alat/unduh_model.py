@@ -1,7 +1,7 @@
 """Unduh SEMUA bobot pretrained yang dipakai notebook (sekitar 9 GB, butuh internet sekali).
 Pakai: python unduh_model.py [folder_tujuan]
 Default folder tujuan: folder `pretrained` di SEBELAH folder _.NEW-GEN
-(struktur sama dengan Z:/GEMASTIK-DATABASE/pretrained). Model yang sudah ada dilewati."""
+(notebook membacanya sebagai "../../pretrained"). Model yang sudah ada dilewati."""
 import os
 import sys
 import urllib.request

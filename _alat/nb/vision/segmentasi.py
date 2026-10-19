@@ -27,12 +27,12 @@ from torchvision.models import segmentation
 # ## Konfigurasi
 
 # %%
-DATA_FOLDER = "Z:/GEMASTIK-DATABASE/data_latihan/vision/detection/PennFudanPed"   # GANTI
+DATA_FOLDER = "../../data_latihan/vision/detection/PennFudanPed"   # GANTI
 IMAGE_FOLDER = f"{DATA_FOLDER}/PNGImages"
 MASK_FOLDER = f"{DATA_FOLDER}/PedMasks"
 IMAGE_PATTERN = "*.png"
 MASK_SUFFIX = "_mask.png"     # FudanPed00001.png → FudanPed00001_mask.png
-PRETRAINED = "Z:/GEMASTIK-DATABASE/pretrained"
+PRETRAINED = "../../pretrained"
 
 IMAGE_SIZE = 256
 EPOCHS = 5

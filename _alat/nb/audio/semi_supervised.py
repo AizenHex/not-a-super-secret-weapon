@@ -31,12 +31,12 @@ from transformers import AutoFeatureExtractor, Wav2Vec2Model
 # ## Konfigurasi
 
 # %%
-DATA_FOLDER = "Z:/GEMASTIK-DATABASE/data_latihan/audio/classification"   # GANTI saat lomba
+DATA_FOLDER = "../../data_latihan/audio/classification"   # GANTI saat lomba
 DATA_FOLDER = f"{DATA_FOLDER}/speech_commands_mini"
 TRAIN_CSV = f"{DATA_FOLDER}/train.csv"
 TEST_CSV = f"{DATA_FOLDER}/test.csv"
 TEST_KEY_CSV = f"{DATA_FOLDER}/test_labels.csv"    # kunci jawaban, hanya ada di data demo
-PRETRAINED_FOLDER = "Z:/GEMASTIK-DATABASE/pretrained/wav2vec2_base"
+PRETRAINED_FOLDER = "../../pretrained/wav2vec2_base"
 
 ID_COL = "id"
 PATH_COL = "path"

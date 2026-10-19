@@ -29,7 +29,7 @@ from sklearn.neighbors import BallTree
 # ## Konfigurasi
 
 # %%
-DATA_FOLDER = "Z:/GEMASTIK-DATABASE/data_latihan/tabular_extra/geo"   # GANTI saat lomba
+DATA_FOLDER = "../../data_latihan/tabular_extra/geo"   # GANTI saat lomba
 TRAIN_CSV = f"{DATA_FOLDER}/california_train.csv"
 TEST_CSV = f"{DATA_FOLDER}/california_test.csv"
 TEST_KEY_CSV = f"{DATA_FOLDER}/california_test_labels.csv"   # hanya ada di data latihan

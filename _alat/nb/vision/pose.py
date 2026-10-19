@@ -23,10 +23,10 @@ from ultralytics import YOLO
 # ## Konfigurasi
 
 # %%
-DATA_FOLDER = "Z:/GEMASTIK-DATABASE/data_latihan/vision/detection/PennFudanPed"   # GANTI
-TABLE_FOLDER = "Z:/GEMASTIK-DATABASE/data_latihan/vision/regresi"
+DATA_FOLDER = "../../data_latihan/vision/detection/PennFudanPed"   # GANTI
+TABLE_FOLDER = "../../data_latihan/vision/regresi"
 TRAIN_CSV = f"{TABLE_FOLDER}/pennfudan_train.csv"   # kolom path + jumlah orang
-WEIGHTS = "Z:/GEMASTIK-DATABASE/pretrained/yolov8n_pose/yolov8n-pose.pt"
+WEIGHTS = "../../pretrained/yolov8n_pose/yolov8n-pose.pt"
 
 PATH_COL = "path"     # path gambar, relatif terhadap DATA_FOLDER
 COUNT_COL = "jumlah"

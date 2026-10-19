@@ -11,7 +11,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-OUT = Path("Z:/GEMASTIK-DATABASE/data_latihan/preprocessing")
+OUT = Path(__file__).resolve().parents[2] / "data_latihan" / "preprocessing"
 N = 3000
 rng = np.random.default_rng(7)
 BULAN = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus",

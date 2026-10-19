@@ -33,7 +33,7 @@ from sklearn.metrics import r2_score, root_mean_squared_error
 # ## Konfigurasi
 
 # %%
-DATA_FOLDER = "Z:/GEMASTIK-DATABASE/data_latihan/vision/sentinel2_indramayu"   # GANTI saat lomba
+DATA_FOLDER = "../../data_latihan/vision/sentinel2_indramayu"   # GANTI saat lomba
 FEATURE_IMAGE = f"{DATA_FOLDER}/20240729.tif"    # citra untuk feature
 TARGET_IMAGE = f"{DATA_FOLDER}/20240818.tif"     # hanya demo: dari sini target dibuat
 PLOTS_FILE = "petak.geojson"     # demo: dibuat di sel bawah. Saat lomba: file poligon panitia

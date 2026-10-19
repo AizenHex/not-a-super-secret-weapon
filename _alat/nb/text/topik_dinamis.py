@@ -24,7 +24,7 @@ from sklearn.metrics import normalized_mutual_info_score
 # ## Konfigurasi
 
 # %%
-DATA_FOLDER = "Z:/GEMASTIK-DATABASE/data_latihan/text/topik_waktu"   # GANTI saat lomba
+DATA_FOLDER = "../../data_latihan/text/topik_waktu"   # GANTI saat lomba
 DATA_CSV = f"{DATA_FOLDER}/tweet_topic.csv"
 
 TEXT_COL = "text"

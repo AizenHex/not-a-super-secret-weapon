@@ -32,11 +32,11 @@ from torchvision import models
 # ## Konfigurasi
 
 # %%
-DATA_FOLDER = "Z:/GEMASTIK-DATABASE/data_latihan/video/anomali_ped2"   # GANTI saat lomba
+DATA_FOLDER = "../../data_latihan/video/anomali_ped2"   # GANTI saat lomba
 NORMAL_VIDEO = f"{DATA_FOLDER}/latih_normal.mp4"
 TEST_VIDEO = f"{DATA_FOLDER}/uji.mp4"
 TEST_KEY_CSV = f"{DATA_FOLDER}/uji_label.csv"      # hanya ada di data latihan
-PRETRAINED = "Z:/GEMASTIK-DATABASE/pretrained"
+PRETRAINED = "../../pretrained"
 
 FRAME_HEIGHT = 240        # ukuran frame saat masuk CNN
 FRAME_WIDTH = 360

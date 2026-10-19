@@ -24,7 +24,7 @@ from sklearn.preprocessing import OneHotEncoder, OrdinalEncoder, StandardScaler,
 # ## Konfigurasi
 
 # %%
-DATA_FOLDER = "Z:/GEMASTIK-DATABASE/data_latihan/tabular/regression"   # GANTI saat lomba
+DATA_FOLDER = "../../data_latihan/tabular/regression"   # GANTI saat lomba
 TRAIN_CSV = f"{DATA_FOLDER}/diamonds_train.csv"
 TEST_CSV = f"{DATA_FOLDER}/diamonds_test.csv"
 

@@ -31,10 +31,10 @@ from ultralytics import YOLO
 # ## Konfigurasi
 
 # %%
-DATA_FOLDER = "Z:/GEMASTIK-DATABASE/data_latihan/vision/udara_visdrone"   # GANTI saat lomba
+DATA_FOLDER = "../../data_latihan/vision/udara_visdrone"   # GANTI saat lomba
 IMAGE_PATTERN = f"{DATA_FOLDER}/gambar/*.jpg"
 ANNOTATION_FOLDER = f"{DATA_FOLDER}/anotasi"     # hanya untuk cek
-WEIGHTS = "Z:/GEMASTIK-DATABASE/pretrained/yolov8n/yolov8n.pt"
+WEIGHTS = "../../pretrained/yolov8n/yolov8n.pt"
 
 TILE_SIZE = 640           # sama dengan ukuran masukan YOLO, 320 untuk objek lebih kecil
 OVERLAP = 0.25            # tile bersebelahan berbagi 25% supaya objek di tepi tidak terpotong

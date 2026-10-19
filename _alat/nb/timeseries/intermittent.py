@@ -18,7 +18,7 @@ import pandas as pd
 # ## Konfigurasi
 
 # %%
-DATA_FOLDER = "Z:/GEMASTIK-DATABASE/data_latihan/timeseries/intermittent"   # GANTI saat lomba
+DATA_FOLDER = "../../data_latihan/timeseries/intermittent"   # GANTI saat lomba
 SALES_CSV = f"{DATA_FOLDER}/retail_harian.csv"
 
 ITEM_COL = "item"

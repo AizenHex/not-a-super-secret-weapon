@@ -26,14 +26,14 @@ from sklearn.svm import SVC, LinearSVC
 # ## Konfigurasi
 
 # %%
-DATA_FOLDER = "Z:/GEMASTIK-DATABASE/data_latihan/text/sentiment"   # GANTI saat lomba
+DATA_FOLDER = "../../data_latihan/text/sentiment"   # GANTI saat lomba
 TRAIN_CSV = f"{DATA_FOLDER}/smsa_train.csv"
 TEST_CSV = f"{DATA_FOLDER}/smsa_test.csv"
 
-EMBEDDING_MODEL = "Z:/GEMASTIK-DATABASE/pretrained/minilm"
-# EMBEDDING_MODEL = "Z:/GEMASTIK-DATABASE/pretrained/indobert"        # khusus Indonesia
-# EMBEDDING_MODEL = "Z:/GEMASTIK-DATABASE/pretrained/distilbert_id"   # lebih ringan
-# EMBEDDING_MODEL = "Z:/GEMASTIK-DATABASE/pretrained/minilm_en"       # teks bahasa Inggris
+EMBEDDING_MODEL = "../../pretrained/minilm"
+# EMBEDDING_MODEL = "../../pretrained/indobert"        # khusus Indonesia
+# EMBEDDING_MODEL = "../../pretrained/distilbert_id"   # lebih ringan
+# EMBEDDING_MODEL = "../../pretrained/minilm_en"       # teks bahasa Inggris
 
 TEXT_COL = "text"
 TARGET = "label"

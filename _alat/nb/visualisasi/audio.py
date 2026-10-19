@@ -22,7 +22,7 @@ import seaborn as sns
 # ## Konfigurasi
 
 # %%
-DATA_FOLDER = "Z:/GEMASTIK-DATABASE/data_latihan/audio"   # GANTI saat lomba
+DATA_FOLDER = "../../data_latihan/audio"   # GANTI saat lomba
 CLIP_FOLDER = f"{DATA_FOLDER}/classification/speech_commands_mini"
 TRAIN_CSV = f"{CLIP_FOLDER}/train.csv"
 EVENT_FOLDER = f"{DATA_FOLDER}/event"

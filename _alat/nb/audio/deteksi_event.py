@@ -27,11 +27,11 @@ from transformers import AutoFeatureExtractor, Wav2Vec2Model
 # ## Konfigurasi
 
 # %%
-DATA_FOLDER = "Z:/GEMASTIK-DATABASE/data_latihan/audio/event"   # GANTI saat lomba
+DATA_FOLDER = "../../data_latihan/audio/event"   # GANTI saat lomba
 ANNOTATION_CSV = f"{DATA_FOLDER}/anotasi.csv"
-CLIP_FOLDER = "Z:/GEMASTIK-DATABASE/data_latihan/audio/classification/speech_commands_mini"
+CLIP_FOLDER = "../../data_latihan/audio/classification/speech_commands_mini"
 CLIP_TRAIN_CSV = f"{CLIP_FOLDER}/train.csv"
-PRETRAINED_FOLDER = "Z:/GEMASTIK-DATABASE/pretrained/wav2vec2_base"
+PRETRAINED_FOLDER = "../../pretrained/wav2vec2_base"
 
 SAMPLE_RATE = 16000
 CLIP_LENGTH = 16000     # potongan diisi/dipotong jadi 1 detik (sama dengan klip train)

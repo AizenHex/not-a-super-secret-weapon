@@ -23,12 +23,12 @@ from transformers import CLIPModel, CLIPProcessor
 # ## Konfigurasi
 
 # %%
-DATA_FOLDER = "Z:/GEMASTIK-DATABASE/data_latihan/vision/pasangan_cifar"   # GANTI saat lomba
+DATA_FOLDER = "../../data_latihan/vision/pasangan_cifar"   # GANTI saat lomba
 TRAIN_CSV = f"{DATA_FOLDER}/pasangan_train.csv"
 TEST_CSV = f"{DATA_FOLDER}/pasangan_test.csv"
 TEST_KEY_CSV = f"{DATA_FOLDER}/pasangan_test_labels.csv"   # hanya ada di data latihan
-IMAGE_FOLDER = "Z:/GEMASTIK-DATABASE/data_latihan/vision/classification/cifar10_small"
-CLIP_FOLDER = "Z:/GEMASTIK-DATABASE/pretrained/clip_b32"
+IMAGE_FOLDER = "../../data_latihan/vision/classification/cifar10_small"
+CLIP_FOLDER = "../../pretrained/clip_b32"
 
 IMAGE_A_COL = "gambar_a"   # path gambar, relatif terhadap IMAGE_FOLDER
 IMAGE_B_COL = "gambar_b"

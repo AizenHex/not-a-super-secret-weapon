@@ -33,10 +33,10 @@ from sklearn.svm import SVC
 # ## Konfigurasi
 
 # %%
-DATA_FOLDER = "Z:/GEMASTIK-DATABASE/data_latihan/audio/classification"   # GANTI saat lomba
+DATA_FOLDER = "../../data_latihan/audio/classification"   # GANTI saat lomba
 DATA_FOLDER = f"{DATA_FOLDER}/speech_commands_mini"
 # Data speaker (label = ID speaker, kolom tetap `path` dan `label`):
-# DATA_FOLDER = "Z:/GEMASTIK-DATABASE/data_latihan/audio/speaker/speech_commands_speakers"
+# DATA_FOLDER = "../../data_latihan/audio/speaker/speech_commands_speakers"
 TRAIN_CSV = f"{DATA_FOLDER}/train.csv"
 TEST_CSV = f"{DATA_FOLDER}/test.csv"
 

@@ -25,7 +25,7 @@ from statsmodels.stats.inter_rater import aggregate_raters, fleiss_kappa
 # ## Konfigurasi
 
 # %%
-DATA_FOLDER = "Z:/GEMASTIK-DATABASE/data_latihan/text/sentiment"   # GANTI saat lomba
+DATA_FOLDER = "../../data_latihan/text/sentiment"   # GANTI saat lomba
 SOURCE_CSV = f"{DATA_FOLDER}/smsa_train.csv"
 ANNOTATION_CSV = "anotasi_SINTETIS.csv"
 

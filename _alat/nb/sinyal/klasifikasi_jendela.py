@@ -29,7 +29,7 @@ from sktime.transformations.panel.rocket import MiniRocketMultivariate
 # ## Konfigurasi
 
 # %%
-DATA_FOLDER = "Z:/GEMASTIK-DATABASE/data_latihan/sinyal/wisdm"   # GANTI saat lomba
+DATA_FOLDER = "../../data_latihan/sinyal/wisdm"   # GANTI saat lomba
 DATA_FOLDER = f"{DATA_FOLDER}/WISDM_ar_v1.1"
 RAW_TXT = f"{DATA_FOLDER}/WISDM_ar_v1.1_raw.txt"
 

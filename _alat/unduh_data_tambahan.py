@@ -13,7 +13,7 @@ import pandas as pd
 from sklearn.datasets import fetch_california_housing, fetch_kddcup99, fetch_openml
 from sklearn.model_selection import train_test_split
 
-ROOT = Path("Z:/GEMASTIK-DATABASE")
+ROOT = Path(__file__).resolve().parents[2]   # folder di atas _.NEW-GEN
 DL = ROOT / "data_latihan"
 MENTAH = Path(sys.argv[1]) if len(sys.argv) > 1 else ROOT / "_unduhan_mentah"
 MENTAH.mkdir(parents=True, exist_ok=True)

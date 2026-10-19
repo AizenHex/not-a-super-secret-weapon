@@ -25,10 +25,10 @@ from umap import UMAP
 # ## Konfigurasi
 
 # %%
-DATA_FOLDER = "Z:/GEMASTIK-DATABASE/data_latihan/text/classification_en"   # GANTI saat lomba
+DATA_FOLDER = "../../data_latihan/text/classification_en"   # GANTI saat lomba
 DATA_CSV = f"{DATA_FOLDER}/news4_train.csv"
-EMBEDDING_MODEL = "Z:/GEMASTIK-DATABASE/pretrained/minilm_en"
-# teks Indonesia: EMBEDDING_MODEL = "Z:/GEMASTIK-DATABASE/pretrained/minilm"
+EMBEDDING_MODEL = "../../pretrained/minilm_en"
+# teks Indonesia: EMBEDDING_MODEL = "../../pretrained/minilm"
 
 TEXT_COL = "text"
 LABEL_COL = "label"       # hanya untuk evaluasi, hapus bila soal tidak punya label

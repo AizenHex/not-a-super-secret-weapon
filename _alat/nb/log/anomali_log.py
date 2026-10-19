@@ -28,7 +28,7 @@ from sklearn.preprocessing import StandardScaler
 # ## Konfigurasi
 
 # %%
-DATA_FOLDER = "Z:/GEMASTIK-DATABASE/data_latihan/log"   # GANTI saat lomba
+DATA_FOLDER = "../../data_latihan/log"   # GANTI saat lomba
 LOG_CSV = f"{DATA_FOLDER}/helpdesk.csv"
 
 CASE_COL = "case_id"

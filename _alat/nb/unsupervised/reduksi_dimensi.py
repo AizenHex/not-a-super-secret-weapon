@@ -27,7 +27,7 @@ from sklearn.preprocessing import StandardScaler
 # ## Konfigurasi
 
 # %%
-DATA_FOLDER = "Z:/GEMASTIK-DATABASE/data_latihan/unsupervised"   # GANTI saat lomba
+DATA_FOLDER = "../../data_latihan/unsupervised"   # GANTI saat lomba
 DATA_CSV = f"{DATA_FOLDER}/digits.csv"
 
 LABEL_COL = "digit"     # hanya untuk warna gambar dan cek, tidak dipakai melatih

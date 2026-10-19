@@ -26,7 +26,7 @@ from mlxtend.preprocessing import TransactionEncoder
 # ## Konfigurasi
 
 # %%
-DATA_FOLDER = "Z:/GEMASTIK-DATABASE/data_latihan/unsupervised"   # GANTI saat lomba
+DATA_FOLDER = "../../data_latihan/unsupervised"   # GANTI saat lomba
 TRANSACTIONS_CSV = f"{DATA_FOLDER}/groceries.csv"
 
 ITEM_SEPARATOR = ","

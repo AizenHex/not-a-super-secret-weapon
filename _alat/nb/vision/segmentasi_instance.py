@@ -26,12 +26,12 @@ from ultralytics import YOLO
 # ## Konfigurasi
 
 # %%
-DATA_FOLDER = "Z:/GEMASTIK-DATABASE/data_latihan/vision/detection/PennFudanPed"   # GANTI
+DATA_FOLDER = "../../data_latihan/vision/detection/PennFudanPed"   # GANTI
 IMAGE_FOLDER = f"{DATA_FOLDER}/PNGImages"
 MASK_FOLDER = f"{DATA_FOLDER}/PedMasks"    # hanya ada di data latihan
 IMAGE_PATTERN = "*.png"
 MASK_SUFFIX = "_mask.png"                  # FudanPed00001.png → FudanPed00001_mask.png
-WEIGHTS = "Z:/GEMASTIK-DATABASE/pretrained/yolov8n_seg/yolov8n-seg.pt"
+WEIGHTS = "../../pretrained/yolov8n_seg/yolov8n-seg.pt"
 
 COCO_CLASSES = [0]   # 0 = person di COCO
 DEVICE = "cpu"

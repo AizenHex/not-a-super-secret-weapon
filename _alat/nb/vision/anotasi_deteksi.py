@@ -26,11 +26,11 @@ from ultralytics import YOLO
 # ## Konfigurasi
 
 # %%
-DATA_FOLDER = "Z:/GEMASTIK-DATABASE/data_latihan/vision/detection/PennFudanPed"   # GANTI
+DATA_FOLDER = "../../data_latihan/vision/detection/PennFudanPed"   # GANTI
 IMAGE_FOLDER = f"{DATA_FOLDER}/PNGImages"
 KEY_FOLDER = f"{DATA_FOLDER}/Annotation"     # kotak asli, hanya ada di data latihan
 IMAGE_EXTENSION = ".png"                      # ganti ".jpg" bila perlu
-YOLO_WEIGHTS = "Z:/GEMASTIK-DATABASE/pretrained/yolov8n/yolov8n.pt"
+YOLO_WEIGHTS = "../../pretrained/yolov8n/yolov8n.pt"
 LABEL_FOLDER = "labels_auto"     # file .txt hasil auto-label (di folder notebook)
 DATASET_FOLDER = "dataset"       # folder YOLO images/ + labels/ (di folder notebook)
 

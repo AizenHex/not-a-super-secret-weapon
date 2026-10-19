@@ -28,12 +28,12 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 # ## Konfigurasi
 
 # %%
-DATA_FOLDER = "Z:/GEMASTIK-DATABASE/data_latihan/text/qa"   # GANTI saat lomba
+DATA_FOLDER = "../../data_latihan/text/qa"   # GANTI saat lomba
 TRAIN_CSV = f"{DATA_FOLDER}/facqa_train.csv"
 VALID_CSV = f"{DATA_FOLDER}/facqa_valid.csv"
 TEST_CSV = f"{DATA_FOLDER}/facqa_test.csv"
-LLM_FOLDER = "Z:/GEMASTIK-DATABASE/pretrained/qwen_05b"
-EMBEDDING_MODEL = "Z:/GEMASTIK-DATABASE/pretrained/minilm"
+LLM_FOLDER = "../../pretrained/qwen_05b"
+EMBEDDING_MODEL = "../../pretrained/minilm"
 
 QUESTION_COL = "pertanyaan"
 CONTEXT_COL = "konteks"

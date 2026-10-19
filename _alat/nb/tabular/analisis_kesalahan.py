@@ -28,7 +28,7 @@ from sklearn.preprocessing import OneHotEncoder
 # ## Konfigurasi
 
 # %%
-DATA_FOLDER = "Z:/GEMASTIK-DATABASE/data_latihan/tabular_extra/ids"   # GANTI saat lomba
+DATA_FOLDER = "../../data_latihan/tabular_extra/ids"   # GANTI saat lomba
 TRAIN_CSV = f"{DATA_FOLDER}/kdd_train.csv"
 
 TARGET = "kategori"

@@ -28,7 +28,7 @@ from sklearn.metrics import average_precision_score, f1_score, precision_score, 
 # ## Konfigurasi
 
 # %%
-DATA_FOLDER = "Z:/GEMASTIK-DATABASE/data_latihan/tabular_extra/fraud_transaksi"   # GANTI saat lomba
+DATA_FOLDER = "../../data_latihan/tabular_extra/fraud_transaksi"   # GANTI saat lomba
 DATA_CSV = f"{DATA_FOLDER}/transaksi_sparkov.csv"
 
 TIME_COL = "waktu_transaksi"

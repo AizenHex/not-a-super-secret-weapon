@@ -27,7 +27,7 @@ from sklearn.model_selection import StratifiedKFold, cross_val_predict
 # ## Konfigurasi
 
 # %%
-DATA_FOLDER = "Z:/GEMASTIK-DATABASE/data_latihan/multitabel/berka"   # GANTI saat lomba
+DATA_FOLDER = "../../data_latihan/multitabel/berka"   # GANTI saat lomba
 TRAIN_CSV = f"{DATA_FOLDER}/loan_train.csv"
 TEST_CSV = f"{DATA_FOLDER}/loan_test.csv"
 TRANS_CSV = f"{DATA_FOLDER}/trans.csv"

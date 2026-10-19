@@ -33,7 +33,7 @@ from sklearn.preprocessing import StandardScaler
 # ## Konfigurasi
 
 # %%
-DATA_FOLDER = "Z:/GEMASTIK-DATABASE/data_latihan/multitabel/dblp_acm"   # GANTI saat lomba
+DATA_FOLDER = "../../data_latihan/multitabel/dblp_acm"   # GANTI saat lomba
 TABLE_A_CSV = f"{DATA_FOLDER}/DBLP2.csv"
 TABLE_B_CSV = f"{DATA_FOLDER}/ACM.csv"
 MATCHES_CSV = f"{DATA_FOLDER}/DBLP-ACM_perfectMapping.csv"   # pasangan benar (berlabel)

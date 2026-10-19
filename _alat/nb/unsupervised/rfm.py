@@ -31,7 +31,7 @@ from sklearn.preprocessing import StandardScaler
 # ## Konfigurasi
 
 # %%
-DATA_FOLDER = "Z:/GEMASTIK-DATABASE/data_latihan/unsupervised"   # GANTI saat lomba
+DATA_FOLDER = "../../data_latihan/unsupervised"   # GANTI saat lomba
 TRANSACTIONS_CSV = f"{DATA_FOLDER}/online_retail.csv"
 
 CUSTOMER_COL = "CustomerID"

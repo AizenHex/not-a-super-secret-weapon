@@ -26,11 +26,11 @@ from sklearn.svm import LinearSVC
 # ## Konfigurasi
 
 # %%
-DATA_FOLDER = "Z:/GEMASTIK-DATABASE/data_latihan/text/arxiv"   # GANTI saat lomba
+DATA_FOLDER = "../../data_latihan/text/arxiv"   # GANTI saat lomba
 TRAIN_CSV = f"{DATA_FOLDER}/arxiv_train.csv"
 TEST_CSV = f"{DATA_FOLDER}/arxiv_test.csv"
 TEST_KEY_CSV = f"{DATA_FOLDER}/arxiv_test_labels.csv"   # hanya ada di data latihan
-EMBEDDING_MODEL = "Z:/GEMASTIK-DATABASE/pretrained/minilm"
+EMBEDDING_MODEL = "../../pretrained/minilm"
 
 TEXT_COL = "text"
 TARGET = "label"

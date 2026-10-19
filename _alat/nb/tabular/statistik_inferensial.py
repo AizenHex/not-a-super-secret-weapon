@@ -21,9 +21,9 @@ from statsmodels.stats.proportion import proportion_effectsize, proportions_ztes
 # ## Konfigurasi
 
 # %%
-DATA_FOLDER = "Z:/GEMASTIK-DATABASE/data_latihan/tabular/classification"   # GANTI saat lomba
+DATA_FOLDER = "../../data_latihan/tabular/classification"   # GANTI saat lomba
 DATA_CSV = f"{DATA_FOLDER}/titanic_train.csv"
-AB_FOLDER = "Z:/GEMASTIK-DATABASE/data_latihan/tabular_extra/uplift"
+AB_FOLDER = "../../data_latihan/tabular_extra/uplift"
 AB_CSV = f"{AB_FOLDER}/hillstrom.csv"
 
 TARGET = "survived"

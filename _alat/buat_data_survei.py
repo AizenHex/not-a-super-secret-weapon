@@ -11,7 +11,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-OUT = Path("Z:/GEMASTIK-DATABASE/data_latihan/tabular_extra/survei_kotor")
+OUT = Path(__file__).resolve().parents[2] / "data_latihan" / "tabular_extra" / "survei_kotor"
 N_TRAIN = 30380
 N_TEST = 7595
 rng = np.random.default_rng(42)

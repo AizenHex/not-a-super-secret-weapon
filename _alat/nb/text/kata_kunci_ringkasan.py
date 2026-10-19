@@ -20,7 +20,7 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 # ## Konfigurasi
 
 # %%
-DATA_FOLDER = "Z:/GEMASTIK-DATABASE/data_latihan/text/classification_en"   # GANTI saat lomba
+DATA_FOLDER = "../../data_latihan/text/classification_en"   # GANTI saat lomba
 DATA_CSV = f"{DATA_FOLDER}/news4_train.csv"
 
 TEXT_COL = "text"

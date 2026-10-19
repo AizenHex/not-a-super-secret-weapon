@@ -25,7 +25,7 @@ from sklearn.pipeline import make_pipeline
 # `WEIGHTS` = bobot tiap anggota saat dirata-rata (anggota lemah diberi bobot kecil).
 
 # %%
-DATA_FOLDER = "Z:/GEMASTIK-DATABASE/data_latihan/text/sentiment"   # GANTI saat lomba
+DATA_FOLDER = "../../data_latihan/text/sentiment"   # GANTI saat lomba
 TRAIN_CSV = f"{DATA_FOLDER}/smsa_train.csv"
 TEST_CSV = f"{DATA_FOLDER}/smsa_test.csv"
 

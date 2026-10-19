@@ -23,10 +23,10 @@ from transformers import TrOCRProcessor, VisionEncoderDecoderModel
 # ## Konfigurasi
 
 # %%
-DATA_FOLDER = "Z:/GEMASTIK-DATABASE/data_latihan/vision/ocr"   # GANTI saat lomba
+DATA_FOLDER = "../../data_latihan/vision/ocr"   # GANTI saat lomba
 HANDWRITTEN_CSV = f"{DATA_FOLDER}/tangan.csv"
 PRINTED_CSV = f"{DATA_FOLDER}/baris.csv"
-EASYOCR_FOLDER = "Z:/GEMASTIK-DATABASE/pretrained/easyocr"
+EASYOCR_FOLDER = "../../pretrained/easyocr"
 
 PATH_COL = "path"     # path gambar, relatif terhadap DATA_FOLDER
 TEXT_COL = "teks"     # teks asli, hanya ada di data latihan
@@ -62,8 +62,8 @@ plt.show()
 # Pilih SATU bobot: hapus `#` di baris yang ingin dipakai.
 
 # %%
-TROCR_FOLDER = "Z:/GEMASTIK-DATABASE/pretrained/trocr_tangan"
-# TROCR_FOLDER = "Z:/GEMASTIK-DATABASE/pretrained/trocr_cetak"
+TROCR_FOLDER = "../../pretrained/trocr_tangan"
+# TROCR_FOLDER = "../../pretrained/trocr_cetak"
 
 processor = TrOCRProcessor.from_pretrained(TROCR_FOLDER)
 trocr = VisionEncoderDecoderModel.from_pretrained(TROCR_FOLDER)

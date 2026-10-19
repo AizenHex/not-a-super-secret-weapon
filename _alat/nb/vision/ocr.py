@@ -23,7 +23,7 @@ from PIL import Image, ImageDraw, ImageFont
 # ## Konfigurasi
 
 # %%
-EASYOCR_FOLDER = "Z:/GEMASTIK-DATABASE/pretrained/easyocr"
+EASYOCR_FOLDER = "../../pretrained/easyocr"
 LANGUAGES = ["en", "id"]
 WORDS = ["selamat", "pagi", "gemastik", "database", "jakarta", "bandung",
          "sepeda", "rumah", "hello", "vision", "model", "hasil"]

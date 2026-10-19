@@ -23,12 +23,12 @@ from transformers import CLIPModel, CLIPProcessor, ViltForQuestionAnswering, Vil
 # ## Konfigurasi
 
 # %%
-DATA_FOLDER = "Z:/GEMASTIK-DATABASE/data_latihan/vision/vqa_demo"   # GANTI saat lomba
+DATA_FOLDER = "../../data_latihan/vision/vqa_demo"   # GANTI saat lomba
 QUESTIONS_CSV = f"{DATA_FOLDER}/pertanyaan.csv"
 KEY_CSV = f"{DATA_FOLDER}/pertanyaan_kunci.csv"   # hanya ada di data latihan
 IMAGE_FOLDER = f"{DATA_FOLDER}/gambar"
-VILT_FOLDER = "Z:/GEMASTIK-DATABASE/pretrained/vilt_vqa"
-CLIP_FOLDER = "Z:/GEMASTIK-DATABASE/pretrained/clip_b32"
+VILT_FOLDER = "../../pretrained/vilt_vqa"
+CLIP_FOLDER = "../../pretrained/clip_b32"
 
 IMAGE_COL = "gambar"        # nama file gambar di IMAGE_FOLDER
 QUESTION_COL = "pertanyaan"

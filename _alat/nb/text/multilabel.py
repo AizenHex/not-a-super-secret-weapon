@@ -24,7 +24,7 @@ from sklearn.svm import LinearSVC
 # ## Konfigurasi
 
 # %%
-DATA_FOLDER = "Z:/GEMASTIK-DATABASE/data_latihan/text/multilabel"   # GANTI saat lomba
+DATA_FOLDER = "../../data_latihan/text/multilabel"   # GANTI saat lomba
 TRAIN_CSV = f"{DATA_FOLDER}/casa_train.csv"
 TEST_CSV = f"{DATA_FOLDER}/casa_test.csv"
 

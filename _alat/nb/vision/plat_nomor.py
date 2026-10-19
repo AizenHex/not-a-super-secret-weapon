@@ -30,13 +30,13 @@ from ultralytics import YOLO
 # ## Konfigurasi
 
 # %%
-DATA_FOLDER = "Z:/GEMASTIK-DATABASE/data_latihan/vision/plat_nomor"   # GANTI saat lomba
+DATA_FOLDER = "../../data_latihan/vision/plat_nomor"   # GANTI saat lomba
 CROPS_CSV = f"{DATA_FOLDER}/potongan.csv"      # potongan plat berlabel
 CROP_FOLDER = f"{DATA_FOLDER}/potongan"
 SCENE_FOLDER = f"{DATA_FOLDER}/adegan"         # foto kendaraan utuh
 SCENE_PATTERN = "*.jpg"
-DETECTOR_WEIGHTS = "Z:/GEMASTIK-DATABASE/pretrained/plat_yolo11/plate_detector_yolo11n.pt"
-EASYOCR_FOLDER = "Z:/GEMASTIK-DATABASE/pretrained/easyocr"
+DETECTOR_WEIGHTS = "../../pretrained/plat_yolo11/plate_detector_yolo11n.pt"
+EASYOCR_FOLDER = "../../pretrained/easyocr"
 
 CROP_PATH_COL = "path"
 PLATE_COL = "plat"

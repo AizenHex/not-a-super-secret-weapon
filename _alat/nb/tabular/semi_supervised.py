@@ -27,7 +27,7 @@ from sklearn.model_selection import train_test_split
 # ## Konfigurasi
 
 # %%
-DATA_FOLDER = "Z:/GEMASTIK-DATABASE/data_latihan/tabular_extra/multiclass"   # GANTI saat lomba
+DATA_FOLDER = "../../data_latihan/tabular_extra/multiclass"   # GANTI saat lomba
 TRAIN_CSV = f"{DATA_FOLDER}/covertype_train.csv"
 TEST_CSV = f"{DATA_FOLDER}/covertype_test.csv"
 

@@ -23,11 +23,11 @@ from sklearn.neighbors import LocalOutlierFactor, NearestNeighbors
 # ## Konfigurasi
 
 # %%
-DATA_FOLDER = "Z:/GEMASTIK-DATABASE/data_latihan/text"   # GANTI saat lomba
+DATA_FOLDER = "../../data_latihan/text"   # GANTI saat lomba
 NORMAL_CSV = f"{DATA_FOLDER}/sentiment/smsa_train.csv"
 ARXIV_CSV = f"{DATA_FOLDER}/arxiv/arxiv_train.csv"
 NEWS_CSV = f"{DATA_FOLDER}/qa/facqa_train.csv"
-EMBEDDING_MODEL = "Z:/GEMASTIK-DATABASE/pretrained/minilm"
+EMBEDDING_MODEL = "../../pretrained/minilm"
 
 TEXT_COL = "text"
 N_NORMAL = 1000

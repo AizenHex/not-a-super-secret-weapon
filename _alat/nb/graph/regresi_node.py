@@ -31,7 +31,7 @@ from sklearn.model_selection import train_test_split
 # ## Konfigurasi
 
 # %%
-DATA_FOLDER = "Z:/GEMASTIK-DATABASE/data_latihan/graph/wikipedia_chameleon"   # GANTI saat lomba
+DATA_FOLDER = "../../data_latihan/graph/wikipedia_chameleon"   # GANTI saat lomba
 EDGES_CSV = f"{DATA_FOLDER}/edges.csv"
 TARGET_CSV = f"{DATA_FOLDER}/target.csv"
 

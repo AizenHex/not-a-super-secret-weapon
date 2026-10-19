@@ -20,12 +20,12 @@ from sklearn.metrics import accuracy_score, roc_auc_score
 # ## Konfigurasi
 
 # %%
-DATA_FOLDER = "Z:/GEMASTIK-DATABASE/data_latihan/vision/wajah_lfw"   # GANTI saat lomba
+DATA_FOLDER = "../../data_latihan/vision/wajah_lfw"   # GANTI saat lomba
 TRAIN_CSV = f"{DATA_FOLDER}/pasangan_train.csv"
 TEST_CSV = f"{DATA_FOLDER}/pasangan_test.csv"
 TEST_KEY_CSV = f"{DATA_FOLDER}/pasangan_test_labels.csv"   # hanya ada di data latihan
 IMAGE_FOLDER = f"{DATA_FOLDER}/gambar"
-MODEL_FOLDER = "Z:/GEMASTIK-DATABASE/pretrained/opencv_wajah"
+MODEL_FOLDER = "../../pretrained/opencv_wajah"
 DETECTOR_ONNX = f"{MODEL_FOLDER}/face_detection_yunet_2023mar.onnx"
 RECOGNIZER_ONNX = f"{MODEL_FOLDER}/face_recognition_sface_2021dec.onnx"
 

@@ -26,7 +26,7 @@ from sklearn.preprocessing import RobustScaler, StandardScaler
 # ## Konfigurasi
 
 # %%
-DATA_FOLDER = "Z:/GEMASTIK-DATABASE/data_latihan/unsupervised"   # GANTI saat lomba
+DATA_FOLDER = "../../data_latihan/unsupervised"   # GANTI saat lomba
 DATA_CSV = f"{DATA_FOLDER}/wine.csv"
 
 DROP_COLS = ["cultivar"]    # kolom yang tidak ditransformasi (label, id)

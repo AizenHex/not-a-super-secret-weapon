@@ -19,8 +19,8 @@ from sklearn.metrics import normalized_mutual_info_score
 # ## Konfigurasi
 
 # %%
-DATA_FOLDER = "Z:/GEMASTIK-DATABASE/data_latihan/graph/cora"   # GANTI saat lomba
-# DATA_FOLDER = "Z:/GEMASTIK-DATABASE/data_latihan/graph/karate"   # graf kecil, label = "club"
+DATA_FOLDER = "../../data_latihan/graph/cora"   # GANTI saat lomba
+# DATA_FOLDER = "../../data_latihan/graph/karate"   # graf kecil, label = "club"
 NODES_CSV = f"{DATA_FOLDER}/nodes.csv"
 EDGES_CSV = f"{DATA_FOLDER}/edges.csv"
 

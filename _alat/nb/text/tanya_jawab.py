@@ -25,11 +25,11 @@ from transformers import AutoModelForQuestionAnswering, AutoTokenizer
 # ## Konfigurasi
 
 # %%
-DATA_FOLDER = "Z:/GEMASTIK-DATABASE/data_latihan/text/qa"   # GANTI saat lomba
+DATA_FOLDER = "../../data_latihan/text/qa"   # GANTI saat lomba
 TRAIN_CSV = f"{DATA_FOLDER}/facqa_train.csv"
 VALID_CSV = f"{DATA_FOLDER}/facqa_valid.csv"
 TEST_CSV = f"{DATA_FOLDER}/facqa_test.csv"
-QA_MODEL = "Z:/GEMASTIK-DATABASE/pretrained/qa_mdeberta"
+QA_MODEL = "../../pretrained/qa_mdeberta"
 
 QUESTION_COL = "pertanyaan"
 CONTEXT_COL = "konteks"

@@ -29,7 +29,7 @@ from sklearn.preprocessing import StandardScaler
 # ## Konfigurasi
 
 # %%
-DATA_FOLDER = "Z:/GEMASTIK-DATABASE/data_latihan/tabular_extra"   # GANTI saat lomba
+DATA_FOLDER = "../../data_latihan/tabular_extra"   # GANTI saat lomba
 BINARY_CSV = f"{DATA_FOLDER}/imbalanced/mammography_train.csv"
 MULTI_CSV = f"{DATA_FOLDER}/multiclass/covertype_train.csv"
 

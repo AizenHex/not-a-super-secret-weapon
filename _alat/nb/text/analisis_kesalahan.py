@@ -30,9 +30,9 @@ from sklearn.svm import LinearSVC
 # lebih stabil daripada `noul` (ya/tidak) menurut README Laya.
 
 # %%
-DATA_FOLDER = "Z:/GEMASTIK-DATABASE/data_latihan/text/sentiment"   # GANTI saat lomba
+DATA_FOLDER = "../../data_latihan/text/sentiment"   # GANTI saat lomba
 DATA_CSV = f"{DATA_FOLDER}/smsa_train.csv"
-LAYA_FOLDER = "Z:/GEMASTIK-DATABASE/pretrained/laya"
+LAYA_FOLDER = "../../pretrained/laya"
 
 TEXT_COL = "text"
 TARGET = "label"

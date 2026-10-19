@@ -24,7 +24,7 @@ from wordcloud import WordCloud
 # ## Konfigurasi
 
 # %%
-DATA_FOLDER = "Z:/GEMASTIK-DATABASE/data_latihan/text/sentiment"   # GANTI saat lomba
+DATA_FOLDER = "../../data_latihan/text/sentiment"   # GANTI saat lomba
 TRAIN_CSV = f"{DATA_FOLDER}/smsa_train.csv"
 
 TEXT_COL = "text"

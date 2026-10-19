@@ -30,11 +30,11 @@ from transformers import CLIPModel, CLIPProcessor
 # ## Konfigurasi
 
 # %%
-DATA_FOLDER = "Z:/GEMASTIK-DATABASE/data_latihan/vision/classification/cifar10_small/train"
+DATA_FOLDER = "../../data_latihan/vision/classification/cifar10_small/train"
 # ↑ GANTI saat lomba
 IMAGE_PATTERN = "*.png"     # dicari di semua subfolder. Ganti "*.jpg" bila perlu
-CLIP_FOLDER = "Z:/GEMASTIK-DATABASE/pretrained/clip_b32"
-PRETRAINED = "Z:/GEMASTIK-DATABASE/pretrained"
+CLIP_FOLDER = "../../pretrained/clip_b32"
+PRETRAINED = "../../pretrained"
 
 N_CLUSTERS = 10       # jumlah klaster, boleh lebih banyak dari jumlah kelas
 PER_ROW = 10          # jumlah gambar per baris grid

@@ -29,10 +29,10 @@ import torch
 # ## Konfigurasi
 
 # %%
-DATA_FOLDER = "Z:/GEMASTIK-DATABASE/data_latihan/dokumen"   # GANTI saat lomba
+DATA_FOLDER = "../../data_latihan/dokumen"   # GANTI saat lomba
 DIGITAL_PDF = f"{DATA_FOLDER}/laporan_digital.pdf"
 SCAN_PDF = f"{DATA_FOLDER}/laporan_scan.pdf"
-EASYOCR_FOLDER = "Z:/GEMASTIK-DATABASE/pretrained/easyocr"
+EASYOCR_FOLDER = "../../pretrained/easyocr"
 
 DPI = 200             # resolusi render PDF → gambar (lebih tinggi = OCR lebih teliti, lebih lambat)
 MIN_CHARACTERS = 20   # halaman dengan teks lebih sedikit dari ini dianggap hasil scan

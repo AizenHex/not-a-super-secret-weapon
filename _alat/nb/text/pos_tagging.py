@@ -17,7 +17,7 @@ from sklearn.metrics import accuracy_score, classification_report, f1_score
 # ## Konfigurasi
 
 # %%
-DATA_FOLDER = "Z:/GEMASTIK-DATABASE/data_latihan/text/pos"   # GANTI saat lomba
+DATA_FOLDER = "../../data_latihan/text/pos"   # GANTI saat lomba
 TRAIN_CSV = f"{DATA_FOLDER}/posp_train.csv"
 VALID_CSV = f"{DATA_FOLDER}/posp_valid.csv"
 TEST_CSV = f"{DATA_FOLDER}/posp_test.csv"

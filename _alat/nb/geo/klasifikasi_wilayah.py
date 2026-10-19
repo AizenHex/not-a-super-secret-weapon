@@ -31,7 +31,7 @@ from sklearn.model_selection import GroupShuffleSplit
 # ## Konfigurasi
 
 # %%
-DATA_FOLDER = "Z:/GEMASTIK-DATABASE/data_latihan/tabular_extra/geo"   # GANTI saat lomba
+DATA_FOLDER = "../../data_latihan/tabular_extra/geo"   # GANTI saat lomba
 POINTS_CSV = f"{DATA_FOLDER}/california_train.csv"
 REGIONS_WKT_CSV = "wilayah_wkt.csv"   # demo: dibuat sendiri, saat lomba dari panitia
 

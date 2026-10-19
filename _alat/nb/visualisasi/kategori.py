@@ -19,7 +19,7 @@ import seaborn as sns
 # ## Konfigurasi
 
 # %%
-DATA_FOLDER = "Z:/GEMASTIK-DATABASE/data_latihan"   # GANTI saat lomba
+DATA_FOLDER = "../../data_latihan"   # GANTI saat lomba
 RETAIL_CSV = f"{DATA_FOLDER}/unsupervised/online_retail.csv"
 TRAIN_CSV = f"{DATA_FOLDER}/tabular/classification/titanic_train.csv"
 

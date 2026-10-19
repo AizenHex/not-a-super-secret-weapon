@@ -32,9 +32,9 @@ from torchvision import models
 # ## Konfigurasi
 
 # %%
-DATA_FOLDER = "Z:/GEMASTIK-DATABASE/data_latihan/medis/pneumoniamnist"   # GANTI saat lomba
+DATA_FOLDER = "../../data_latihan/medis/pneumoniamnist"   # GANTI saat lomba
 DATA_NPZ = f"{DATA_FOLDER}/pneumoniamnist_64.npz"
-PRETRAINED = "Z:/GEMASTIK-DATABASE/pretrained"
+PRETRAINED = "../../pretrained"
 
 IMAGE_SIZE = 128              # gambar diperbesar ke ukuran ini sebelum masuk CNN
 EPOCHS = 6

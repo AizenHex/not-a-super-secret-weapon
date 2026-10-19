@@ -33,9 +33,9 @@ from transformers import AutoFeatureExtractor, Wav2Vec2Model
 # ## Konfigurasi
 
 # %%
-DATA_FOLDER = "Z:/GEMASTIK-DATABASE/data_latihan/audio/emosi"   # GANTI saat lomba
+DATA_FOLDER = "../../data_latihan/audio/emosi"   # GANTI saat lomba
 DATA_CSV = f"{DATA_FOLDER}/ravdess.csv"
-PRETRAINED_FOLDER = "Z:/GEMASTIK-DATABASE/pretrained/wav2vec2_base"
+PRETRAINED_FOLDER = "../../pretrained/wav2vec2_base"
 
 ID_COL = "id"
 PATH_COL = "path"           # kolom berisi nama file audio, relatif terhadap DATA_FOLDER

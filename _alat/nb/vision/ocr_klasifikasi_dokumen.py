@@ -26,11 +26,11 @@ from sklearn.svm import LinearSVC
 # ## Konfigurasi
 
 # %%
-DATA_FOLDER = "Z:/GEMASTIK-DATABASE/data_latihan/vision/ocr"   # GANTI saat lomba
+DATA_FOLDER = "../../data_latihan/vision/ocr"   # GANTI saat lomba
 TRAIN_CSV = f"{DATA_FOLDER}/dokumen_train.csv"
 TEST_CSV = f"{DATA_FOLDER}/dokumen_test.csv"
 TEST_KEY_CSV = f"{DATA_FOLDER}/dokumen_test_labels.csv"   # hanya ada di data latihan
-EASYOCR_FOLDER = "Z:/GEMASTIK-DATABASE/pretrained/easyocr"
+EASYOCR_FOLDER = "../../pretrained/easyocr"
 
 LANGUAGES = ["en", "id"]
 PATH_COL = "path"     # path gambar, relatif terhadap DATA_FOLDER

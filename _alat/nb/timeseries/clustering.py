@@ -26,7 +26,7 @@ from sktime.dists_kernels import DtwDist
 # ## Konfigurasi
 
 # %%
-DATA_FOLDER = "Z:/GEMASTIK-DATABASE/data_latihan/timeseries/classification"   # GANTI saat lomba
+DATA_FOLDER = "../../data_latihan/timeseries/classification"   # GANTI saat lomba
 TRAIN_CSV = f"{DATA_FOLDER}/gunpoint_train.csv"
 TEST_CSV = f"{DATA_FOLDER}/gunpoint_test.csv"
 

@@ -26,7 +26,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 # ## Konfigurasi
 
 # %%
-DATA_FOLDER = "Z:/GEMASTIK-DATABASE/data_latihan/recsys/ml-100k"   # GANTI saat lomba
+DATA_FOLDER = "../../data_latihan/recsys/ml-100k"   # GANTI saat lomba
 RATINGS_CSV = f"{DATA_FOLDER}/ratings.csv"
 
 USER_COL = "user"         # nomor pengguna 0, 1, 2, ...

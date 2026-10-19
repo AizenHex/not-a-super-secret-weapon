@@ -29,11 +29,11 @@ from sentence_transformers import SentenceTransformer
 # ## Konfigurasi
 
 # %%
-DATA_FOLDER = "Z:/GEMASTIK-DATABASE/data_latihan/tabular_extra/survei_kotor"   # GANTI saat lomba
+DATA_FOLDER = "../../data_latihan/tabular_extra/survei_kotor"   # GANTI saat lomba
 TRAIN_CSV = f"{DATA_FOLDER}/ukt_SINTETIS_train.csv"
 TEST_CSV = f"{DATA_FOLDER}/ukt_SINTETIS_test.csv"
-LAYA_DIR = "Z:/GEMASTIK-DATABASE/pretrained/laya"
-EMBED_DIR = "Z:/GEMASTIK-DATABASE/pretrained/minilm"
+LAYA_DIR = "../../pretrained/laya"
+EMBED_DIR = "../../pretrained/minilm"
 DEVICE = "cpu"
 if torch.cuda.is_available():
     DEVICE = "cuda"

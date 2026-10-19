@@ -1,9 +1,10 @@
 #!/bin/sh
 # Pakai: sh build.sh tabular/klasifikasi [text/klasifikasi_tfidf ...]
 # Ubah _alat/nb/<nama>.py -> _.NEW-GEN/<nama>.ipynb lalu jalankan (Run All).
-SP="Z:/GEMASTIK-DATABASE/_.NEW-GEN/_alat"
-NEW="Z:/GEMASTIK-DATABASE/_.NEW-GEN"
-PY="Z:/GEMASTIK-DATABASE/.venv/Scripts/python.exe"
+SP="$(cd "$(dirname "$0")" && pwd)"
+NEW="$(dirname "$SP")"
+PY="$NEW/.venv/Scripts/python.exe"
+[ -f "$PY" ] || PY="$(dirname "$NEW")/.venv/Scripts/python.exe"
 export PYTHONIOENCODING=utf-8
 for name in "$@"; do
   "$PY" "$SP/py2nb.py" "$SP/nb/$name.py" "$NEW/$name.ipynb" || exit 1

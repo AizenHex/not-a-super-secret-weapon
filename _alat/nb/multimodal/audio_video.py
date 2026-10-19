@@ -37,13 +37,13 @@ from transformers import AutoFeatureExtractor, Wav2Vec2Model
 # ## Konfigurasi
 
 # %%
-DATA_FOLDER = "Z:/GEMASTIK-DATABASE/data_latihan/multimodal/cremad_mini"   # GANTI saat lomba
+DATA_FOLDER = "../../data_latihan/multimodal/cremad_mini"   # GANTI saat lomba
 CLIPS_CSV = f"{DATA_FOLDER}/daftar.csv"
 AUDIO_FOLDER = f"{DATA_FOLDER}/audio"
 VIDEO_FOLDER = f"{DATA_FOLDER}/video"
 AUDIO_EXTENSION = ".wav"
 VIDEO_EXTENSION = ".flv"
-PRETRAINED = "Z:/GEMASTIK-DATABASE/pretrained"
+PRETRAINED = "../../pretrained"
 
 NAME_COL = "nama"         # nama file tanpa ekstensi, misal 1001_IEO_HAP_LO
 SAMPLE_RATE = 16000

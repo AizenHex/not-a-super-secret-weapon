@@ -34,7 +34,7 @@ warnings.filterwarnings("ignore", category=rasterio.errors.NotGeoreferencedWarni
 # ## Konfigurasi
 
 # %%
-DATA_FOLDER = "Z:/GEMASTIK-DATABASE/data_latihan/vision/oscd_sentinel2"   # GANTI saat lomba
+DATA_FOLDER = "../../data_latihan/vision/oscd_sentinel2"   # GANTI saat lomba
 BEFORE_NAME = "pasangan{}_sebelum.tif"     # {} diganti nomor pasangan
 AFTER_NAME = "pasangan{}_sesudah.tif"
 LABEL_NAME = "pasangan{}_label.tif"

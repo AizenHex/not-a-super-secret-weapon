@@ -27,7 +27,7 @@ from sklearn.svm import SVC
 # ## Konfigurasi
 
 # %%
-DATA_FOLDER = "Z:/GEMASTIK-DATABASE/data_latihan/vision/satelit"   # GANTI saat lomba
+DATA_FOLDER = "../../data_latihan/vision/satelit"   # GANTI saat lomba
 TRAIN_CSV = f"{DATA_FOLDER}/satimage_train.csv"
 TEST_CSV = f"{DATA_FOLDER}/satimage_test.csv"
 TEST_KEY_CSV = f"{DATA_FOLDER}/satimage_test_labels.csv"   # hanya ada di data latihan

@@ -24,7 +24,7 @@ import pandas as pd
 # ## Konfigurasi
 
 # %%
-DATA_FOLDER = "Z:/GEMASTIK-DATABASE/data_latihan/preprocessing"   # GANTI saat lomba
+DATA_FOLDER = "../../data_latihan/preprocessing"   # GANTI saat lomba
 DIRTY_CSV = f"{DATA_FOLDER}/kotor_SINTETIS.csv"
 KEY_CSV = f"{DATA_FOLDER}/kotor_SINTETIS_kunci.csv"   # hanya ada di data latihan
 

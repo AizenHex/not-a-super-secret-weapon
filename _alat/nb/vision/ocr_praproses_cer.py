@@ -22,9 +22,9 @@ import torch
 # ## Konfigurasi
 
 # %%
-DATA_FOLDER = "Z:/GEMASTIK-DATABASE/data_latihan/vision/ocr"   # GANTI saat lomba
+DATA_FOLDER = "../../data_latihan/vision/ocr"   # GANTI saat lomba
 LINES_CSV = f"{DATA_FOLDER}/baris.csv"
-EASYOCR_FOLDER = "Z:/GEMASTIK-DATABASE/pretrained/easyocr"
+EASYOCR_FOLDER = "../../pretrained/easyocr"
 
 LANGUAGES = ["en", "id"]
 PATH_COL = "path"         # path gambar, relatif terhadap DATA_FOLDER

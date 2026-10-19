@@ -28,7 +28,7 @@ from sklearn.pipeline import make_pipeline
 # ## Konfigurasi
 
 # %%
-DATA_FOLDER = "Z:/GEMASTIK-DATABASE/data_latihan/text/sentiment"   # GANTI saat lomba
+DATA_FOLDER = "../../data_latihan/text/sentiment"   # GANTI saat lomba
 TEXTS_CSV = f"{DATA_FOLDER}/smsa_train.csv"
 MANUAL_CSV = "label_manual.csv"     # hasil klik tombol, ditambah terus tiap klik
 

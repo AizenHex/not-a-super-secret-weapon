@@ -31,7 +31,7 @@ from sklearn.preprocessing import StandardScaler
 # ## Konfigurasi
 
 # %%
-DATA_FOLDER = "Z:/GEMASTIK-DATABASE/data_latihan/unsupervised"   # GANTI saat lomba
+DATA_FOLDER = "../../data_latihan/unsupervised"   # GANTI saat lomba
 DATA_CSV = f"{DATA_FOLDER}/breast_cancer_anomaly.csv"
 
 LABEL_COL = "is_anomaly"     # hanya untuk cek, saat lomba biasanya tidak ada

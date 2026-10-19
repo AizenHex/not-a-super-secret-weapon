@@ -19,7 +19,7 @@ from scipy import stats
 # ## Konfigurasi
 
 # %%
-DATA_FOLDER = "Z:/GEMASTIK-DATABASE/data_latihan/timeseries/changepoint"   # GANTI saat lomba
+DATA_FOLDER = "../../data_latihan/timeseries/changepoint"   # GANTI saat lomba
 SERIES_CSV = f"{DATA_FOLDER}/nile.csv"
 
 TIME_COL = "year"

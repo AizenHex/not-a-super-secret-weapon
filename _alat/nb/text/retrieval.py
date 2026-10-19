@@ -26,11 +26,11 @@ from sklearn.metrics.pairwise import cosine_similarity
 # ## Konfigurasi
 
 # %%
-DATA_FOLDER = "Z:/GEMASTIK-DATABASE/data_latihan/text/classification_en"   # GANTI saat lomba
+DATA_FOLDER = "../../data_latihan/text/classification_en"   # GANTI saat lomba
 CORPUS_CSV = f"{DATA_FOLDER}/news4_train.csv"
 QUERY_CSV = f"{DATA_FOLDER}/news4_test.csv"
 QUERY_KEY_CSV = f"{DATA_FOLDER}/news4_test_labels.csv"   # hanya ada di data latihan
-EMBEDDING_MODEL = "Z:/GEMASTIK-DATABASE/pretrained/minilm"
+EMBEDDING_MODEL = "../../pretrained/minilm"
 
 TEXT_COL = "text"
 LABEL_COL = "label"

@@ -27,7 +27,7 @@ from sklearn.preprocessing import OneHotEncoder, StandardScaler
 # ## Konfigurasi
 
 # %%
-DATA_FOLDER = "Z:/GEMASTIK-DATABASE/data_latihan/tabular_extra/uplift"   # GANTI saat lomba
+DATA_FOLDER = "../../data_latihan/tabular_extra/uplift"   # GANTI saat lomba
 DATA_CSV = f"{DATA_FOLDER}/hillstrom.csv"
 
 OUTCOME = "visit"                  # hasil yang ingin dinaikkan (1/0)

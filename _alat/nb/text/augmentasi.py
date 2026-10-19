@@ -26,11 +26,11 @@ from sklearn.svm import LinearSVC
 # ## Konfigurasi
 
 # %%
-DATA_FOLDER = "Z:/GEMASTIK-DATABASE/data_latihan/text/classification"   # GANTI saat lomba
+DATA_FOLDER = "../../data_latihan/text/classification"   # GANTI saat lomba
 TRAIN_CSV = f"{DATA_FOLDER}/emot_train.csv"
 TEST_CSV = f"{DATA_FOLDER}/emot_test.csv"
 TEST_KEY_CSV = f"{DATA_FOLDER}/emot_test_labels.csv"   # hanya ada di data latihan
-SLANG_CSV = "Z:/GEMASTIK-DATABASE/data_latihan/preprocessing/kamus_alay_salsabila.csv"
+SLANG_CSV = "../../data_latihan/preprocessing/kamus_alay_salsabila.csv"
 
 TEXT_COL = "text"
 TARGET = "label"

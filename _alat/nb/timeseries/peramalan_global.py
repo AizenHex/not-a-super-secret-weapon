@@ -24,7 +24,7 @@ from xgboost import XGBRegressor
 # ## Konfigurasi
 
 # %%
-DATA_FOLDER = "Z:/GEMASTIK-DATABASE/data_latihan/timeseries/global"   # GANTI saat lomba
+DATA_FOLDER = "../../data_latihan/timeseries/global"   # GANTI saat lomba
 TRAIN_CSV = f"{DATA_FOLDER}/harga_pangan_SINTETIS_train.csv"
 TEST_CSV = f"{DATA_FOLDER}/harga_pangan_SINTETIS_test.csv"
 TEST_KEY_CSV = f"{DATA_FOLDER}/harga_pangan_SINTETIS_test_labels.csv"   # hanya di data latihan

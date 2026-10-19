@@ -25,7 +25,7 @@ import pandas as pd
 # ## Konfigurasi
 
 # %%
-DATA_FOLDER = "Z:/GEMASTIK-DATABASE/data_latihan/recsys/ml-100k"   # GANTI saat lomba
+DATA_FOLDER = "../../data_latihan/recsys/ml-100k"   # GANTI saat lomba
 EVENTS_CSV = f"{DATA_FOLDER}/ratings.csv"
 ITEMS_CSV = f"{DATA_FOLDER}/movies.csv"
 

@@ -31,7 +31,7 @@ from sklearn.preprocessing import StandardScaler
 # ## Konfigurasi
 
 # %%
-DATA_FOLDER = "Z:/GEMASTIK-DATABASE/data_latihan/multimodal/regression"   # GANTI saat lomba
+DATA_FOLDER = "../../data_latihan/multimodal/regression"   # GANTI saat lomba
 TRAIN_CSV = f"{DATA_FOLDER}/train.csv"
 TEST_CSV = f"{DATA_FOLDER}/test.csv"
 

@@ -21,7 +21,7 @@ from statsmodels.tsa.stattools import adfuller, grangercausalitytests
 # ## Konfigurasi
 
 # %%
-DATA_FOLDER = "Z:/GEMASTIK-DATABASE/data_latihan/timeseries/forecasting"   # GANTI saat lomba
+DATA_FOLDER = "../../data_latihan/timeseries/forecasting"   # GANTI saat lomba
 SERIES_CSV = f"{DATA_FOLDER}/macro_quarterly.csv"
 
 DATE_COL = "date"

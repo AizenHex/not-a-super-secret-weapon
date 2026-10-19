@@ -21,7 +21,7 @@ from sklearn.model_selection import GroupShuffleSplit
 # ## Konfigurasi
 
 # %%
-DATA_FOLDER = "Z:/GEMASTIK-DATABASE/data_latihan/tabular_extra/ranking"   # GANTI saat lomba
+DATA_FOLDER = "../../data_latihan/tabular_extra/ranking"   # GANTI saat lomba
 TRAIN_CSV = f"{DATA_FOLDER}/produk_rank_SINTETIS_train.csv"
 TEST_CSV = f"{DATA_FOLDER}/produk_rank_SINTETIS_test.csv"
 TEST_KEY_CSV = f"{DATA_FOLDER}/produk_rank_SINTETIS_test_labels.csv"   # hanya di data latihan

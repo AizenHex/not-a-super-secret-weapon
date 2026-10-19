@@ -28,7 +28,7 @@ from torch import nn
 # ## Konfigurasi
 
 # %%
-DATA_FOLDER = "Z:/GEMASTIK-DATABASE/data_latihan/graph/cora"   # GANTI saat lomba
+DATA_FOLDER = "../../data_latihan/graph/cora"   # GANTI saat lomba
 NODES_CSV = f"{DATA_FOLDER}/nodes.csv"
 EDGES_CSV = f"{DATA_FOLDER}/edges.csv"
 

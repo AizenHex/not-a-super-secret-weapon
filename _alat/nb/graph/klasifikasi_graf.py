@@ -36,7 +36,7 @@ from sklearn.svm import SVC
 # ## Konfigurasi
 
 # %%
-DATA_FOLDER = "Z:/GEMASTIK-DATABASE/data_latihan/graph/MUTAG"   # GANTI saat lomba
+DATA_FOLDER = "../../data_latihan/graph/MUTAG"   # GANTI saat lomba
 NAME = "MUTAG"                                  # awalan nama file TU Dataset
 EDGES_TXT = f"{DATA_FOLDER}/{NAME}_A.txt"
 GRAPH_INDICATOR_TXT = f"{DATA_FOLDER}/{NAME}_graph_indicator.txt"

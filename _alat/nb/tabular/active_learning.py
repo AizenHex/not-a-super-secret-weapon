@@ -24,7 +24,7 @@ from sklearn.model_selection import train_test_split
 # ## Konfigurasi
 
 # %%
-DATA_FOLDER = "Z:/GEMASTIK-DATABASE/data_latihan/unsupervised"   # GANTI saat lomba
+DATA_FOLDER = "../../data_latihan/unsupervised"   # GANTI saat lomba
 DATA_CSV = f"{DATA_FOLDER}/digits.csv"
 
 TARGET = "digit"

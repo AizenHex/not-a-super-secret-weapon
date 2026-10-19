@@ -23,7 +23,7 @@ from statsmodels.stats.diagnostic import acorr_ljungbox
 # ## Konfigurasi
 
 # %%
-DATA_FOLDER = "Z:/GEMASTIK-DATABASE/data_latihan/timeseries/anomaly"   # GANTI saat lomba
+DATA_FOLDER = "../../data_latihan/timeseries/anomaly"   # GANTI saat lomba
 SERIES_CSV = f"{DATA_FOLDER}/nyc_taxi.csv"
 
 DATE_COL = "timestamp"

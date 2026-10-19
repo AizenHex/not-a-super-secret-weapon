@@ -24,7 +24,7 @@ from sklearn.model_selection import train_test_split
 # ## Konfigurasi
 
 # %%
-DATA_FOLDER = "Z:/GEMASTIK-DATABASE/data_latihan/tabular_extra/geo"   # GANTI saat lomba
+DATA_FOLDER = "../../data_latihan/tabular_extra/geo"   # GANTI saat lomba
 TRAIN_CSV = f"{DATA_FOLDER}/california_train.csv"
 
 ID_COL = "id"

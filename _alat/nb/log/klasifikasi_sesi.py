@@ -28,7 +28,7 @@ from sklearn.model_selection import train_test_split
 # ## Konfigurasi
 
 # %%
-DATA_FOLDER = "Z:/GEMASTIK-DATABASE/data_latihan/log"   # GANTI saat lomba
+DATA_FOLDER = "../../data_latihan/log"   # GANTI saat lomba
 LOG_CSV = f"{DATA_FOLDER}/denda_lalu_lintas.csv"
 
 CASE_COL = "case_id"             # kolom id sesi

@@ -33,7 +33,7 @@ from sklearn.preprocessing import OrdinalEncoder
 # (kunci = teks setelah strip + huruf besar).
 
 # %%
-DATA_FOLDER = "Z:/GEMASTIK-DATABASE/data_latihan/tabular_extra/survei_kotor"   # GANTI saat lomba
+DATA_FOLDER = "../../data_latihan/tabular_extra/survei_kotor"   # GANTI saat lomba
 TRAIN_CSV = f"{DATA_FOLDER}/ukt_SINTETIS_train.csv"
 TEST_CSV = f"{DATA_FOLDER}/ukt_SINTETIS_test.csv"
 

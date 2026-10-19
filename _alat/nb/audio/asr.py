@@ -24,11 +24,11 @@ from transformers import WhisperForConditionalGeneration, WhisperProcessor
 # ## Konfigurasi
 
 # %%
-DATA_FOLDER = "Z:/GEMASTIK-DATABASE/data_latihan/audio/classification"   # GANTI saat lomba
+DATA_FOLDER = "../../data_latihan/audio/classification"   # GANTI saat lomba
 DATA_FOLDER = f"{DATA_FOLDER}/speech_commands_mini"
 TEST_CSV = f"{DATA_FOLDER}/test.csv"
 TEST_KEY_CSV = f"{DATA_FOLDER}/test_labels.csv"    # kunci jawaban, hanya ada di data demo
-WHISPER_FOLDER = "Z:/GEMASTIK-DATABASE/pretrained/whisper_tiny"
+WHISPER_FOLDER = "../../pretrained/whisper_tiny"
 
 ID_COL = "id"
 PATH_COL = "path"

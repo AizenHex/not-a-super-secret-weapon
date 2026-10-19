@@ -11,12 +11,17 @@ Baca ini di menit pertama final. Detail riset: [RISET.md](RISET.md).
    - `jupyter.bat`: buka JupyterLab. `aktifkan.bat`: buka terminal dengan `.venv` aktif.
    - Belum punya folder `pretrained`? Dobel klik `download_model.bat` (sekali, sekitar 9 GB,
      butuh internet). Model masuk ke folder `pretrained` di sebelah folder `_.NEW-GEN`.
-2. Di **setiap notebook yang dibuka**, ganti baris pertama sel Konfigurasi:
-   ```python
-   DATA_FOLDER = "Z:/GEMASTIK-DATABASE/data_latihan/..."   # GANTI saat lomba
+2. Path di notebook **relatif** terhadap folder notebook, jadi langsung jalan di laptop mana pun
+   asalkan susunan foldernya begini:
    ```
-   menjadi folder data soal, misalnya `"C:/GEMASTIK/soal1"`. Pakai garis miring `/`, bukan `\`.
-   Model pretrained dibaca dari `PRETRAINED = "Z:/GEMASTIK-DATABASE/pretrained"`: ganti juga.
+   <folder apa saja>/_.NEW-GEN/      ← repo ini
+   <folder apa saja>/pretrained/     ← hasil download_model.bat
+   <folder apa saja>/data_latihan/   ← data demo (opsional)
+   ```
+   Saat lomba, ganti baris pertama sel Konfigurasi ke folder data soal:
+   ```python
+   DATA_FOLDER = "C:/GEMASTIK/soal1"   # GANTI saat lomba (garis miring /, bukan \)
+   ```
 3. Ganti nama file dan nama kolom (huruf besar semua) di sel Konfigurasi.
 4. Hapus sel terakhir `## Cek dengan kunci jawaban (HAPUS saat lomba)`. Kunci jawaban hanya ada
    di data latihan.

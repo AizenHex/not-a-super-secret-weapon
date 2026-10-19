@@ -30,7 +30,7 @@ from xgboost import XGBClassifier
 # ## Konfigurasi
 
 # %%
-DATA_FOLDER = "Z:/GEMASTIK-DATABASE/data_latihan/tabular/classification"   # GANTI saat lomba
+DATA_FOLDER = "../../data_latihan/tabular/classification"   # GANTI saat lomba
 TRAIN_CSV = f"{DATA_FOLDER}/titanic_train.csv"
 TEST_CSV = f"{DATA_FOLDER}/titanic_test.csv"
 

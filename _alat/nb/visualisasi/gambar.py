@@ -29,8 +29,8 @@ from ultralytics import YOLO
 # ## Konfigurasi
 
 # %%
-DATA_FOLDER = "Z:/GEMASTIK-DATABASE/data_latihan/vision"   # GANTI saat lomba
-WEIGHTS_FOLDER = "Z:/GEMASTIK-DATABASE/pretrained"
+DATA_FOLDER = "../../data_latihan/vision"   # GANTI saat lomba
+WEIGHTS_FOLDER = "../../pretrained"
 CIFAR_FOLDER = f"{DATA_FOLDER}/classification/cifar10_small"
 COCO_FOLDER = f"{DATA_FOLDER}/detection/coco8"
 PENN_FOLDER = f"{DATA_FOLDER}/detection/PennFudanPed"

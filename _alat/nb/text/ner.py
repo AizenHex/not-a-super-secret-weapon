@@ -19,7 +19,7 @@ from sklearn_crfsuite import metrics
 # ## Konfigurasi
 
 # %%
-DATA_FOLDER = "Z:/GEMASTIK-DATABASE/data_latihan/text/ner"   # GANTI saat lomba
+DATA_FOLDER = "../../data_latihan/text/ner"   # GANTI saat lomba
 TRAIN_CSV = f"{DATA_FOLDER}/nerp_train.csv"
 TEST_CSV = f"{DATA_FOLDER}/nerp_test.csv"
 

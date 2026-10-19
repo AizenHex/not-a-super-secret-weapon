@@ -25,7 +25,7 @@ from sklearn.neighbors import NearestNeighbors
 # ## Konfigurasi
 
 # %%
-DATA_FOLDER = "Z:/GEMASTIK-DATABASE/data_latihan/trajektori/geolife_mini"   # GANTI saat lomba
+DATA_FOLDER = "../../data_latihan/trajektori/geolife_mini"   # GANTI saat lomba
 POINTS_CSV = f"{DATA_FOLDER}/titik_user_000.csv"
 
 TIME_COL = "waktu"

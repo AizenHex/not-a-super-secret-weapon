@@ -42,7 +42,7 @@ from sklearn.preprocessing import StandardScaler
 # Semua yang boleh diubah ada di sel ini. Saat lomba, biasanya cukup ganti `DATA_FOLDER`.
 
 # %%
-DATA_FOLDER = "Z:/GEMASTIK-DATABASE/data_latihan/audio/mesin_toycar"   # GANTI saat lomba
+DATA_FOLDER = "../../data_latihan/audio/mesin_toycar"   # GANTI saat lomba
 TRAIN_FOLDER = f"{DATA_FOLDER}/train"
 TEST_FOLDER = f"{DATA_FOLDER}/test"
 

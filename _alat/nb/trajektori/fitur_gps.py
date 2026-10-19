@@ -28,7 +28,7 @@ from sklearn.model_selection import GroupKFold, cross_val_predict
 # ## Konfigurasi
 
 # %%
-DATA_FOLDER = "Z:/GEMASTIK-DATABASE/data_latihan/trajektori/geolife_mini"   # GANTI saat lomba
+DATA_FOLDER = "../../data_latihan/trajektori/geolife_mini"   # GANTI saat lomba
 TRAIN_CSV = f"{DATA_FOLDER}/gps_latih.csv"
 TEST_CSV = f"{DATA_FOLDER}/gps_test.csv"
 TEST_KEY_CSV = f"{DATA_FOLDER}/gps_test_labels.csv"   # hanya ada di data latihan

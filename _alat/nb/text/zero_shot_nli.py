@@ -22,11 +22,11 @@ from transformers import pipeline
 # `LABEL_WORDS`: kata yang dibaca model (kiri) → label asli di data (kanan).
 
 # %%
-DATA_FOLDER = "Z:/GEMASTIK-DATABASE/data_latihan/text/sentiment"   # GANTI saat lomba
+DATA_FOLDER = "../../data_latihan/text/sentiment"   # GANTI saat lomba
 TRAIN_CSV = f"{DATA_FOLDER}/smsa_train.csv"
 TEST_CSV = f"{DATA_FOLDER}/smsa_test.csv"
 TEST_KEY_CSV = f"{DATA_FOLDER}/smsa_test_labels.csv"   # hanya ada di data latihan
-NLI_MODEL = "Z:/GEMASTIK-DATABASE/pretrained/nli_mdeberta"
+NLI_MODEL = "../../pretrained/nli_mdeberta"
 
 TEXT_COL = "text"
 TARGET = "label"

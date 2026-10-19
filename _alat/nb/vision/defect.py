@@ -32,11 +32,11 @@ from transformers import CLIPModel, CLIPProcessor
 # ## Konfigurasi
 
 # %%
-DATA_FOLDER = "Z:/GEMASTIK-DATABASE/data_latihan/vision/defect_mvtec_bottle"   # GANTI
+DATA_FOLDER = "../../data_latihan/vision/defect_mvtec_bottle"   # GANTI
 TRAIN_CSV = f"{DATA_FOLDER}/train.csv"
 TEST_CSV = f"{DATA_FOLDER}/test.csv"
 TEST_KEY_CSV = f"{DATA_FOLDER}/test_labels.csv"   # hanya ada di data latihan
-PRETRAINED = "Z:/GEMASTIK-DATABASE/pretrained"
+PRETRAINED = "../../pretrained"
 CLIP_FOLDER = f"{PRETRAINED}/clip_b32"
 
 PATH_COL = "path"       # path gambar, relatif terhadap DATA_FOLDER

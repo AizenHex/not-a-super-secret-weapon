@@ -36,7 +36,7 @@ from xgboost import XGBClassifier
 # ## Konfigurasi
 
 # %%
-DATA_FOLDER = "Z:/GEMASTIK-DATABASE/data_latihan/tabular_extra/imbalanced"   # GANTI saat lomba
+DATA_FOLDER = "../../data_latihan/tabular_extra/imbalanced"   # GANTI saat lomba
 TRAIN_CSV = f"{DATA_FOLDER}/mammography_train.csv"
 TEST_CSV = f"{DATA_FOLDER}/mammography_test.csv"
 

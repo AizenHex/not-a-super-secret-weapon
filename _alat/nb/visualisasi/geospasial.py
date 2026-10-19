@@ -31,7 +31,7 @@ from sklearn.neighbors import KernelDensity
 # ## Konfigurasi
 
 # %%
-DATA_FOLDER = "Z:/GEMASTIK-DATABASE/data_latihan"   # GANTI saat lomba
+DATA_FOLDER = "../../data_latihan"   # GANTI saat lomba
 PROVINCE_GEOJSON = f"{DATA_FOLDER}/geo/indonesia_provinsi.geojson"
 EARTHQUAKE_CSV = f"{DATA_FOLDER}/geo/gempa_indonesia_2015_2025.csv"
 CITY_CSV = f"{DATA_FOLDER}/graph/kota_indonesia.csv"

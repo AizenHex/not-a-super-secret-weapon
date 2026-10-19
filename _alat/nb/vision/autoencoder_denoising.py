@@ -22,7 +22,7 @@ from torch.nn import functional
 # ## Konfigurasi
 
 # %%
-DATA_FOLDER = "Z:/GEMASTIK-DATABASE/data_latihan/vision/classification/cifar10_small"  # GANTI
+DATA_FOLDER = "../../data_latihan/vision/classification/cifar10_small"  # GANTI
 TRAIN_CSV = f"{DATA_FOLDER}/train.csv"
 TEST_CSV = f"{DATA_FOLDER}/test.csv"
 

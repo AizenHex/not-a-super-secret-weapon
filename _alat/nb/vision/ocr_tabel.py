@@ -21,9 +21,9 @@ import torch
 # ## Konfigurasi
 
 # %%
-DATA_FOLDER = "Z:/GEMASTIK-DATABASE/data_latihan/vision/ocr"   # GANTI saat lomba
+DATA_FOLDER = "../../data_latihan/vision/ocr"   # GANTI saat lomba
 KEY_CSV = f"{DATA_FOLDER}/tabel.csv"     # hanya ada di data latihan
-EASYOCR_FOLDER = "Z:/GEMASTIK-DATABASE/pretrained/easyocr"
+EASYOCR_FOLDER = "../../pretrained/easyocr"
 
 LANGUAGES = ["en", "id"]
 ROW_TOLERANCE = 15   # piksel, kotak dengan selisih tengah-y lebih kecil = satu baris

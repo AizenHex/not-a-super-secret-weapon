@@ -26,11 +26,11 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 # ## Konfigurasi
 
 # %%
-DATA_FOLDER = "Z:/GEMASTIK-DATABASE/data_latihan/text/generasi"   # GANTI saat lomba
+DATA_FOLDER = "../../data_latihan/text/generasi"   # GANTI saat lomba
 EXAMPLE_CSV = f"{DATA_FOLDER}/contoh.csv"
 TEST_CSV = f"{DATA_FOLDER}/test.csv"
 TEST_KEY_CSV = f"{DATA_FOLDER}/test_labels.csv"   # hanya ada di data latihan
-LLM_FOLDER = "Z:/GEMASTIK-DATABASE/pretrained/qwen_05b"
+LLM_FOLDER = "../../pretrained/qwen_05b"
 
 TEXT_COL = "artikel"
 TARGET = "ringkasan"

@@ -22,7 +22,7 @@ import pandas as pd
 # ## Konfigurasi
 
 # %%
-DATA_FOLDER = "Z:/GEMASTIK-DATABASE/data_latihan/graph"   # GANTI saat lomba
+DATA_FOLDER = "../../data_latihan/graph"   # GANTI saat lomba
 CITY_CSV = f"{DATA_FOLDER}/kota_indonesia.csv"
 
 NAME_COL = "kota"

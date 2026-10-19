@@ -22,12 +22,12 @@ from ultralytics import YOLO
 # ## Konfigurasi
 
 # %%
-DATA_FOLDER = "Z:/GEMASTIK-DATABASE/data_latihan/vision/regresi"   # GANTI saat lomba
+DATA_FOLDER = "../../data_latihan/vision/regresi"   # GANTI saat lomba
 TRAIN_CSV = f"{DATA_FOLDER}/pennfudan_train.csv"
 TEST_CSV = f"{DATA_FOLDER}/pennfudan_test.csv"
 TEST_KEY_CSV = f"{DATA_FOLDER}/pennfudan_test_labels.csv"   # hanya ada di data latihan
-IMAGE_FOLDER = "Z:/GEMASTIK-DATABASE/data_latihan/vision/detection/PennFudanPed"
-WEIGHTS = "Z:/GEMASTIK-DATABASE/pretrained/yolov8n/yolov8n.pt"
+IMAGE_FOLDER = "../../data_latihan/vision/detection/PennFudanPed"
+WEIGHTS = "../../pretrained/yolov8n/yolov8n.pt"
 
 PATH_COL = "path"       # path gambar, relatif terhadap IMAGE_FOLDER
 TARGET = "jumlah"

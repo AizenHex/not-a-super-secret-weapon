@@ -27,9 +27,9 @@ from ultralytics import YOLO
 # ## Konfigurasi
 
 # %%
-DATA_FOLDER = "Z:/GEMASTIK-DATABASE/data_latihan/video/vtest"   # GANTI saat lomba
+DATA_FOLDER = "../../data_latihan/video/vtest"   # GANTI saat lomba
 VIDEO_PATH = f"{DATA_FOLDER}/vtest.avi"
-WEIGHTS = "Z:/GEMASTIK-DATABASE/pretrained/yolov8n/yolov8n.pt"
+WEIGHTS = "../../pretrained/yolov8n/yolov8n.pt"
 
 CLASSES = [0]             # id kelas COCO: 0 = orang, 2 = mobil, 3 = motor, 5 = bus
 CONFIDENCE = 0.3

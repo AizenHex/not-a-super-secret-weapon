@@ -22,11 +22,11 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 # `LABEL_WORDS`: kata jawaban LLM (kiri) → label asli di data (kanan).
 
 # %%
-DATA_FOLDER = "Z:/GEMASTIK-DATABASE/data_latihan/text/sentiment"   # GANTI saat lomba
+DATA_FOLDER = "../../data_latihan/text/sentiment"   # GANTI saat lomba
 TRAIN_CSV = f"{DATA_FOLDER}/smsa_train.csv"
 TEST_CSV = f"{DATA_FOLDER}/smsa_test.csv"
 TEST_KEY_CSV = f"{DATA_FOLDER}/smsa_test_labels.csv"   # hanya ada di data latihan
-LLM_FOLDER = "Z:/GEMASTIK-DATABASE/pretrained/qwen_05b"
+LLM_FOLDER = "../../pretrained/qwen_05b"
 
 TEXT_COL = "text"
 TARGET = "label"
