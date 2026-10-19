@@ -44,6 +44,7 @@ sklearn-crfsuite==0.5.0
 rapidfuzz==3.14.6            # skor kemiripan string (entity resolution)
 PySastrawi==1.2.1
 laya==0.4.8                  # Laya (alat bantu peta kategori), bobot di pretrained/laya
+streamlit==1.66.0            # web lokal _laya_eda (jalankan.bat)
 
 # Gambar dan audio
 torch==2.11.0+cu128

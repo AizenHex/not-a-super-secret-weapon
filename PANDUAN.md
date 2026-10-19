@@ -126,6 +126,15 @@ fungsi dan peta yang **sama** ke train dan test.
 
 Log jaringan/IDS → `tabular/log_serangan`.
 
+### Lihat data dulu secara manual → `_laya_eda/jalankan.bat` (web lokal)
+
+Dobel klik → browser `http://localhost:8501`. Untuk teks (satu kolom) atau baris tabel (beberapa
+kolom). Laya mengelompokkan tiap baris lewat "lensa" (emosi, maksud, jenis, kelengkapan, label
+cocok?, ...), MiniLM membantu menemukan kategori, pandas mengecek angka. Outlier angka dibanding
+**keseluruhan** dan dibanding **kategorinya sendiri**. Catatan simpan/buang/ganti label diekspor ke
+`_laya_eda/hasil/<nama_csv>/data_berlensa.csv` untuk dibaca notebook. Laya ±75–300 baris/detik di
+GPU; mulai dari 1.000 baris.
+
 ## 2. Metrik → yang dilakukan
 
 | Metrik | Lakukan |

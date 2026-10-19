@@ -27,3 +27,7 @@ _alat/cek_peta.py
 _alat/show.py
 _alat/uji_varian.py
 _alat/sosialisasi2025.txt
+
+# _laya_eda: hasil dan file unggahan tiap orang
+_laya_eda/hasil/
+_laya_eda/data/
