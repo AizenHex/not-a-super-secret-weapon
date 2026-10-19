@@ -9,6 +9,8 @@ Baca ini di menit pertama final. Detail riset: [RISET.md](RISET.md).
    - Dobel klik `_.NEW-GEN/setup.bat` (sekali saja). File ini membuat `.venv` lalu memasang semua
      library dari `requirements.txt`. Kalau `env/wheelhouse` ikut disalin, pemasangan tanpa internet.
    - `jupyter.bat`: buka JupyterLab. `aktifkan.bat`: buka terminal dengan `.venv` aktif.
+   - Belum punya folder `pretrained`? Dobel klik `download_model.bat` (sekali, sekitar 9 GB,
+     butuh internet). Model masuk ke folder `pretrained` di sebelah folder `_.NEW-GEN`.
 2. Di **setiap notebook yang dibuka**, ganti baris pertama sel Konfigurasi:
    ```python
    DATA_FOLDER = "Z:/GEMASTIK-DATABASE/data_latihan/..."   # GANTI saat lomba

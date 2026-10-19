@@ -10,7 +10,8 @@ setlocal
 set PYTHONIOENCODING=utf-8
 set NEW=%~dp0
 set ALAT=%~dp0_alat
-set PY=%~dp0..\.venv\Scripts\python.exe
+set PY=%~dp0.venv\Scripts\python.exe
+if not exist "%PY%" set PY=%~dp0..\.venv\Scripts\python.exe
 set HASIL=%ALAT%\log\hasil_build.txt
 echo build %date% %time% > "%HASIL%"
 
