@@ -1,0 +1,23 @@
+{
+  "jenis_properti": {
+    "type": "choice",
+    "instructions": "Jenis properti apa yang diiklankan?",
+    "criteria": {
+      "rumah": "rumah tinggal",
+      "apartemen": "unit apartemen",
+      "kost": "kamar kost atau kontrakan bulanan",
+      "tanah": "tanah kosong atau kavling",
+      "komersial": "ruko, kantor, gudang"
+    }
+  },
+  "kelengkapan_alamat": {
+    "type": "score",
+    "instructions": "Seberapa lengkap alamatnya?",
+    "criteria": [
+      "tidak ada lokasi jelas",
+      "hanya kota",
+      "kecamatan dan kota",
+      "jalan, nomor, dan kota lengkap"
+    ]
+  }
+}

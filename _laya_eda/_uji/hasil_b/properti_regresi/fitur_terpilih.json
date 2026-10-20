@@ -1,0 +1,19 @@
+{
+  "tugas": "angka",
+  "metrik": "R²",
+  "label": "luas_m2",
+  "fitur_terpilih": [],
+  "parameter": {
+    "dimension": null,
+    "category_columns": [
+      "judul",
+      "deskripsi"
+    ],
+    "keywords": [
+      "/bulan",
+      "nego",
+      "hubungi"
+    ],
+    "date_columns": []
+  }
+}

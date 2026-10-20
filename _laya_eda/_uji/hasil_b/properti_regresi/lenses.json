@@ -1,0 +1,13 @@
+{
+  "jenis_properti": {
+    "type": "choice",
+    "instructions": "Jenis properti apa yang diiklankan?",
+    "criteria": {
+      "rumah": "rumah tinggal",
+      "apartemen": "unit apartemen",
+      "kost": "kamar kost atau kontrakan bulanan",
+      "tanah": "tanah kosong atau kavling",
+      "komersial": "ruko, kantor, gudang"
+    }
+  }
+}

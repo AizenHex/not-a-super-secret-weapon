@@ -1,0 +1,11 @@
+row,answer,value,confidence,first_value,second,second_value
+265,sedih,0.488,0.488,0.488,netral,0.2174
+78,takut,0.9996,0.9996,0.9996,netral,0.0002
+347,sedih,0.774,0.774,0.774,marah,0.101
+255,cinta,0.6438,0.6438,0.6438,sedih,0.3357
+327,netral,0.2934,0.2934,0.2934,senang,0.2862
+291,senang,0.5147,0.5147,0.5147,netral,0.4595
+184,sedih,0.6286,0.6286,0.6286,netral,0.1814
+82,senang,0.8934,0.8934,0.8934,netral,0.0886
+438,netral,0.544,0.544,0.544,senang,0.2173
+405,netral,0.7469,0.7469,0.7469,marah,0.1484

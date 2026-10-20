@@ -70,7 +70,16 @@ def show_summary(ctx):
     show_explanation("ringkasan_kategori")
 
 
+def top_values(values, limit=30):
+    # kolom dengan ribuan nilai berbeda: 30 tersering tetap, sisanya jadi "(lainnya)"
+    values = values.astype(str)
+    common = values.value_counts().index[:limit]
+    return values.where(values.isin(common), "(lainnya)")
+
+
 def crosstab_as(rows, columns, show_as):
+    rows = top_values(rows)
+    columns = top_values(columns)
     cross = pd.crosstab(rows, columns)
     if show_as == "% per baris":
         cross = (100 * pd.crosstab(rows, columns, normalize="index")).round(1)
@@ -93,7 +102,9 @@ def show_cross(ctx):
     st.dataframe(cross.style.background_gradient(cmap="Blues", axis=None))
     value_a = left.selectbox(f"{dim_a} =", list(cross.index), key="value_a")
     value_b = middle.selectbox(f"{dim_b} =", list(cross.columns), key="value_b")
-    picked = table[(table[dim_a] == value_a) & (table[dim_b] == value_b)]
+    same_a = top_values(table[dim_a]) == value_a
+    same_b = top_values(table[dim_b]) == value_b
+    picked = table[same_a & same_b]
     st.write(f"{len(picked)} baris")
     view = picked[ctx["show_columns"]].head(300).copy()
     view["alasan"] = ctx["reasons"].reindex(view.index)

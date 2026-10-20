@@ -1,0 +1,11 @@
+row,answer,value,confidence,first_value,second,second_value
+110,rumah,1.0,1.0,1.0,apartemen,0.0
+419,rumah,0.9999,0.9999,0.9999,komersial,0.0001
+565,komersial,0.7343,0.7343,0.7343,tanah,0.136
+77,komersial,0.4316,0.4316,0.4316,kost,0.2086
+181,kost,1.0,1.0,1.0,rumah,0.0
+284,apartemen,1.0,1.0,1.0,rumah,0.0
+10,tanah,0.9997,0.9997,0.9997,rumah,0.0002
+469,komersial,0.7148,0.7148,0.7148,tanah,0.1532
+78,kost,0.9998,0.9998,0.9998,komersial,0.0001
+349,rumah,1.0,1.0,1.0,apartemen,0.0

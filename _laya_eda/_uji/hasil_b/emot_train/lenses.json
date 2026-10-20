@@ -1,0 +1,29 @@
+{
+  "emosi": {
+    "type": "choice",
+    "instructions": "Emosi apa yang paling terasa dari penulis teks ini?",
+    "criteria": {
+      "senang": "gembira, bangga, puas, bersyukur",
+      "sedih": "kecewa, kehilangan, putus asa",
+      "marah": "kesal, benci, jengkel",
+      "takut": "cemas, khawatir, ngeri",
+      "cinta": "sayang, rindu, kagum pada seseorang",
+      "netral": "informasi biasa tanpa emosi"
+    }
+  },
+  "kejelasan": {
+    "type": "score",
+    "instructions": "Seberapa jelas dan bermakna teks ini?",
+    "criteria": [
+      "acak atau tidak bermakna",
+      "sulit dipahami",
+      "cukup jelas",
+      "sangat jelas"
+    ]
+  },
+  "label_cocok": {
+    "type": "noul",
+    "instructions": "Apakah label ini benar menggambarkan isi teks?",
+    "with_label": true
+  }
+}

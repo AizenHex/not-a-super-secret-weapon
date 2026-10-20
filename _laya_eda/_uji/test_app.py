@@ -1,8 +1,9 @@
 """Uji otomatis semua tab (Streamlit AppTest). Jalankan dari folder _laya_eda:
     python _uji/test_app.py
 Memakai GPU sebentar (Laya 300 + 100 baris, MiniLM 1500 + 3521 teks). Folder hasil/properti,
-hasil/_uji_emot, dan data/ dihapus di awal dan akhir; hasil/emot_train (milik pengguna) tidak
-disentuh, hanya dibaca (file Laya lama tanpa kolom pilihan kedua)."""
+hasil/_uji_emot, dan data/ dihapus di awal dan akhir. Hasil Laya uji diambil dari _uji/hasil_b;
+hasil/emot_train (milik pengguna) hanya dibaca, tidak diubah."""
+import json
 import os
 import shutil
 import sys
@@ -48,8 +49,9 @@ def by_label(widgets, text):
 
 
 def by_key(kind, key):
+    # kunci yang bergantung pada CSV ditulis "<kunci>__<folder>"
     for widget in at.get(kind):
-        if widget.key == key:
+        if widget.key == key or str(widget.key).startswith(key + "__"):
             return widget
     raise KeyError(key)
 
@@ -173,15 +175,27 @@ check("tulis laporan temuan")
 with open("hasil/properti/laporan_eda.md", encoding="utf-8") as file:
     report = file.read()
 expect("## Temuan utama" in report and "**Alasan:**" in report, "laporan berisi temuan + alasan")
-by_key("selectbox", "kode_number").set_value("harga")
-check("kode: pilih outlier harga")
+# catatan uji: buang baris 5 dan 6 (ditulis langsung, seperti hasil tab Telusuri)
+notes = pd.DataFrame({"keputusan": ["buang", "buang"], "label_baru": ["", ""],
+                      "catatan": ["uji buang", "uji buang"]}, index=[5, 6])
+notes.to_csv("hasil/properti/catatan.csv", index_label="row")
+by_key("multiselect", "ekspor_fitur").set_value(["gaya", "log_angka"])
+check("ekspor: pilih fitur gaya + log angka")
+by_key("button", "ekspor_train_tulis").click()
+check("ekspor: tulis train_siap")
+ready = pd.read_csv("hasil/properti/train_siap.csv")
+expect(len(ready) == 2998 and 5 not in ready["row"].tolist(), "train_siap: 2 baris dibuang")
+expect("panjang" in ready.columns and "log_harga" in ready.columns, "train_siap: kolom fitur ada")
 by_key("selectbox", "kode_category").set_value("jenis_properti")
+by_key("multiselect", "kode_features").set_value(["gaya", "log_angka", "rasio_median"])
 by_key("button", "kode_write").click()
 check("kode: tulis eda_otomatis")
 with open("hasil/properti/eda_otomatis.py", encoding="utf-8") as file:
     script = file.read()
-expect("DROP_ROWS" in script and 'CATEGORY = "jenis_properti"' in script,
-       "kode berisi catatan + outlier per jenis_properti")
+expect("MANUAL_DROP" in script and "for column in OUTLIER_COLUMNS:" in script,
+       "kode: buang manual + loop outlier")
+expect('CATEGORY = "jenis_properti"' in script and "DROP_ROWS" not in script,
+       "kode: kategori jenis_properti, tanpa daftar DROP_ROWS")
 expect(os.path.exists("hasil/properti/eda_otomatis.ipynb"), "notebook .ipynb tertulis")
 print("   contoh alasan Laya:", doubt["alasan"].iloc[0][:300].encode("ascii", "replace").decode())
 
@@ -212,11 +226,19 @@ emot.loc[(emot["label_asli"] == "anger") & (emot.index % 3 == 0), "umur"] = np.n
 os.makedirs("data", exist_ok=True)
 emot.to_csv("data/_uji_emot.csv", index=False)
 os.makedirs("hasil/_uji_emot", exist_ok=True)
-for name in ["emosi", "sentimen", "spam", "kejelasan"]:
-    shutil.copy(f"hasil/emot_train/laya_{name}.csv", f"hasil/_uji_emot/laya_{name}.csv")
-old_spam = pd.read_csv("hasil/_uji_emot/laya_spam.csv").head(100)
-old_spam.to_csv("hasil/_uji_emot/laya_spam.csv", index=False)
-shutil.copy("hasil/emot_train/lenses.json", "hasil/_uji_emot/lenses.json")
+# hasil Laya milik uji sendiri (_uji/hasil_b, 300 baris), bukan folder hasil pengguna.
+# 'emosi_lama' = 100 baris format lama (tanpa pilihan kedua) untuk uji "lanjutkan file lama".
+FIXTURE = "_uji/hasil_b/emot_train"
+for name in ["emosi", "kejelasan", "label_cocok"]:
+    shutil.copy(f"{FIXTURE}/laya_{name}.csv", f"hasil/_uji_emot/laya_{name}.csv")
+old_file = pd.read_csv(f"{FIXTURE}/laya_emosi.csv").head(100)
+old_file = old_file[["row", "answer", "value", "confidence"]]
+old_file.to_csv("hasil/_uji_emot/laya_emosi_lama.csv", index=False)
+with open(f"{FIXTURE}/lenses.json", encoding="utf-8") as file:
+    test_lenses = json.load(file)
+test_lenses["emosi_lama"] = test_lenses["emosi"]
+with open("hasil/_uji_emot/lenses.json", "w", encoding="utf-8") as file:
+    json.dump(test_lenses, file, ensure_ascii=False, indent=2)
 by_label(at.sidebar.text_input, "File CSV").set_value("data/_uji_emot.csv")
 check("csv emot")
 by_label(at.sidebar.radio, "Mode").set_value("teks")
@@ -237,8 +259,8 @@ by_key("selectbox", "relation_col").set_value("umur")
 check("hubungan umur vs label")
 by_label(at.number_input, "Jumlah baris").set_value(200)
 by_label(at.button, "Jalankan Laya").click()
-check("lanjutkan file Laya lama (spam 100 -> 200)")
-new_spam = pd.read_csv("hasil/_uji_emot/laya_spam.csv")
+check("lanjutkan file Laya lama (emosi_lama 100 -> 200)")
+new_spam = pd.read_csv("hasil/_uji_emot/laya_emosi_lama.csv")
 expect("second" in new_spam.columns and len(new_spam) >= 190, "file lama diperbarui "
        f"({len(new_spam)} baris, kolom second ada)")
 expect(new_spam["second"].isna().sum() == 100,

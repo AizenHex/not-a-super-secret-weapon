@@ -1,0 +1,11 @@
+row,answer,value,confidence,first_value,second,second_value
+110,2 kecamatan dan kota,1.5812,0.4631,0.4134,1 hanya kota,0.4631
+419,2 kecamatan dan kota,1.8576,0.7373,0.7373,1 hanya kota,0.1841
+565,2 kecamatan dan kota,1.5551,0.4905,0.3257,1 hanya kota,0.4905
+77,2 kecamatan dan kota,2.0886,0.4628,0.1951,"3 jalan, nomor, dan kota lengkap",0.4628
+181,2 kecamatan dan kota,1.7997,0.7277,0.7277,1 hanya kota,0.216
+284,2 kecamatan dan kota,1.554,0.4876,0.4876,1 hanya kota,0.4408
+10,1 hanya kota,1.4399,0.4931,0.4931,2 kecamatan dan kota,0.3126
+469,2 kecamatan dan kota,1.8874,0.3643,0.3112,1 hanya kota,0.3643
+78,2 kecamatan dan kota,1.8563,0.6393,0.6393,1 hanya kota,0.2297
+349,"3 jalan, nomor, dan kota lengkap",2.5042,0.6832,0.6832,1 hanya kota,0.152

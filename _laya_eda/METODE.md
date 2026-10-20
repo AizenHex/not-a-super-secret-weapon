@@ -482,8 +482,14 @@ lensa Laya 0,22-0,27 (tidak ada yang bocor, 6-7 detik). Properti: `judul` dan `d
 
 - **Kode EDA** (`codegen.py`, tab *Kode EDA*): sel notebook disusun dari pilihan sidebar (kolom,
   format angka Indonesia, skala log, rasio), lensa Laya yang sudah dijalankan (lensa
-  `with_label` dilewati), outlier IQR per kategori, catatan *buang* / *ganti label*, dan buang
-  duplikat. Hasilnya `.py` (sel `# %%`) dan `.ipynb`, tanpa impor `_laya_eda`.
+  `with_label` dilewati), dan fitur pilihan (gaya, negasi, panjang, kosong, log, angka ÷ median
+  kategori, frekuensi, tanggal; statistik diambil dari train saja). Baris dibuang lewat **aturan
+  pandas** (duplikat, teks kosong, angka tidak terbaca, negatif/nol, outlier IQR per kategori):
+  tiap aturan berupa loop per kolom yang di-`|` ke satu penanda `drop`, dicetak jumlahnya, lalu
+  dibuang sekali. Hanya keputusan manual tab Telusuri yang ditulis per baris (`MANUAL_DROP`,
+  `NEW_LABELS`, bersama catatannya). Hasilnya `.py` (sel `# %%`) dan `.ipynb`.
+- **Train siap pakai** (tab *Ekspor*): data asli + catatan diterapkan + fitur pilihan dari
+  `features.BUILDERS` → `train_siap.csv`.
   `_uji/test_codegen.py` membuat lalu **menjalankan** kode untuk dua skenario (properti; emot +
   test) dan notebooknya lewat nbconvert: lolos, 0 baris > 100 karakter [diukur 20 Okt 2026].
 - Kelompok KMeans (tab *Temukan kategori*) tidak ditulis ulang karena bisa berubah tiap jalan.

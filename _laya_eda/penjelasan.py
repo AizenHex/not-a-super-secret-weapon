@@ -293,10 +293,11 @@ EXPLANATIONS = {
         "juri": "Mesin mengusulkan, manusia memutuskan, dan semua keputusan tercatat.",
     },
     "ekspor": {
-        "apa": ("Satu file CSV berisi data asli, jawaban Laya, kelompok, cek teks, angka, "
-                "alasan, dan catatan."),
-        "cara": ("Semua tabel digabung menurut nomor baris (`row`). Notebook EDA program cukup "
-                 "membaca file ini dan membuang baris berkeputusan 'buang'."),
+        "apa": ("Dua file: data_berlensa.csv (semua hasil + alasan + catatan, untuk ditelusuri) "
+                "dan train_siap.csv (catatan sudah diterapkan + fitur pilihan, untuk model)."),
+        "cara": ("Semua tabel digabung menurut nomor baris (`row`). Untuk train_siap: label "
+                 "'ganti_label' diganti dulu, lalu baris 'buang' dibuang; fitur dihitung dengan "
+                 "fungsi yang sama dengan tab Fitur → label."),
         "kenapa": "Hasil EDA manual bisa dipakai langsung oleh notebook modelling.",
         "batasan": "Berisi hanya baris yang sudah dihitung; lensa yang belum jalan berisi kosong.",
         "juri": "Seluruh temuan dan alasannya diekspor ke satu file yang dipakai ulang oleh model.",
@@ -360,10 +361,11 @@ EXPLANATIONS = {
     "kode": {
         "apa": ("Kode notebook EDA (.py dengan sel `# %%` atau .ipynb) yang mengulang semua "
                 "langkah yang kamu pilih di web ini, tanpa membutuhkan `_laya_eda`."),
-        "cara": ("codegen.py menyusun sel satu per satu dari pilihan sidebar (kolom, format "
-                 "angka, skala log, rasio), lensa Laya yang sudah dijalankan, outlier IQR per "
-                 "kategori, dan catatan buang / ganti label dari tab Telusuri. Nomor baris di "
-                 "catatan = indeks baris CSV asli."),
+        "cara": ("codegen.py menyusun sel dari pilihan sidebar, lensa Laya yang sudah "
+                 "dijalankan, dan fitur pilihan. Baris dibuang lewat ATURAN pandas (duplikat, "
+                 "teks kosong, angka tidak terbaca / negatif, outlier IQR per kategori), tiap "
+                 "aturan = loop per kolom yang menambah ke satu penanda `drop`, bukan daftar "
+                 "nomor baris. Hanya keputusan manual tab Telusuri yang ditulis per baris."),
         "kenapa": ("Keputusan manual harus bisa diulang. Kode yang bisa dijalankan dari awal "
                    "membuktikan bahwa data bersih untuk model berasal dari langkah yang jelas."),
         "batasan": ("Tab Temukan kategori (kelompok) tidak ikut dibuat ulang karena hasil "

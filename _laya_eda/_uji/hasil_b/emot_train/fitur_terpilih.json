@@ -1,0 +1,31 @@
+{
+  "tugas": "kelas",
+  "metrik": "F1 macro",
+  "label": "label",
+  "fitur_terpilih": [
+    {
+      "grup": "char",
+      "judul": "TF-IDF karakter 2-5 gram (char_wb)",
+      "selisih": 0.0146,
+      "detail": {
+        "tfidf": "char_wb",
+        "ngram": [
+          2,
+          5
+        ],
+        "min_df": 3,
+        "sublinear_tf": true
+      }
+    }
+  ],
+  "parameter": {
+    "dimension": null,
+    "category_columns": [],
+    "keywords": [
+      "/bulan",
+      "nego",
+      "hubungi"
+    ],
+    "date_columns": []
+  }
+}
