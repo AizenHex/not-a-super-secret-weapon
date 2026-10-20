@@ -1,7 +1,6 @@
 @echo off
 rem Jalankan sekali (dobel klik): buat .venv di folder ini lalu pasang semua library.
 rem Kalau folder ..\env\wheelhouse ada, pemasangan TANPA internet. Kalau tidak, lewat internet.
-cd /d "%~dp0"
 set PYTHONIOENCODING=utf-8
 
 if not exist .venv\Scripts\python.exe (
