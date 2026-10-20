@@ -1,4 +1,5 @@
-"""Fungsi bantu untuk app.py: statistik teks, cek angka, kelompok MiniLM, dan menjalankan Laya.
+"""Fungsi bantu: statistik teks, baca angka, kelompok MiniLM, menjalankan Laya, catatan.
+Outlier + alasannya ada di outliers.py.
 Semua hasil disimpan ke folder hasil/<nama_csv>/ supaya tidak dihitung ulang."""
 import json
 import os
@@ -12,6 +13,7 @@ RESULT_FOLDER = "hasil"
 BATCH_SIZE = 32        # teks per putaran GPU (32 paling cepat di laptop ini)
 CHUNK_ROWS = 256       # hasil Laya disimpan ke file tiap sekian baris
 SEED = 42
+NOTE_COLUMNS = ["keputusan", "label_baru", "catatan"]
 
 
 def work_folder(csv_path):
@@ -61,58 +63,6 @@ def to_number(series, indonesian_format):
     return pd.to_numeric(number_text, errors="coerce")
 
 
-def iqr_outliers(values, use_log):
-    # skala log cocok untuk harga/luas: 15 juta vs 1,5 miliar terlihat jauh
-    if use_log:
-        values = np.log10(values.where(values > 0))
-    q1 = values.quantile(0.25)
-    q3 = values.quantile(0.75)
-    spread = 1.5 * (q3 - q1)
-    return (values < q1 - spread) | (values > q3 + spread)
-
-
-def group_outliers(values, groups, use_log):
-    # outlier IQR di dalam tiap kelompok: dibandingkan dengan baris sejenis saja
-    table = pd.DataFrame({"nilai": values, "kelompok": groups})
-    table = table.dropna()
-    scaled = table["nilai"]
-    if use_log:
-        scaled = np.log10(scaled.where(scaled > 0))
-    grouped = scaled.groupby(table["kelompok"])
-    q1 = grouped.transform("quantile", 0.25)
-    q3 = grouped.transform("quantile", 0.75)
-    spread = (q3 - q1) * 1.5
-    grouped = table.groupby("kelompok")["nilai"]
-    table["median_kelompok"] = grouped.transform("median")
-    table["kali_median"] = table["nilai"] / table["median_kelompok"]
-    table["outlier"] = (scaled < q1 - spread) | (scaled > q3 + spread)
-    return table
-
-
-def compare_outliers(values, groups, use_log):
-    # dua pembanding: semua baris vs baris sekategori saja
-    table = group_outliers(values, groups, use_log)
-    table["outlier_keseluruhan"] = iqr_outliers(values, use_log)[table.index]
-    table["persentil_keseluruhan"] = (100 * values.rank(pct=True)[table.index]).round()
-    table["persentil_kategori"] = (100 * table.groupby("kelompok")["nilai"].rank(pct=True)).round()
-    in_group = table["outlier"]
-    overall = table["outlier_keseluruhan"]
-    table["status"] = "normal"
-    table.loc[in_group & overall, "status"] = "janggal di keduanya"
-    table.loc[in_group & ~overall, "status"] = "janggal hanya di kategorinya"
-    table.loc[~in_group & overall, "status"] = "janggal hanya di keseluruhan"
-    return table
-
-
-def describe_value(values, row, use_log):
-    # posisi satu nilai di antara values: persentil, median, outlier atau bukan
-    values = values.dropna()
-    value = values[row]
-    position = {"persentil": round(100 * (values < value).mean()), "median": values.median()}
-    position["outlier"] = bool(iqr_outliers(values, use_log)[row])
-    return position
-
-
 # ---------------- kelompok MiniLM ----------------
 
 def encode(encoder, texts):
@@ -158,30 +108,6 @@ def category_summary(categories, stats, labels, texts):
     return summary.sort_values("jumlah", ascending=False)
 
 
-def text_outliers(vectors, rows, categories):
-    # jarak makna tiap teks ke pusat kategorinya; "nyasar" = lebih dekat ke kategori lain
-    labels = categories[rows].to_numpy()
-    keep = pd.notna(labels)
-    vectors = vectors[keep]
-    labels = labels[keep]
-    names = list(pd.unique(labels))
-    centers = []
-    for name in names:
-        center = vectors[labels == name].mean(axis=0)
-        centers.append(center / np.linalg.norm(center))
-    similarity = vectors @ np.array(centers).T
-    own = []
-    for label in labels:
-        own.append(names.index(label))
-    table = pd.DataFrame({"kategori": labels}, index=np.asarray(rows)[keep])
-    table["jarak_ke_kategorinya"] = 1 - similarity[np.arange(len(labels)), own]
-    table["kategori_terdekat"] = np.array(names, dtype=object)[similarity.argmax(axis=1)]
-    table["nyasar"] = table["kategori_terdekat"] != table["kategori"]
-    checked = group_outliers(table["jarak_ke_kategorinya"], table["kategori"], False)
-    table["jauh"] = checked["outlier"] & (checked["kali_median"] > 1)   # hanya yang terlalu jauh
-    return table
-
-
 def similar_pairs(vectors, rows, threshold, max_pairs=3000):
     # pasangan teks yang maknanya hampir sama walau kata-katanya beda
     rows = np.asarray(rows)
@@ -189,10 +115,10 @@ def similar_pairs(vectors, rows, threshold, max_pairs=3000):
     for start in range(0, len(vectors), 1000):
         similarity = vectors[start:start + 1000] @ vectors.T
         first, second = np.nonzero(similarity >= threshold)
-        for i, j in zip(first, second):
-            if start + i < j:
-                pairs.append({"row_a": rows[start + i], "row_b": rows[j],
-                              "kemiripan": round(float(similarity[i, j]), 3)})
+        for i, other in zip(first, second):
+            if start + i < other:
+                pairs.append({"row_a": rows[start + i], "row_b": rows[other],
+                              "kemiripan": round(float(similarity[i, other]), 3)})
         if len(pairs) >= max_pairs:
             break
     return pd.DataFrame(pairs[:max_pairs], columns=["row_a", "row_b", "kemiripan"])
@@ -267,35 +193,95 @@ def make_states(data, rows, columns, label_column):
     return states
 
 
+def best_other(probabilities, chosen):
+    # pilihan dengan peluang terbesar selain yang dipilih Laya
+    second = ""
+    second_value = -1.0
+    for name in probabilities:
+        if name != chosen and probabilities[name] > second_value:
+            second = name
+            second_value = probabilities[name]
+    return second, second_value
+
+
+def read_choice(answer):
+    probabilities = answer["probabilities"]
+    chosen = answer["choice"]
+    second, second_value = best_other(probabilities, chosen)
+    return {"answer": chosen, "value": answer["answer_confidence"],
+            "first_value": probabilities[chosen], "second": second, "second_value": second_value}
+
+
+def read_score(answer, lens):
+    # skor skala dibulatkan ke tingkat terdekat; pilihan kedua = tingkat lain yang paling mungkin
+    level = int(round(answer["score"]))
+    probabilities = answer["probabilities"]
+    second, second_value = best_other(probabilities, str(level))
+    return {"answer": f"{level} {lens['criteria'][level]}", "value": answer["score"],
+            "first_value": probabilities[str(level)],
+            "second": f"{second} {lens['criteria'][int(second)]}", "second_value": second_value}
+
+
+def read_noul(answer):
+    # ya/tidak: value = peluang "ya"; pilihan kedua = jawaban yang berlawanan
+    yes = answer["noul"]
+    if yes >= 0.5:
+        return {"answer": "ya", "value": yes, "first_value": yes, "second": "tidak",
+                "second_value": 1 - yes}
+    return {"answer": "tidak", "value": yes, "first_value": 1 - yes, "second": "ya",
+            "second_value": yes}
+
+
 def read_answer(answer, lens):
-    # hasil: (jawaban, nilai, yakin). nilai = peluang "ya" atau skor skala
+    # satu jawaban Laya -> satu baris file: jawaban, nilai, yakin, pilihan pertama & kedua
     if answer["type"] == "choice":
-        return answer["choice"], answer["answer_confidence"], answer["answer_confidence"]
-    if answer["type"] == "score":
-        level = int(round(answer["score"]))
-        text = f"{level} {lens['criteria'][level]}"
-        return text, answer["score"], answer["answer_confidence"]
-    choice = "tidak"
-    if answer["noul"] >= 0.5:
-        choice = "ya"
-    return choice, answer["noul"], answer["answer_confidence"]
+        line = read_choice(answer)
+    elif answer["type"] == "score":
+        line = read_score(answer, lens)
+    else:
+        line = read_noul(answer)
+    line["confidence"] = answer["answer_confidence"]
+    return line
 
 
-def run_lens(judge, data, rows, columns, label_column, name, lens, folder, bar):
+NEW_LENS_COLUMNS = ["first_value", "second", "second_value"]
+
+
+def upgrade_old_file(path):
+    # file lama (sebelum ada pilihan kedua) diberi kolom kosong supaya baris baru bisa ditambahkan
+    old_columns = list(pd.read_csv(path, nrows=0).columns)
+    if "second" in old_columns:
+        return
+    old = pd.read_csv(path)
+    for column in NEW_LENS_COLUMNS:
+        old[column] = np.nan
+    old.to_csv(path, index=False)
+
+
+def answer_chunk(judge, data, chunk, columns, label_column, name, lens):
+    # Laya menjawab satu potongan baris -> tabel siap ditulis ke file
     question = {"type": lens["type"], "instructions": lens["instructions"]}
     if lens["type"] != "noul":
         question["criteria"] = lens["criteria"]
+    states = make_states(data, chunk, columns, label_column)
+    results = judge.predict_batch(states, {name: question}, batch_size=BATCH_SIZE)
+    lines = []
+    for row, result in zip(chunk, results):
+        line = read_answer(result["answers"][name], lens)
+        line["row"] = row
+        lines.append(line)
+    return pd.DataFrame(lines)[["row", "answer", "value", "confidence"] + NEW_LENS_COLUMNS]
+
+
+def run_lens(judge, data, rows, columns, label_column, name, lens, folder, bar):
     path = lens_file(folder, name)
+    if os.path.exists(path):
+        upgrade_old_file(path)
     for start in range(0, len(rows), CHUNK_ROWS):
         chunk = rows[start:start + CHUNK_ROWS]
-        states = make_states(data, chunk, columns, label_column)
-        results = judge.predict_batch(states, {name: question}, batch_size=BATCH_SIZE)
-        lines = []
-        for row, result in zip(chunk, results):
-            answer, value, confidence = read_answer(result["answers"][name], lens)
-            lines.append({"row": row, "answer": answer, "value": value, "confidence": confidence})
+        answers = answer_chunk(judge, data, chunk, columns, label_column, name, lens)
         first_write = not os.path.exists(path)
-        pd.DataFrame(lines).to_csv(path, mode="a", header=first_write, index=False)
+        answers.to_csv(path, mode="a", header=first_write, index=False)
         done = start + len(chunk)
         bar.progress(done / len(rows), text=f"lensa {name}: {done} / {len(rows)} baris")
 
@@ -308,6 +294,7 @@ def done_rows(folder, name):
 
 
 def lens_results(folder, lenses, index):
+    # kolom per lensa: <nama>, __yakin, __nilai, __pertama_nilai, __kedua, __kedua_nilai
     table = pd.DataFrame(index=index)
     for name in lenses:
         path = lens_file(folder, name)
@@ -319,7 +306,18 @@ def lens_results(folder, lenses, index):
         table[name] = result["answer"]
         table[f"{name}__yakin"] = result["confidence"]
         table[f"{name}__nilai"] = result["value"]
+        for column, suffix in [("first_value", "__pertama_nilai"), ("second", "__kedua"),
+                               ("second_value", "__kedua_nilai")]:
+            table[name + suffix] = np.nan    # file lama tidak punya kolom ini
+            if column in result.columns:
+                table[name + suffix] = result[column]
     return table
+
+
+def add_finding(ctx, section, finding, reason, advice, importance):
+    # temuan penting satu bagian; importance 0..1 dipakai untuk mengurutkan panel Temuan utama
+    ctx["findings"].append({"bagian": section, "temuan": finding, "alasan": reason,
+                            "saran": advice, "penting": round(min(max(importance, 0.0), 1.0), 3)})
 
 
 # ---------------- catatan manual ----------------
@@ -327,7 +325,7 @@ def lens_results(folder, lenses, index):
 def load_notes(folder):
     path = f"{folder}/catatan.csv"
     if not os.path.exists(path):
-        return pd.DataFrame(columns=["keputusan", "label_baru", "catatan"])
+        return pd.DataFrame(columns=NOTE_COLUMNS)
     text_types = {"keputusan": str, "label_baru": str, "catatan": str}
     return pd.read_csv(path, index_col="row", dtype=text_types, keep_default_na=False)
 
