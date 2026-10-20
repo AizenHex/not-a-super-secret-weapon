@@ -6,9 +6,14 @@ Baca ini di menit pertama final. Detail riset: [RISET.md](RISET.md).
 
 1. Salin folder proyek ke komputer lomba. Pakai path pendek (misalnya `C:/GEMASTIK/`), karena
    path panjang bisa membuat pemasangan library gagal ("Long Path").
-   - Dobel klik `_.NEW-GEN/setup.bat` (sekali saja). File ini membuat `.venv` lalu memasang semua
-     library dari `requirements.txt`. Kalau `env/wheelhouse` ikut disalin, pemasangan tanpa internet.
-   - `jupyter.bat`: buka JupyterLab. `aktifkan.bat`: buka terminal dengan `.venv` aktif.
+   - **PyCharm:** buka folder repo ini sebagai proyek; PyCharm membuat venv (`.venv`) di root.
+     Buka tab *Terminal* PyCharm (venv sudah aktif di sana) lalu ketik `setup.bat`.
+   - **Tanpa PyCharm:** dobel klik `setup.bat`. Venv yang sudah ada dipakai; kalau belum ada,
+     `.venv` dibuat di folder ini. Library dari `requirements.txt`; kalau `env/wheelhouse` ikut
+     disalin, pemasangan tanpa internet. Akhir yang benar: `OK. GPU: True` lalu `SUKSES`.
+   - Semua `.bat` mencari venv lewat `cari_python.bat`: venv aktif → `.venv`/`venv` di folder ini →
+     `.venv`/`venv` satu folder di atas.
+   - `jupyter.bat`: buka JupyterLab. `aktifkan.bat`: buka terminal dengan venv aktif.
    - Belum punya folder `pretrained`? Dobel klik `download_model.bat` (sekali, sekitar 9 GB,
      butuh internet). Model masuk ke folder `pretrained` di sebelah folder `_.NEW-GEN`.
 2. Path di notebook **relatif** terhadap folder notebook, jadi langsung jalan di laptop mana pun

@@ -1,5 +1,12 @@
 @echo off
-rem Buka JupyterLab memakai .venv di folder ini (jalankan setup.bat dulu kalau belum).
+rem Buka JupyterLab memakai venv proyek (jalankan setup.bat dulu kalau belum).
+cd /d "%~dp0"
 set PYTHONIOENCODING=utf-8
-.venv\Scripts\python.exe -m jupyterlab
+call "%~dp0cari_python.bat"
+if not defined PY (
+    echo Venv belum ada. Jalankan setup.bat dulu.
+    pause
+    exit /b 1
+)
+"%PY%" -m jupyterlab
 pause

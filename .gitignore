@@ -14,21 +14,6 @@ _ringkasan_metode/*.log
 _ringkasan_metode/*.out
 _ringkasan_metode/*.toc
 
-# catatan kerja pribadi (tidak di-share)
-KRITIK.md
-RENCANA_PENGISIAN.md
-PETA_TOOLKIT.xlsx
 handoff.md
-_alat/BRIEF_*.md
-_alat/katalog/
-_alat/peta.py
-_alat/peta_data.py
-_alat/cek_peta.py
-_alat/show.py
-_alat/uji_varian.py
-_alat/sosialisasi2025.txt
-
-# _laya_eda: hasil dan file unggahan tiap orang
-_laya_eda/hasil/
-_laya_eda/data/
-_laya_eda/_uji/hasil_b/**/*.npy
+kritik.md
+rencana_pengisian.md
