@@ -10,6 +10,7 @@ from outliers import decimal_text
 CATEGORY_LIMIT = 50       # kolom dengan nilai unik <= ini dianggap kolom kategori
 SMALL_NUMERIC_UNIQUE = 10  # kolom angka dengan nilai unik <= ini juga dianggap kategori
 REGRESSION_UNIQUE = 10    # label angka dengan nilai unik > ini = regresi (bukan kelas)
+MAX_LABEL_CLASSES = 50       # label teks dengan nilai berbeda lebih dari ini bukan kategori
 RARE_SHARE = 0.01         # kategori di bawah 1% = langka
 MIXED_MIN = 0.5           # kolom teks yang >= 50% terbaca angka tetapi tidak 100% = campur
 SKEW_LIMIT = 1.0          # |skew| di atas ini = miring

@@ -1,12 +1,13 @@
 """Pembuat kode EDA otomatis: dari pilihan dan temuan di Laya EDA, tulis notebook bergaya
-ATURAN_KODE (sel # %%) yang bisa langsung ditempel ke notebook lomba. Tidak memakai helpers.
+ATURAN_KODE (sel # %%) yang bisa langsung ditempel ke notebook lomba. Hanya pandas + numpy:
+tanpa Laya, tanpa helpers.
 Baris yang dibuang dipilih lewat ATURAN pandas (loop per kolom), bukan daftar nomor baris;
 hanya keputusan manual dari tab Telusuri yang ditulis per baris (bersama catatannya).
 
 config (dict):
     csv_path, test_csv (atau None), columns, label_column (atau None),
     number_columns, indonesian_format, use_log, ratio (pasangan [atas, bawah] atau None),
-    lenses (dict lensa yang dipakai), manual_drop (dict nomor baris -> catatan),
+    manual_drop (dict nomor baris -> catatan),
     new_labels (dict nomor baris -> label baru), drop_rules (list, kunci RULES),
     outlier_columns (list), outlier_category (atau None), features (list, kunci FEATURES),
     category_columns (list, untuk frekuensi), date_columns (list, untuk tanggal)
@@ -53,8 +54,7 @@ def code(text):
 
 
 def uses_outlier(config):
-    # kategori 'kelompok' (KMeans MiniLM) tidak ditulis ulang, jadi tidak bisa jadi pembanding
-    if config["outlier_category"] is None or config["outlier_category"] == "kelompok":
+    if config["outlier_category"] is None:
         return False
     return "outlier" in config["drop_rules"] and len(config["outlier_columns"]) > 0
 
@@ -62,7 +62,7 @@ def uses_outlier(config):
 def feature_category(config):
     # 'angka ÷ median kategori' butuh kategori yang ada juga di test (bukan label)
     category = config["outlier_category"]
-    if category is None or category == config["label_column"] or category == "kelompok":
+    if category is None or category == config["label_column"]:
         return None
     return category
 
@@ -90,8 +90,6 @@ def intro_cells(config):
         steps.append("ganti label")
     if len(config["number_columns"]) > 0:
         steps.append("ubah kolom angka")
-    if len(config["lenses"]) > 0:
-        steps.append("lensa Laya sebagai kolom baru")
     steps.append("tandai lalu buang baris menurut aturan")
     if len(usable_features(config)) > 0:
         steps.append("tambah fitur")
@@ -100,8 +98,6 @@ def intro_cells(config):
              f"Dibuat otomatis dari temuan di `_laya_eda`. Langkah: {', '.join(steps)}.\n\n"
              "Jalankan dari atas. Ubah nilai di sel **Konfigurasi** bila path atau kolom beda.")
     imports = "import numpy as np\nimport pandas as pd"
-    if len(config["lenses"]) > 0:
-        imports = imports + "\nimport torch\nimport laya"
     return [markdown(title), code(imports)]
 
 
@@ -134,10 +130,6 @@ def config_cells(config):
         lines.append(f"CATEGORY_COLUMNS = {literal(config['category_columns'])}")
     if "tanggal" in features:
         lines.append(f"DATE_COLUMNS = {literal(config['date_columns'])}")
-    if len(config["lenses"]) > 0:
-        lines.append('LAYA_FOLDER = "../../pretrained/laya"')
-        lines.append("BATCH_SIZE = 32")
-        lines.append('DEVICE = "cuda" if torch.cuda.is_available() else "cpu"')
     lines.append('OUTPUT_TRAIN = "train_bersih.csv"')
     if config["test_csv"] is not None:
         lines.append('OUTPUT_TEST = "test_bersih.csv"')
@@ -207,80 +199,6 @@ for column in NUMBER_COLUMNS:
             text = text + f'\nbottom = {table}["{ratio[1]}_angka"]'
             text = text + f'\n{table}["{name}"] = {top} / bottom.where(bottom > 0)'
     return [markdown(explain), code(text)]
-
-
-LENS_CODE = '''judge = laya.load(LAYA_FOLDER, subfolder="multilingual", device=DEVICE)
-
-
-def make_states(table):
-    # satu kolom: kirim teksnya; beberapa kolom: kirim dict kolom -> nilai
-    states = []
-    for row in table.index:
-        if len(TEXT_COLUMNS) == 1:
-            states.append(str(table.at[row, TEXT_COLUMNS[0]]))
-            continue
-        state = {}
-        for column in TEXT_COLUMNS:
-            state[column] = str(table.at[row, column])
-        states.append(state)
-    return states
-
-
-def add_lens_columns(table):
-    states = make_states(table)
-    for name in LENSES:
-        question = LENSES[name]
-        results = judge.predict_batch(states, {name: question}, batch_size=BATCH_SIZE)
-        answers = []
-        values = []
-        for result in results:
-            answer = result["answers"][name]
-            if answer["type"] == "choice":
-                answers.append(answer["choice"])
-                values.append(answer["answer_confidence"])
-            elif answer["type"] == "score":
-                answers.append(round(answer["score"]))
-                values.append(answer["score"])
-            else:
-                answers.append(int(answer["noul"] >= 0.5))
-                values.append(answer["noul"])
-        table[name] = answers
-        table[f"{name}__nilai"] = values
-    return table
-
-
-# coba pada 3 baris dulu
-add_lens_columns(train.head(3).copy())[list(LENSES)]'''
-
-
-def lens_cells(config):
-    lenses = {}
-    skipped = []
-    for name in config["lenses"]:
-        lens = config["lenses"][name]
-        if lens.get("with_label"):
-            skipped.append(name)
-            continue
-        question = {"type": lens["type"], "instructions": lens["instructions"]}
-        if "criteria" in lens:
-            question["criteria"] = lens["criteria"]
-        lenses[name] = question
-    if len(lenses) == 0:
-        return []
-    explain = ("## Lensa Laya → kolom baru\n"
-               "Pertanyaan yang sama dengan di Laya EDA, dijalankan ke train **dan** test (fitur "
-               "yang hanya ada di train tidak berguna). Kolom `<lensa>` = jawaban, "
-               "`<lensa>__nilai` = peluang/skor. Kecepatan ±75–300 baris/detik per lensa di GPU.")
-    if len(skipped) > 0:
-        explain = explain + (f"\n\nLensa {', '.join(skipped)} tidak ditulis: lensa itu melihat "
-                             "label, jadi hanya untuk mencari label salah, bukan fitur.")
-    cells = [markdown(explain), code(f"LENSES = {literal(lenses)}"), code(LENS_CODE)]
-    run = "train = add_lens_columns(train)"
-    if config["test_csv"] is not None:
-        run = run + "\ntest = add_lens_columns(test)"
-    run = run + f"\ntrain[{literal(list(lenses))}].describe(include=\"all\")"
-    cells.append(code(run))
-    return cells
 
 
 def basic_rule_lines(config):
@@ -455,7 +373,6 @@ def build_cells(config):
     cells = cells + read_cells(config)
     cells = cells + label_cells(config)
     cells = cells + number_cells(config)
-    cells = cells + lens_cells(config)
     cells = cells + rule_cells(config)
     cells = cells + outlier_cells(config)
     cells = cells + drop_cells(config)

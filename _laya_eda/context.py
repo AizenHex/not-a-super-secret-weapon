@@ -73,8 +73,10 @@ def build_table(ctx):
     if os.path.exists(f"{folder}/kelompok.csv"):
         add_group_column(ctx, table, dimensions)
     if ctx["label_column"] is not None:
-        if not eda.is_regression_label(ctx["data"][ctx["label_column"]]):
-            dimensions.append(ctx["label_column"])    # label angka (regresi) bukan kategori
+        label = ctx["data"][ctx["label_column"]]
+        # label angka (regresi) atau teks yang hampir unik bukan kategori
+        if not eda.is_regression_label(label) and label.nunique() <= eda.MAX_LABEL_CLASSES:
+            dimensions.append(ctx["label_column"])
     ctx["table"] = table
     ctx["dimensions"] = dimensions
 

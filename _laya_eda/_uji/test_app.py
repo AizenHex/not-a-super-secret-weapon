@@ -1,8 +1,9 @@
 """Uji otomatis semua tab (Streamlit AppTest). Jalankan dari folder _laya_eda:
     python _uji/test_app.py
-Memakai GPU sebentar (Laya 300 + 100 baris, MiniLM 1500 + 3521 teks). Folder hasil/properti,
-hasil/_uji_emot, dan data/ dihapus di awal dan akhir. Hasil Laya uji diambil dari _uji/hasil_b;
-hasil/emot_train (milik pengguna) hanya dibaca, tidak diubah."""
+Memakai GPU sebentar (Laya 300 + 100 baris, MiniLM 1500 + 3521 teks).
+Hanya folder hasil/_uji_* dan file data/_uji_*.csv yang dihapus di awal dan akhir, jadi
+unggahan pengguna di data/ aman. Hasil Laya uji diambil dari _uji/hasil_b; hasil/emot_train
+(milik pengguna) hanya dibaca, tidak diubah."""
 import json
 import os
 import shutil
@@ -15,11 +16,18 @@ from streamlit.testing.v1 import AppTest
 HERE = os.path.dirname(os.path.abspath(__file__))
 APP_FOLDER = os.path.dirname(HERE)
 APP = os.path.join(APP_FOLDER, "app.py")
-TEMP_FOLDERS = ["hasil/properti", "hasil/_uji_emot", "data"]
+# hanya file dan folder milik uji (awalan _uji_) yang dihapus; unggahan pengguna di data/ aman
+TEMP_FOLDERS = ["hasil/_uji_properti", "hasil/_uji_emot"]
+TEMP_FILES = ["data/_uji_properti.csv", "data/_uji_emot.csv", "data/_uji_emot_test.csv"]
 os.chdir(APP_FOLDER)
 sys.path.insert(0, APP_FOLDER)
 for folder in TEMP_FOLDERS:
     shutil.rmtree(folder, ignore_errors=True)
+for path in TEMP_FILES:
+    if os.path.exists(path):
+        os.remove(path)
+os.makedirs("data", exist_ok=True)
+shutil.copy("contoh/properti.csv", "data/_uji_properti.csv")
 at = AppTest.from_file(APP, default_timeout=900)
 
 
@@ -78,7 +86,7 @@ by_key("selectbox", "relation_col").set_value("teks_panjang")
 check("hubungan teks_panjang")
 
 # ---------- skenario A: properti, mode baris ----------
-by_label(at.sidebar.text_input, "File CSV").set_value("contoh/properti.csv")
+by_label(at.sidebar.text_input, "File CSV").set_value("data/_uji_properti.csv")
 check("ganti csv")
 by_label(at.sidebar.radio, "Mode").set_value("baris")
 check("mode baris")
@@ -109,7 +117,7 @@ check("n baris")
 by_label(at.button, "Jalankan Laya").click()
 check("jalankan laya")
 for name in ["jenis_properti", "kelengkapan_alamat", "spam"]:
-    result = pd.read_csv(f"hasil/properti/laya_{name}.csv")
+    result = pd.read_csv(f"hasil/_uji_properti/laya_{name}.csv")
     expect({"second", "second_value", "first_value"} <= set(result.columns),
            f"laya_{name}.csv punya kolom pilihan kedua ({len(result)} baris)")
     expect(result["second"].notna().all(), f"pilihan kedua terisi untuk lensa {name}")
@@ -119,7 +127,7 @@ by_label(at.button, "Kelompokkan").click()
 check("kelompokkan")
 by_label(at.button, "Jadikan lensa").click()
 check("jadikan lensa")
-print("   lensa:", list(pd.read_json("hasil/properti/lenses.json", typ="series").index))
+print("   lensa:", list(pd.read_json("hasil/_uji_properti/lenses.json", typ="series").index))
 by_key("selectbox", "summary_dim").set_value("jenis_properti")
 check("ringkasan per kategori")
 by_label(at.radio, "Isi sel").set_value("% per baris")
@@ -153,7 +161,7 @@ check("peta 2D warna lensa")
 expect(has_text("Silhouette rata-rata"), "angka silhouette tampil")
 by_label(at.button, "Tulis file").click()
 check("ekspor")
-export = pd.read_csv("hasil/properti/data_berlensa.csv")
+export = pd.read_csv("hasil/_uji_properti/data_berlensa.csv")
 export["alasan"] = export["alasan"].fillna("")
 print("   ekspor:", export.shape)
 expect("alasan" in export.columns, "kolom alasan ada di file ekspor")
@@ -172,31 +180,32 @@ doubt = export[export["alasan"].str.contains("Laya")]
 expect(len(doubt) > 0, f"alasan Laya ragu ada ({len(doubt)} baris)")
 by_key("button", "temuan_tulis").click()
 check("tulis laporan temuan")
-with open("hasil/properti/laporan_eda.md", encoding="utf-8") as file:
+with open("hasil/_uji_properti/laporan_eda.md", encoding="utf-8") as file:
     report = file.read()
 expect("## Temuan utama" in report and "**Alasan:**" in report, "laporan berisi temuan + alasan")
 # catatan uji: buang baris 5 dan 6 (ditulis langsung, seperti hasil tab Telusuri)
 notes = pd.DataFrame({"keputusan": ["buang", "buang"], "label_baru": ["", ""],
                       "catatan": ["uji buang", "uji buang"]}, index=[5, 6])
-notes.to_csv("hasil/properti/catatan.csv", index_label="row")
+notes.to_csv("hasil/_uji_properti/catatan.csv", index_label="row")
 by_key("multiselect", "ekspor_fitur").set_value(["gaya", "log_angka"])
 check("ekspor: pilih fitur gaya + log angka")
 by_key("button", "ekspor_train_tulis").click()
 check("ekspor: tulis train_siap")
-ready = pd.read_csv("hasil/properti/train_siap.csv")
+ready = pd.read_csv("hasil/_uji_properti/train_siap.csv")
 expect(len(ready) == 2998 and 5 not in ready["row"].tolist(), "train_siap: 2 baris dibuang")
 expect("panjang" in ready.columns and "log_harga" in ready.columns, "train_siap: kolom fitur ada")
-by_key("selectbox", "kode_category").set_value("jenis_properti")
+by_key("selectbox", "kode_category").set_value("jenis_asli")
 by_key("multiselect", "kode_features").set_value(["gaya", "log_angka", "rasio_median"])
 by_key("button", "kode_write").click()
 check("kode: tulis eda_otomatis")
-with open("hasil/properti/eda_otomatis.py", encoding="utf-8") as file:
+with open("hasil/_uji_properti/eda_otomatis.py", encoding="utf-8") as file:
     script = file.read()
 expect("MANUAL_DROP" in script and "for column in OUTLIER_COLUMNS:" in script,
        "kode: buang manual + loop outlier")
-expect('CATEGORY = "jenis_properti"' in script and "DROP_ROWS" not in script,
-       "kode: kategori jenis_properti, tanpa daftar DROP_ROWS")
-expect(os.path.exists("hasil/properti/eda_otomatis.ipynb"), "notebook .ipynb tertulis")
+expect('CATEGORY = "jenis_asli"' in script and "DROP_ROWS" not in script,
+       "kode: kategori jenis_asli, tanpa daftar DROP_ROWS")
+expect("import laya" not in script and "torch" not in script, "kode: tanpa Laya, hanya pandas")
+expect(os.path.exists("hasil/_uji_properti/eda_otomatis.ipynb"), "notebook .ipynb tertulis")
 print("   contoh alasan Laya:", doubt["alasan"].iloc[0][:300].encode("ascii", "replace").decode())
 
 # ---------- skenario B: teks emosi, label diacak sebagian, kolom tambahan ----------
@@ -291,6 +300,20 @@ by_key("button", "tsne_button").click()
 check("peta 2D emot (1000 titik)")
 by_key("selectbox", "tsne_color").set_value("label")
 check("peta 2D warna label")
+by_key("button", "salah_tombol_train").click()
+check("salah tebak train")
+expect(has_text("Pasangan label"), "tabel pasangan label yang tertukar tampil")
+# test berlabel: 300 baris emot dengan label asli, supaya baris salah bisa dihitung
+emot.head(300).to_csv("data/_uji_emot_test.csv", index=False)
+by_key("text_input", "salah_test_path").set_value("data/_uji_emot_test.csv")
+by_key("button", "salah_tombol_test").click()
+check("salah tebak test berlabel")
+found = False
+for item in at.success:
+    if "Di test, model baseline salah menebak" in item.value:
+        print("   ", item.value[:200].encode("ascii", "replace").decode())
+        found = True
+expect(found, "ringkasan salah tebak test tampil")
 by_label(at.button, "Tulis file").click()
 check("ekspor emot")
 export = pd.read_csv("hasil/_uji_emot/data_berlensa.csv")
@@ -302,4 +325,6 @@ conflict = export["alasan"].str.contains("KONFLIK")
 expect(conflict.sum() >= 2, f"alasan konflik label ({conflict.sum()} baris)")
 for folder in TEMP_FOLDERS:
     shutil.rmtree(folder, ignore_errors=True)
+for path in TEMP_FILES:
+    os.remove(path)
 print("SEMUA LOLOS")

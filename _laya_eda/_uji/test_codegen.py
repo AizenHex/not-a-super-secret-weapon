@@ -1,4 +1,5 @@
-"""Uji pembuat kode EDA: buat kode untuk 2 skenario lalu JALANKAN kodenya (Laya di CPU, data kecil).
+"""Uji pembuat kode EDA: buat kode untuk 2 skenario lalu JALANKAN kodenya (data kecil).
+Kode hasil wajib tanpa Laya: baris 'import laya' / 'import torch' = gagal.
 Jalankan: python _uji/test_codegen.py (dari folder _laya_eda atau mana saja)."""
 import os
 import shutil
@@ -11,7 +12,6 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 APP_FOLDER = os.path.dirname(HERE)
 sys.path.insert(0, APP_FOLDER)
 import codegen
-from lenses import PRESETS
 
 # folder kerja 2 tingkat di bawah GEMASTIK-DATABASE, seperti folder notebook toolkit
 RUN_FOLDER = os.path.join(os.path.dirname(APP_FOLDER), "_uji_codegen_tmp")
@@ -33,11 +33,9 @@ configs = {
         "columns": ["judul", "deskripsi", "harga", "alamat", "luas_m2"],
         "label_column": "jenis_asli", "number_columns": ["harga", "luas_m2"],
         "indonesian_format": True, "use_log": True, "ratio": ["harga", "luas_m2"],
-        "lenses": {"jenis_properti": PRESETS["jenis_properti"],
-                   "label_cocok": PRESETS["label_cocok"]},
         "manual_drop": {3: "harga 'hubungi wa'", 7: ""}, "new_labels": {5: "kost"},
         "drop_rules": ["duplikat", "teks_kosong", "tidak_terbaca", "negatif", "outlier"],
-        "outlier_columns": ["harga", "harga_per_luas_m2"], "outlier_category": "jenis_properti",
+        "outlier_columns": ["harga", "harga_per_luas_m2"], "outlier_category": "jenis_asli",
         "features": ["gaya", "negasi", "panjang_kolom", "kosong", "log_angka", "rasio_median",
                      "frekuensi"],
         "category_columns": ["alamat"], "date_columns": [],
@@ -46,8 +44,6 @@ configs = {
         "csv_path": "emot_kecil.csv", "test_csv": "emot_test_kecil.csv",
         "columns": ["text"], "label_column": "label", "number_columns": [],
         "indonesian_format": True, "use_log": True, "ratio": None,
-        "lenses": {"emosi": PRESETS["emosi"], "kejelasan": PRESETS["kejelasan"],
-                   "spam": PRESETS["spam"]},
         "manual_drop": {}, "new_labels": {}, "drop_rules": ["duplikat", "teks_kosong"],
         "outlier_columns": [], "outlier_category": None,
         "features": ["gaya", "negasi", "panjang_kolom", "rasio_median"],
@@ -56,7 +52,6 @@ configs = {
 }
 
 environment = dict(os.environ)
-environment["CUDA_VISIBLE_DEVICES"] = "-1"     # GPU sedang dipakai; uji di CPU
 failed = 0
 long_lines = 0   # semua baris kode hasil harus <= 100 karakter
 for name in configs:
@@ -69,6 +64,9 @@ for name in configs:
     for line in codegen.to_script(cells).splitlines():
         if len(line) > 100:
             long_lines = long_lines + 1
+        if "import laya" in line or "import torch" in line:
+            print("  kode memanggil Laya/torch:", line)
+            failed = failed + 1
     done = subprocess.run([sys.executable, script_path], cwd=RUN_FOLDER, env=environment,
                           capture_output=True, text=True)
     print(f"== {name}: kode {len(cells)} sel, baris >100: {long_lines}, exit {done.returncode}")

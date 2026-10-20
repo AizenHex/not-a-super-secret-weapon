@@ -481,8 +481,8 @@ lensa Laya 0,22-0,27 (tidak ada yang bocor, 6-7 detik). Properti: `judul` dan `d
 ## 10. Kode EDA dan laporan
 
 - **Kode EDA** (`codegen.py`, tab *Kode EDA*): sel notebook disusun dari pilihan sidebar (kolom,
-  format angka Indonesia, skala log, rasio), lensa Laya yang sudah dijalankan (lensa
-  `with_label` dilewati), dan fitur pilihan (gaya, negasi, panjang, kosong, log, angka ÷ median
+  format angka Indonesia, skala log, rasio) dan fitur pilihan; **kode hasil hanya pandas +
+  numpy, tidak memanggil Laya** (lensa hanya alat bantu melihat data di web). Fitur pilihan: (gaya, negasi, panjang, kosong, log, angka ÷ median
   kategori, frekuensi, tanggal; statistik diambil dari train saja). Baris dibuang lewat **aturan
   pandas** (duplikat, teks kosong, angka tidak terbaca, negatif/nol, outlier IQR per kategori):
   tiap aturan berupa loop per kolom yang di-`|` ke satu penanda `drop`, dicetak jumlahnya, lalu
@@ -492,6 +492,23 @@ lensa Laya 0,22-0,27 (tidak ada yang bocor, 6-7 detik). Properti: `judul` dan `d
   `features.BUILDERS` → `train_siap.csv`.
   `_uji/test_codegen.py` membuat lalu **menjalankan** kode untuk dua skenario (properti; emot +
   test) dan notebooknya lewat nbconvert: lolos, 0 baris > 100 karakter [diukur 20 Okt 2026].
-- Kelompok KMeans (tab *Temukan kategori*) tidak ditulis ulang karena bisa berubah tiap jalan.
+- Kelompok KMeans (tab *Temukan kategori*) dan lensa Laya tidak ditulis ulang; kategori pembanding
+  outlier hanya kolom asli CSV (mis. label).
 - **Temuan utama** (tab *Temuan utama*): `ctx["findings"]` (lihat 2b) diurutkan menurut
   `penting`, temuan sama dibuang, lalu disusun jadi `laporan_eda.md`.
+
+## 11. Salah tebak (`mistakes.py`, tab *Salah tebak*)
+
+- **Train:** `cross_val_predict` 5 lipatan (StratifiedKFold, seed 42) dengan model baseline
+  TF-IDF kata (opsional + karakter) + LogisticRegression; label angka: Ridge + KFold. Tiap baris
+  ditebak model yang tidak pernah melihatnya, jadi kesalahannya mendekati kesalahan di data baru.
+  Kelas dengan < 5 baris tidak ikut (syarat CV 5 lipatan).
+- **Test:** model yang sama dilatih di baris train lalu menebak test. Test berlabel → tabel salah
+  tebak; tanpa label → baris paling ragu + sebaran tebakan vs sebaran label train.
+- **Jenis salah:** *yakin salah* = salah dengan peluang tebakan ≥ 70% (kandidat label salah),
+  *ragu* = peluang tebakan < 50%, sisanya *salah*. Label angka: 5% selisih terbesar = *meleset jauh*.
+- **Ringkasan:** pasangan label → tebakan yang paling sering tertukar, skor per kelas
+  (`classification_report`), tabel silang label × tebakan, persen salah per kuartil panjang teks.
+- **Angka emot_train (3521 baris, TF-IDF kata) [diukur 20 Okt 2026]:** 2283 benar (64,8%),
+  51 yakin salah; pasangan tertukar teratas sadness → anger (188), happy → sadness (162);
+  persen salah per kuartil panjang 35,4 / 35,9 / 35,7 / 33,7% (panjang teks tidak berpengaruh).

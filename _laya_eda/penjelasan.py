@@ -361,18 +361,35 @@ EXPLANATIONS = {
     "kode": {
         "apa": ("Kode notebook EDA (.py dengan sel `# %%` atau .ipynb) yang mengulang semua "
                 "langkah yang kamu pilih di web ini, tanpa membutuhkan `_laya_eda`."),
-        "cara": ("codegen.py menyusun sel dari pilihan sidebar, lensa Laya yang sudah "
-                 "dijalankan, dan fitur pilihan. Baris dibuang lewat ATURAN pandas (duplikat, "
-                 "teks kosong, angka tidak terbaca / negatif, outlier IQR per kategori), tiap "
+        "cara": ("codegen.py menyusun sel dari pilihan sidebar dan fitur pilihan; kodenya "
+                 "hanya pandas + numpy, tanpa memanggil Laya. Baris dibuang lewat ATURAN "
+                 "pandas (duplikat, teks kosong, angka tidak terbaca / negatif, outlier IQR "
+                 "per kategori), tiap "
                  "aturan = loop per kolom yang menambah ke satu penanda `drop`, bukan daftar "
                  "nomor baris. Hanya keputusan manual tab Telusuri yang ditulis per baris."),
         "kenapa": ("Keputusan manual harus bisa diulang. Kode yang bisa dijalankan dari awal "
                    "membuktikan bahwa data bersih untuk model berasal dari langkah yang jelas."),
         "batasan": ("Tab Temukan kategori (kelompok) tidak ikut dibuat ulang karena hasil "
-                    "pengelompokan bisa berubah tiap jalan; lensa yang memakai label juga "
-                    "dilewati. Path CSV dianggap dari folder notebook di _.NEW-GEN/<folder>/."),
+                    "pengelompokan bisa berubah tiap jalan; lensa Laya juga tidak ditulis (Laya "
+                    "hanya alat bantu melihat data di web ini). Path CSV dianggap dari folder "
+                    "notebook di _.NEW-GEN/<folder>/."),
         "juri": ("Semua yang kami temukan secara manual sudah diubah jadi kode yang bisa "
                  "dijalankan ulang (reproducible), bukan hanya catatan."),
+    },
+    "salah_tebak": {
+        "apa": ("Daftar baris yang masih salah ditebak model baseline, di train dan di test, "
+                "beserta pasangan kelas yang sering tertukar."),
+        "cara": ("Train: cross_val_predict 5 lipatan (StratifiedKFold), jadi tiap baris ditebak "
+                 "model yang tidak pernah melihatnya. Test: model dilatih di semua baris train "
+                 "lalu menebak test. Model = TF-IDF + LogisticRegression (label angka: Ridge). "
+                 "'Yakin salah' = salah dengan peluang tebakan ≥ 70%, 'ragu' = peluang < 50%."),
+        "kenapa": ("Analisis kesalahan menunjukkan apa yang belum dipahami model: kelas yang "
+                   "mirip, teks pendek, slang, atau label yang salah. Dari situ kita tahu fitur "
+                   "atau pembersihan apa yang perlu ditambah."),
+        "batasan": ("Model baseline, bukan model akhir. 'Yakin salah' hanya kandidat label salah "
+                    "yang perlu dicek manual. Test tanpa label hanya bisa dilihat keraguannya."),
+        "juri": ("Kami menganalisis kesalahan model per kelas dan per panjang teks, lalu "
+                 "memeriksa baris yang salah dengan yakin sebagai kandidat label salah."),
     },
     "temuan": {
         "apa": "Ringkasan semua temuan dari tab lain, diurutkan dari yang paling penting.",

@@ -37,13 +37,6 @@ def notes_to_steps(ctx):
     return manual_drop, new_labels
 
 
-def used_lenses(ctx):
-    lenses = {}
-    for name in ctx["lens_done"]:
-        lenses[name] = ctx["lenses"][name]
-    return lenses
-
-
 def saved_features(ctx):
     # fitur yang lolos di tab Fitur → label (fitur_terpilih.json) jadi pilihan awal
     path = f"{ctx['folder']}/fitur_terpilih.json"
@@ -73,12 +66,13 @@ def pick_outlier(ctx, rules):
     columns = st.multiselect("Cek outlier untuk kolom angka", list(ctx["numbers"].columns),
                              default=list(ctx["numbers"].columns),
                              key=f"kode_outlier_columns__{ctx['folder']}")
+    # kode tanpa Laya: kategori pembanding hanya kolom asli CSV (bukan lensa / kelompok)
     category_options = []
-    for name in ctx["dimensions"]:
-        if name != "kelompok":    # kelompok KMeans tidak ditulis ulang di kode
+    for name in ctx["dimensions"] + features.category_candidates(ctx):
+        if name in ctx["data"].columns and name not in category_options:
             category_options.append(name)
     if len(columns) == 0 or len(category_options) == 0:
-        st.caption("Outlier per kategori butuh kolom angka dan kategori (lensa Laya atau label).")
+        st.caption("Outlier per kategori butuh kolom angka dan kolom kategori di CSV.")
         return [], None
     category = st.selectbox("... dibandingkan di dalam kategori", category_options,
                             key=f"kode_category__{ctx['folder']}")
@@ -107,7 +101,7 @@ def build_config(ctx):
     return {"csv_path": notebook_path(ctx["csv_path"]), "test_csv": test_csv,
             "columns": ctx["columns"], "label_column": ctx["label_column"],
             "number_columns": ctx["number_columns"], "indonesian_format": ctx["indonesian"],
-            "use_log": ctx["use_log"], "ratio": ctx["ratio"], "lenses": used_lenses(ctx),
+            "use_log": ctx["use_log"], "ratio": ctx["ratio"],
             "manual_drop": manual_drop, "new_labels": new_labels, "drop_rules": rules,
             "outlier_columns": outlier_columns, "outlier_category": category,
             "features": chosen, "category_columns": features.category_candidates(ctx),
@@ -115,16 +109,15 @@ def build_config(ctx):
 
 
 def show(ctx):
-    st.write("Pilihan di sidebar, lensa Laya yang sudah dijalankan, aturan buang, fitur, dan "
-             "catatan *buang / ganti label* di tab Telusuri diubah jadi kode notebook. Kode ini "
-             "tidak butuh `_laya_eda`, jadi bisa ditempel ke notebook lomba.")
+    st.write("Pilihan di sidebar, aturan buang, fitur, dan catatan *buang / ganti label* di "
+             "tab Telusuri diubah jadi kode notebook. Kode ini **hanya pandas + numpy** (tanpa "
+             "Laya, tanpa `_laya_eda`), jadi bisa ditempel ke notebook lomba.")
     config = build_config(ctx)
     cells = codegen.build_cells(config)
     script = codegen.to_script(cells)
     st.write(f"**{len(cells)} sel** · {len(config['drop_rules'])} aturan buang · buang manual "
              f"{len(config['manual_drop'])} baris · ganti label {len(config['new_labels'])} "
-             f"baris · {len(codegen.usable_features(config))} fitur · "
-             f"{len(config['lenses'])} lensa Laya")
+             f"baris · {len(codegen.usable_features(config))} fitur")
     first, second, third = st.columns(3)
     first.download_button("Unduh .py (sel # %%)", script.encode("utf-8"), "eda_otomatis.py",
                           key="kode_py")

@@ -16,6 +16,7 @@ import tab_lensa
 import tab_outlier
 import tab_peta
 import tab_profil
+import tab_salah
 import tab_teks
 import tab_telusuri
 import tab_temuan
@@ -29,7 +30,8 @@ DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 # `with tabs["nama"]: modul.show(ctx)` di bawah (sebelum Temuan utama dan Kode EDA).
 TAB_NAMES = ["Data", "Profil & label", "Cek angka", "Teks & konsistensi", "Temukan kategori",
              "Lensa Laya", "Peta data", "Outlier", "Telusuri + catatan", "Ekspor",
-             "Fitur → label", "Train vs test", "Temuan utama", "Kode EDA"]
+             "Fitur → label", "Train vs test", "Salah tebak",
+             "Temuan utama", "Kode EDA"]
 
 st.set_page_config(page_title="Laya EDA", layout="wide")
 
@@ -88,6 +90,8 @@ with tabs["Fitur → label"]:
     tab_fitur.show(ctx)
 with tabs["Train vs test"]:
     tab_test.show(ctx)
+with tabs["Salah tebak"]:
+    tab_salah.show(ctx)
 
 # ---- dua tab ini paling akhir: memakai temuan dan pilihan dari semua tab di atas ----
 with tabs["Temuan utama"]:

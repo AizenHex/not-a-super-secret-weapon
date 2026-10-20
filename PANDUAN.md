@@ -136,9 +136,10 @@ cocok?, ...), MiniLM membantu menemukan kategori, pandas mengecek angka. Outlier
 GPU; mulai dari 1.000 baris.
 
 Tiap baris janggal punya **alasan** tertulis. Tab *Fitur → label* menguji fitur baru (CV ablasi,
-importance, label salah), tab *Train vs test* mengecek pergeseran data. Tab *Temuan utama* =
+importance, label salah), tab *Train vs test* mengecek pergeseran data, tab *Salah tebak*
+menampilkan baris train/test yang masih salah ditebak model baseline. Tab *Temuan utama* =
 laporan `laporan_eda.md`, tab *Kode EDA* = notebook `eda_otomatis.ipynb` yang mengulang semua
-langkahmu tanpa web ini. Rumus dan bahan menjawab juri: `_laya_eda/METODE.md` dan kotak
+langkahmu tanpa web ini (hanya pandas + numpy, tanpa Laya). Rumus dan bahan menjawab juri: `_laya_eda/METODE.md` dan kotak
 "Cara kerja & kenapa" di tiap tab.
 
 ## 2. Metrik → yang dilakukan

@@ -473,6 +473,15 @@ def pick_rows(candidates, max_rows, rows):
     return pd.Index(np.sort(chosen))
 
 
+def drop_rare_classes(rows, y):
+    # CV 5 lipatan butuh minimal 5 contoh per kelas; kelas yang lebih kecil tidak ikut diuji
+    if task_of(y) != "kelas":
+        return rows
+    counts = y[rows].value_counts()
+    enough = counts[counts >= FOLDS].index
+    return rows[y[rows].isin(enough)]
+
+
 def assemble(ctx, groups, options, max_rows, rows=None):
     # hasil: X (kolom 'teks' + kolom padat), y, spec. Baris = baris berlabel yang punya semua grup
     y = ctx["data"][ctx["label_column"]]
@@ -484,6 +493,7 @@ def assemble(ctx, groups, options, max_rows, rows=None):
             if frames[name].shape[1] > 0:
                 candidates = candidates.intersection(frames[name].index)
     rows = pick_rows(candidates, max_rows, rows)
+    rows = drop_rare_classes(rows, y)
     X = pd.DataFrame({"teks": ctx["texts"][rows]})
     spec = {"kata": "kata" in groups, "char": "char" in groups, "dense": {}, "te": []}
     for name in frames:
@@ -806,6 +816,7 @@ def single_feature_scores(ctx, max_rows):
     for name in candidates:
         rows = y.dropna().index.intersection(candidates[name].dropna().index)
         rows = pick_rows(rows, max_rows, None)
+        rows = drop_rare_classes(rows, y)
         if len(rows) < 30:
             continue
         result = score_column(candidates[name][rows], y[rows], task)

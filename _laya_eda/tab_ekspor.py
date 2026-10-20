@@ -81,10 +81,11 @@ def build_train(ctx, groups, with_lenses, with_numbers):
             train[name] = ctx["table"][name]
             train[f"{name}__nilai"] = ctx["table"][f"{name}__nilai"]
     options = feature_options(ctx)
+    frames = [train]
     for group in groups:
         frame = features.BUILDERS[group](ctx, options)
-        for column in frame.columns:
-            train[column] = frame[column]    # baris tanpa nilai (mis. belum dibaca Laya) = NaN
+        frames.append(frame.reindex(train.index))    # baris yang belum dibaca Laya = NaN
+    train = pd.concat(frames, axis=1)    # sekali gabung, jauh lebih cepat dari satu per satu
     return apply_notes(ctx, train)
 
 

@@ -5,6 +5,7 @@ import os
 import pandas as pd
 import streamlit as st
 
+import eda
 import helpers
 
 DEFAULT_CSV = "../../data_latihan/text/classification/emot_train.csv"
@@ -62,12 +63,21 @@ def pick_columns(ctx):
     ctx["mode"] = mode
 
 
+def warn_unique_label(label):
+    # kolom teks yang hampir unik per baris (mis. kolom teks itu sendiri) bukan label kategori
+    if pd.api.types.is_numeric_dtype(label) or label.nunique() <= eda.MAX_LABEL_CLASSES:
+        return
+    st.sidebar.warning(f"Kolom ini punya {label.nunique()} nilai berbeda, jadi bukan label "
+                       "kategori. Pilih kolom label yang sebenarnya, atau (tidak ada).")
+
+
 def pick_label_and_date(ctx):
     all_columns = list(ctx["data"].columns)
     label_choice = st.sidebar.selectbox("Kolom label (opsional)", [NO_CHOICE] + all_columns)
     ctx["label_column"] = None
     if label_choice != NO_CHOICE:
         ctx["label_column"] = label_choice
+        warn_unique_label(ctx["data"][label_choice])
     date_choice = st.sidebar.selectbox("Kolom tanggal (opsional)", [NO_CHOICE] + all_columns)
     ctx["date_column"] = None
     if date_choice != NO_CHOICE:
