@@ -12,7 +12,7 @@ from penjelasan import show_explanation
 
 
 def notebook_path(csv_path):
-    # notebook lomba ada di _.NEW-GEN/<folder>/, sama dalamnya dengan _laya_eda
+    # notebook lomba ada di <repo>/<folder>/, sama dalamnya dengan _laya_eda
     if csv_path.startswith("../"):
         return csv_path
     return f"../_laya_eda/{csv_path}"

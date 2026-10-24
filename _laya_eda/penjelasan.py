@@ -372,7 +372,7 @@ EXPLANATIONS = {
         "batasan": ("Tab Temukan kategori (kelompok) tidak ikut dibuat ulang karena hasil "
                     "pengelompokan bisa berubah tiap jalan; lensa Laya juga tidak ditulis (Laya "
                     "hanya alat bantu melihat data di web ini). Path CSV dianggap dari folder "
-                    "notebook di _.NEW-GEN/<folder>/."),
+                    "notebook di <repo>/<folder>/."),
         "juri": ("Semua yang kami temukan secara manual sudah diubah jadi kode yang bisa "
                  "dijalankan ulang (reproducible), bukan hanya catatan."),
     },

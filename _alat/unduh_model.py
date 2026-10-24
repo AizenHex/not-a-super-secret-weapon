@@ -1,7 +1,7 @@
 """Unduh SEMUA bobot pretrained yang dipakai notebook (sekitar 9 GB, butuh internet sekali).
 Pakai: python unduh_model.py [folder_tujuan]
-Default folder tujuan: folder `pretrained` di SEBELAH folder _.NEW-GEN
-(notebook membacanya sebagai "../../pretrained"). Model yang sudah ada dilewati."""
+Default folder tujuan: folder `pretrained` di SEBELAH folder repo ini
+(notebook contoh/ membacanya sebagai "../../../pretrained"). Model yang sudah ada dilewati."""
 import os
 import sys
 import urllib.request

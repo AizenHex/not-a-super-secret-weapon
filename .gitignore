@@ -4,9 +4,11 @@ __pycache__/
 catboost_info/
 .venv/
 
-# arsip notebook lama: simpan notebook-nya saja, bukan hasil Run All
-/_arsip/notebook/*/*
-!/_arsip/notebook/*/*.ipynb
+# contoh/ dan arsenal/: simpan notebook-nya saja, bukan hasil Run All
+/contoh/*/*
+!/contoh/*/*.ipynb
+/arsenal/**/outputs/
+/arsenal/**/submission*.csv
 
 # sisa kompilasi LaTeX
 _ringkasan_metode/*.aux

@@ -1,4 +1,4 @@
-# Library untuk notebook _.NEW-GEN. Versi = yang sudah terbukti menjalankan semua notebook
+# Library untuk semua notebook repo ini (contoh/ dan arsenal/). Versi = yang sudah terbukti menjalankan semua notebook
 # (Python 3.13, Windows 64-bit). Pasang dengan setup.bat, atau manual:
 #   python -m pip install -r requirements.txt
 # torch versi CUDA 12.8 diambil dari index PyTorch di bawah. Tanpa GPU NVIDIA tetap jalan (CPU).

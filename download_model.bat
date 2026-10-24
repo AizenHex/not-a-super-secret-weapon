@@ -1,7 +1,7 @@
 @echo off
 rem Unduh SEMUA model pretrained (sekitar 9 GB, butuh internet). Jalankan setup.bat dulu.
 rem Hasil: folder "pretrained" di SEBELAH folder ini, contoh:
-rem   C:\GEMASTIK\_.NEW-GEN\      (folder ini)
+rem   C:\GEMASTIK\<repo ini>\     (folder ini)
 rem   C:\GEMASTIK\pretrained\     (hasil unduhan)
 rem Kalau terputus, jalankan lagi: model yang sudah ada dilewati.
 cd /d "%~dp0"
