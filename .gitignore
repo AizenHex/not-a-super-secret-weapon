@@ -4,9 +4,9 @@ __pycache__/
 catboost_info/
 .venv/
 
-# hasil Run All di folder notebook (dibuat ulang otomatis): simpan notebook-nya saja
-/[a-z]*/*
-!/[a-z]*/*.ipynb
+# arsip notebook lama: simpan notebook-nya saja, bukan hasil Run All
+/_arsip/notebook/*/*
+!/_arsip/notebook/*/*.ipynb
 
 # sisa kompilasi LaTeX
 _ringkasan_metode/*.aux

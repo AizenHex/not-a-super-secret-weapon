@@ -1,5 +1,7 @@
 """Cek ATURAN_KODE.md pada file .py bersel `# %%`. Pakai: lint.py nb/tabular/*.py"""
 import ast
+
+from sel import baca_teks_sel
 import re
 import sys
 
@@ -8,7 +10,8 @@ LARANGAN = {
     r"^\s*assert ": "assert",
     r"_authoring|from src|sys\.path": "impor helper lama",
     r"\.merge\(|\.join\(\s*\w+\s*,?\s*on=|(?<!re)set_index\(": "merge/join/set_index",
-    r"^\s*class ": "class",
+    # class hanya untuk pola standar PyTorch: model (nn.Module) dan dataset (Dataset)
+    r"^\s*class (?!\w+\((nn\.Module|Dataset|torch\.utils\.data\.Dataset)\))": "class selain nn.Module/Dataset",
     r"lambda.*lambda": "lambda bertumpuk",
     r"\bif METHOD\b|\bif MODEL\b": "cabang metode",
     r"[^\"'#]*;\s*\S": "dua statement satu baris",
@@ -66,7 +69,7 @@ def cek_gaya(sel, kode_sel):
 
 total_masalah = 0
 for path in sys.argv[1:]:
-    text = open(path, encoding="utf-8").read()
+    text = baca_teks_sel(path)
     cells = re.split(r"^# %%.*$", text, flags=re.M)
     headers = re.findall(r"^# %%.*$", text, flags=re.M)
     masalah = []
