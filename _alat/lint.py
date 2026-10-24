@@ -89,6 +89,9 @@ for path in sys.argv[1:]:
             if len(line) > 100:
                 masalah.append(f"baris {len(line)} kar: {line[:60]}")
             for pola, nama in LARANGAN.items():
+                # ATURAN §1: merge/join/set_index dilarang hanya di sel yang menyusun submission
+                if nama == "merge/join/set_index" and "submission" not in cell:
+                    continue
                 if re.search(pola, line) and not line.strip().startswith("#"):
                     masalah.append(f"{nama}: {line.strip()[:70]}")
         masalah = masalah + cek_gaya(cell.strip()[:40], cell)

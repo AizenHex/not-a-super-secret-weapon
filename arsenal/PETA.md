@@ -26,7 +26,40 @@ lalu ubah baris yang bertanda `# UBAH`. Tiap sel punya import sendiri.
 | `boxes` / `pred_boxes` / `best_boxes` | path, label, x1, y1, x2, y2 (piksel), + score untuk prediksi |
 | `crops` | crop_path, path, label, width, height, + text, conf, rotation setelah OCR |
 
-## Soal → potongan
+## Umum (semua modalitas): `umum/`
+
+Bagian bernomor; tiap file diawali tabel "ingin → bagian". Bagian 0 = data contoh, lewati.
+
+| ingin | file | bagian |
+|---|---|---|
+| gambar per folder kelas → tabel path, label | `umum/baca_folder.ipynb` | 1 |
+| folder gambar + CSV label, cek file hilang | `umum/baca_folder.ipynb` | 2 |
+| banyak CSV / txt / JSON / JSONL / Excel → satu tabel | `umum/baca_folder.ipynb` | 3–6 |
+| ambil info dari nama file (regex) | `umum/baca_folder.ipynb` | 7 |
+| gambar → array `X` (n, SIZE, SIZE, 3) + `y` | `umum/baca_folder.ipynb` | 8 |
+| CSV sangat besar, zip, PDF | `umum/baca_folder.ipynb` | 9–11 |
+| laporan cepat: tipe, kosong, unik | `umum/tabel_bersih.ipynb` | 1 |
+| nama kolom, `-`/`?` → NaN, `Rp 1.250.000` → angka | `umum/tabel_bersih.ipynb` | 2–4 |
+| tanggal format campur, kategori tidak konsisten, ya/tidak | `umum/tabel_bersih.ipynb` | 5–7 |
+| baris dobel, isi kosong, outlier | `umum/tabel_bersih.ipynb` | 8–10 |
+| filter, urut, N teratas per kelompok | `umum/tabel_olah.ipynb` | 1–2 |
+| `groupby` ringkasan / `transform` / pivot / melt | `umum/tabel_olah.ipynb` | 3–6 |
+| gabung tabel, **fitur dari tabel riwayat** (multi-tabel) | `umum/tabel_olah.ipynb` | 7–8 |
+| fitur waktu: lag, rolling, selisih hari | `umum/tabel_olah.ipynb` | 9 |
+| angka → rentang (`cut` / `qcut`) | `umum/tabel_olah.ipynb` | 10 |
+| contekan regex, bersihkan teks, kata gaul | `umum/teks_regex.ipynb` | 1–2 |
+| ambil field dari teks (kode, tanggal, email, HP) | `umum/teks_regex.ipynb` | 3 |
+| `1,5 juta` / `3 Okt 2026` → angka / tanggal | `umum/teks_regex.ipynb` | 6 |
+| cocokkan nama mirip ke daftar baku (fuzzy) | `umum/teks_regex.ipynb` | 7 |
+| histogram, hitungan kelas, scatter, waktu, boxplot | `umum/plot.ipynb` | 1–5 |
+| heatmap korelasi, confusion matrix, grid gambar, kurva loss | `umum/plot.ipynb` | 6–9 |
+| simpan/muat tabel, numpy, sklearn, PyTorch, JSON, pickle | `umum/simpan_muat.ipynb` | 1–6 |
+| **file jawaban** + cek dengan `sample_submission.csv` | `umum/simpan_muat.ipynb` | 7 |
+| cadangkan `outputs/` jadi zip | `umum/simpan_muat.ipynb` | 8 |
+
+Sintaks Python yang lupa (list, dict, loop, f-string, pesan error): `../kamus/`.
+
+## Soal vision → potongan
 
 | soal / kendala | file | sel |
 |---|---|---|
