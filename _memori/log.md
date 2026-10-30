@@ -2,6 +2,17 @@
 
 Terbaru di atas. Format di [`README.md`](README.md).
 
+## 2026-10-30 claude-opus-5-5 - figur PPT vignette (di Vignate-2, bukan repo ini)
+- Dikerjakan: figur kartu `gambar18` (proses YOLO), `gambar20` (inferensi), `gambar21` (orientasi →
+  enhance → PaddleOCR → teks), `gambar22` (10 citra uji tanpa entete), `gambar23` (4 contoh ujung ke
+  ujung, pengganti figur lama Times). Skrip di `Z:/GEMASTIK/Vignate-2/outputs/figures/_src/v2/`, rincian
+  di `Z:/GEMASTIK/Vignate-2/HANDOFF.md` bagian A4. Angka deteksi dari prediksi ulang `yolo_2cls_v2.pt`
+  (lihat `keputusan.md`). PPT selesai dibuat pengguna hari ini.
+- Dikoreksi pengguna: tolak pita "kenapa" + bayangan + label fase di kartu ("design sebelumnya malah
+  lebih rapi"); teks kecil di PPT → kanvas 13 in. Masuk `aturan.md` bagian Figur.
+- Berikutnya: tidak ada untuk PPT. PaddleOCR belum dipasang (pengguna: "jangan dulu"), jadi orientasi +
+  teks gambar21/23 masih dari run notebook lama.
+
 ## 2026-10-30 claude-opus-5-5 - hook agar memori selalu diperbarui
 - Dikerjakan: `.claude/settings.json` + `.claude/hooks/memori.sh`. SessionStart menempel
   `status.md` + `aturan.md` ke konteks; UserPromptSubmit memotret keadaan file; Stop memblokir sekali

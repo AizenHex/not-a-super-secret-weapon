@@ -22,6 +22,8 @@ Pengguna berangkat 2026-11-09. Prioritas dan pohon pekerjaan: [`../RENCANA_LOMBA
   204 masalah `_alat/lint.py`, path relatif `data/`, `work/`, `models/` (menulis ke dalam folder kerja,
   bukan `../../outputs/`).
 - `viginte-train.ipynb` dipindah dari root ke `_.Testing/` (diabaikan git).
+- PPT vignette (penyisihan) selesai 2026-10-30. Figur + skripnya di `Z:/GEMASTIK/Vignate-2/outputs/figures/`
+  (di luar repo, bukan git); catatan lengkap `Z:/GEMASTIK/Vignate-2/HANDOFF.md`.
 
 ## Pekerjaan terbuka (urut prioritas, dari RENCANA_LOMBA.md)
 

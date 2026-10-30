@@ -42,6 +42,12 @@ Koreksi terbaru pengguna di chat menang atas isi file ini; setelah itu perbarui 
   jangan colormap jet/rainbow, warna dibantu bentuk/pola. Diagram: kotak sudut membulat untuk proses,
   garis putus-putus untuk alur tambahan/tahap logis, warna jenuh hanya untuk keluaran akhir.
 
+- Figur kartu proses untuk PPT (2026-10-30): kanvas 13×5,4 in (≈1:1 di slide 13,33 in), font
+  Be Vietnam Pro, judul kartu 22, angka besar 23, keterangan 15,5, legenda ≥ 14. Desain kartu polos:
+  pita judul + pita bawah pastel, chevron antar kartu. **Jangan** tambah pita "kenapa", bayangan,
+  atau kurung fase; pengguna menilai versi polos lebih rapi. Satu angka = satu sumber (semua figur
+  deteksi pakai prediksi `yolo_2cls_v2.pt` yang sama).
+
 ## Git
 
 - Commit/push hanya kalau pengguna memintanya di sesi itu. Kalau diizinkan ("kalau ada perubahan kode,
