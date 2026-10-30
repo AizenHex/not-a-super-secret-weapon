@@ -22,6 +22,10 @@ pengguna mengoreksi cara kerja):
 4. `_memori/keputusan.md`: kalau memilih satu cara dari beberapa, tulis alasannya.
 5. Kalau perubahan kode di-commit, commit perubahan memori di commit yang sama.
 
+Hook di `.claude/settings.json` menempel `status.md` + `aturan.md` saat sesi mulai dan menahan
+jawaban akhir sekali kalau ada file berubah tanpa `_memori/` ikut berubah. Hook itu pengingat,
+bukan pengganti langkah di atas.
+
 Pertanyaan biasa yang tidak mengubah apa pun tidak perlu entri. Jangan menulis rahasia atau tebakan
 sebagai fakta.
 

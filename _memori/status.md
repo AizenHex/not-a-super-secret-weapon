@@ -11,7 +11,9 @@ Pengguna berangkat 2026-11-09. Prioritas dan pohon pekerjaan: [`../RENCANA_LOMBA
 ## Keadaan sekarang
 
 - Branch kerja: `rapikan-struktur` (remote `origin` = github.com/AizenHex/not-a-super-secret-weapon).
-  Default remote: `new-gen`. Commit terakhir: `d59ab4b` (2026-10-30).
+  Default remote: `new-gen`.
+- `.claude/` (2026-10-30): hook memori (`settings.json`, `hooks/memori.sh`). Aktif kalau Claude Code
+  dibuka dari root repo ini; tinjau/matikan lewat `/hooks`.
 - `arsenal/`: potongan siap tempel per modalitas (vision, teks, tabular, jembatan, umum, pipeline).
   Peta: [`../arsenal/PETA.md`](../arsenal/PETA.md).
 - `contoh/`: 199 notebook utuh, 19 modalitas.

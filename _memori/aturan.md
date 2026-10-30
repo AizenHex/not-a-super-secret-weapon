@@ -31,6 +31,17 @@ Koreksi terbaru pengguna di chat menang atas isi file ini; setelah itu perbarui 
   batch kecil (mis. 8), jangan menaikkan batch yang komentarnya menyebut panas. (2026-10-24)
 - Tanya dulu sebelum memasang paket pip.
 
+## Figur (PPT/laporan)
+
+- Satu pesan per figur, 16:9, huruf besar; tidak ada label/klaim tebakan di figur. (2026-10-30)
+- Daftar cek sebelum figur dianggap selesai (diadaptasi dari kritik PaperBanana, 2026-10-30):
+  isi setia ke data/metode (tidak ada yang dikarang, tidak ada komponen penting yang hilang); cek
+  ejaan dan label; contoh di figur benar; judul/caption tidak ditulis di dalam gambar; buang legenda
+  yang berulang dan beri label langsung di garis/batang.
+- Plot: grid tipis putus-putus di belakang data, garis diberi marker, nilai ditulis di sel heatmap,
+  jangan colormap jet/rainbow, warna dibantu bentuk/pola. Diagram: kotak sudut membulat untuk proses,
+  garis putus-putus untuk alur tambahan/tahap logis, warna jenuh hanya untuk keluaran akhir.
+
 ## Git
 
 - Commit/push hanya kalau pengguna memintanya di sesi itu. Kalau diizinkan ("kalau ada perubahan kode,

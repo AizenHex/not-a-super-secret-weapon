@@ -2,6 +2,15 @@
 
 Terbaru di atas. Format di [`README.md`](README.md).
 
+## 2026-10-30 claude-opus-5-5 - hook agar memori selalu diperbarui
+- Dikerjakan: `.claude/settings.json` + `.claude/hooks/memori.sh`. SessionStart menempel
+  `status.md` + `aturan.md` ke konteks; UserPromptSubmit memotret keadaan file; Stop memblokir sekali
+  kalau giliran itu mengubah file di luar `_memori/` tanpa menyentuh `_memori/`. Diuji di repo
+  sementara (perubahan kotor, commit tanpa memori, commit dengan memori, nama file aneh).
+- Dinilai: PaperBanana (github.com/dwzhu-pku/PaperBanana). Tidak dipasang, lihat `keputusan.md`.
+- Dikoreksi pengguna: -
+- Berikutnya: hook baru aktif di sesi Claude Code berikutnya yang dibuka dari root repo ini.
+
 ## 2026-10-30 claude-opus-5-5 - memori agen + CLAUDE.md
 - Dikerjakan: `_memori/` (README, status, aturan, keputusan, log), `CLAUDE.md` (wajib baca dan
   perbarui memori), `AGENTS.md` (rujukan untuk Codex). Isi awal diambil dari README,
