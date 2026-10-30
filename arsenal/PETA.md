@@ -82,6 +82,7 @@ Bagian bernomor; tiap file diawali tabel "ingin → bagian". Bagian 0 = data con
 | latih OCR sendiri dari teks sintetis (CNN + Transformer + CTC) | `vision/ocr/ocr_cnn_transformer` | semua |
 | aksara non-Latin (Jawa) dengan label buatan sendiri (CVAT) | `vision/ocr/karakter_label_sendiri` | semua |
 | kotak → potong → OCR → submission, sekali jalan | `pipeline/deteksi_potong_ocr` | Run All |
+| vignette: YOLO 2 kelas → orientasi Paddle → PaddleOCR → submission (patokan v2, belum lolos lint) | `pipeline/ocr_end_to_end_v2` | 0–6 |
 
 Format tabel standar vision:
 
