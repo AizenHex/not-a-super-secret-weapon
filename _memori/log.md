@@ -2,6 +2,18 @@
 
 Terbaru di atas. Format di [`README.md`](README.md).
 
+## 2026-10-31 claude-opus-5-5 - Laya EDA: tab Split data + buang kustom
+- Dikerjakan: `_laya_eda/tab_split.py` (tab baru "Split data" sesudah Ekspor: acak + stratify,
+  waktu, kelompok / teks sama; cek teks bocor; tulis `train_split.csv` + `valid_split.csv`; kode
+  notebook setara) dan `_laya_eda/custom_drop.py` (buang kolom + aturan baris `train.query`,
+  disimpan di `hasil/<csv>/buang_kustom.json`, diterapkan sesudah catatan Telusuri). Sambungan di
+  `tab_ekspor.py` (`ctx["ready_train"]`), `app.py`, `context.py`, `penjelasan.py`. Commit 21ab935
+  di `new-gen` (di-rebase ke atas `e0b2bfa`, lalu di-push). Uji cepat AppTest (di luar repo) lolos
+  sebelum dan sesudah rebase; langkah uji ditambah ke `_uji/test_app.py` tetapi belum dijalankan.
+- Dikoreksi pengguna: -
+- Berikutnya: jalankan `python _uji/test_app.py` dari `_laya_eda` (butuh GPU); aturan buang kustom
+  belum ikut ke kode tab Kode EDA (kode itu membaca CSV mentah tanpa kolom fitur).
+
 ## 2026-10-31 claude-opus-5-5 - commit + push, new-gen = rapikan-struktur
 - Dikerjakan: semua perubahan repo compact (sesi 2026-10-30) di-commit dan di-push ke
   `rapikan-struktur`; `new-gen` (default) dimajukan ke commit yang sama atas permintaan pengguna.
