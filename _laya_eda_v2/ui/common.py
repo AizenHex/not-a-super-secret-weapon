@@ -2,6 +2,8 @@
 from __future__ import annotations
 
 import json
+import os
+from pathlib import Path
 
 import pandas as pd
 import streamlit as st
@@ -9,6 +11,40 @@ import streamlit as st
 from core import steps as engine
 from core.ops import OPS, summary
 from ui.flows import FLOWS
+
+
+# Simpan otomatis: daftar langkah + label + path data ditulis ke file setiap berubah, dan dibaca lagi saat
+# server/halaman dibuka ulang. Uji memakai file lain lewat LAYA_SESI agar tidak menimpa progresmu.
+SESSION_FILE = Path(os.environ.get("LAYA_SESI", Path(__file__).resolve().parents[1] / "hasil" / "sesi_terakhir.json"))
+
+
+def restore_session() -> None:
+    """Dipanggil sekali di awal app.py, SEBELUM widget path data dibuat."""
+    if "project" in st.session_state:
+        return
+    saved = {}
+    if SESSION_FILE.exists():
+        try:
+            saved = json.loads(SESSION_FILE.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            saved = {}
+    st.session_state["project"] = {"label": saved.get("label"), "steps": saved.get("steps", [])}
+    for key in ("train_path", "test_path"):
+        if saved.get(key):
+            st.session_state[key] = saved[key]
+    st.session_state["saved_session"] = json.dumps(saved, sort_keys=True, ensure_ascii=False, default=str)
+
+
+def save_session() -> None:
+    """Dipanggil di akhir app.py: tulis file hanya bila ada yang berubah."""
+    p = project()
+    data = {"label": p["label"], "steps": p["steps"], "train_path": st.session_state.get("train_path", ""),
+            "test_path": st.session_state.get("test_path", "")}
+    text = json.dumps(data, sort_keys=True, ensure_ascii=False, default=str)
+    if text != st.session_state.get("saved_session"):
+        SESSION_FILE.parent.mkdir(parents=True, exist_ok=True)
+        SESSION_FILE.write_text(json.dumps(data, ensure_ascii=False, indent=2, default=str), encoding="utf-8")
+        st.session_state["saved_session"] = text
 
 
 def project() -> dict:
@@ -150,6 +186,35 @@ def preview_step(op: str, params: dict, key: str, replace: int | None = None) ->
         st.rerun()
 
 
+def preview_steps(op: str, plan: list[dict], key: str) -> None:
+    """Pratinjau beberapa langkah sejenis sekaligus (satu per kolom) + satu tombol untuk menambah semuanya.
+
+    key = key data_editor asal usulan: dihapus sesudah menambah agar centang tidak terbawa (dan tidak dobel).
+    """
+    st.subheader(f"Pratinjau {len(plan)} langkah sekaligus")
+    base = state()
+    candidate = [{"op": op, "params": params, "on": True} for params in plan]
+    result = engine.run(candidate, label(), base["train"], base["test"])
+    if result["error"]:
+        st.error(f"Langkah {result['error']['langkah']} gagal: {result['error']['galat']}")
+        return
+    info = engine.diff(base["train"], result["train"])
+    cols = st.columns(3)
+    cols[0].metric("baris train", f"{len(result['train']):,}", -len(info["baris dibuang"]) or None)
+    cols[1].metric("sel berubah", f"{int(info['sel berubah'].sum()):,}")
+    cols[2].metric("baris test", f"{len(result['test']):,}")
+    if len(info["sel berubah"]):
+        st.caption("Sel berubah per kolom: " + ", ".join(f"{c} ({n:,})" for c, n in info["sel berubah"].head(12).items()))
+    with st.expander("Kode langkah-langkah ini"):
+        st.code("\n\n".join(engine.step_code(step) for step in candidate), language="python")
+    if st.button(f"Tambah {len(plan)} langkah: {OPS[op]['title']}", type="primary", key=f"add_many_{key}"):
+        for params in plan:
+            engine.add_step(project(), op, params)
+        st.session_state.pop(key, None)
+        st.toast(f"{len(plan)} langkah ditambahkan")
+        st.rerun()
+
+
 def sidebar_steps() -> None:
     """Daftar langkah ala Data Wrangler: nyalakan/matikan, pindah, hapus; galat ditandai."""
     p = project()
@@ -158,6 +223,18 @@ def sidebar_steps() -> None:
         st.sidebar.caption("Belum ada langkah: data belum diubah sama sekali. Tambah langkah dari tab "
                            "Temuan, Operasi, Ejaan, Isian bebas, atau Outlier.")
         return
+    st.sidebar.caption(f"Tersimpan otomatis di `{SESSION_FILE.name}` (kembali lagi sesudah server dinyalakan ulang).")
+    if st.sidebar.button("Kosongkan semua langkah", key="clear_steps"):
+        st.session_state["confirm_clear"] = True
+    if st.session_state.get("confirm_clear"):
+        left, right = st.sidebar.columns(2)
+        if left.button("Ya, kosongkan", type="primary", key="clear_yes"):
+            p["steps"].clear()
+            st.session_state["confirm_clear"] = False
+            st.rerun()
+        if right.button("Batal", key="clear_no"):
+            st.session_state["confirm_clear"] = False
+            st.rerun()
     log = {entry["langkah"]: entry for entry in state()["log"]} if raw_train() is not None else {}
     for i, step in enumerate(p["steps"]):
         entry = log.get(i + 1)

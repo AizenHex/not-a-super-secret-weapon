@@ -32,12 +32,13 @@ TABS = {
 
 KEEP = ["insight_column", "op_group", "op_name", "spell_column", "spell_method", "free_column", "free_min",
         "free_cut", "outlier_column", "out_mode", "out_m", "out_a", "out_low", "out_high", "out_group", "label_model", "ag_time", "ag_presets",
-        "train_path_input", "test_path_input"]
+        "spell_mode", "spell_all_method"]
 
 st.sidebar.title("Laya EDA")
 st.sidebar.caption("Alat bantu EDA: data mentah tidak berubah sampai kamu menambah langkah.")
 with st.sidebar.expander("Cara kerja langkah (flowchart)"):
     st.graphviz_chart(FLOWS["langkah"], width="stretch")
+common.restore_session()
 tab_explore.sidebar_data()
 common.sidebar_steps()
 
@@ -49,4 +50,7 @@ for name in KEEP:
 # Hanya halaman yang dibuka yang dihitung (st.tabs menghitung SEMUA tab di setiap klik → terasa macet).
 page = st.radio("Halaman", list(TABS), horizontal=True, key="page", label_visibility="collapsed")
 st.divider()
-TABS[page]()
+try:
+    TABS[page]()
+finally:
+    common.save_session()

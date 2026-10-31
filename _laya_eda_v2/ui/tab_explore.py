@@ -23,7 +23,8 @@ def read_csv(source) -> pd.DataFrame:
 
 def load_frame(title: str, default: str, key: str) -> tuple[pd.DataFrame | None, str]:
     """Kembalikan (data, kunci sumber). Kunci dipakai cache langkah (bukan id objek)."""
-    path = st.text_input(f"{title}: path CSV", default, key=f"{key}_path")
+    st.session_state.setdefault(f"{key}_path", default)  # path tersimpan (common.restore_session) menang
+    path = st.text_input(f"{title}: path CSV", key=f"{key}_path")
     upload = st.file_uploader(f"… atau unggah {title}", type="csv", key=f"{key}_upload")
     if upload is not None:
         return read_csv(upload), f"upload:{upload.name}:{upload.size}"

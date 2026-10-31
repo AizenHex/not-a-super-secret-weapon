@@ -238,6 +238,10 @@ def show_spelling() -> None:
     if not texts:
         st.info("Tidak ada kolom teks.")
         return
+    mode = st.radio("Cara", ["semua kolom sekaligus (tabel)", "satu kolom (rinci)"], horizontal=True, key="spell_mode")
+    if mode.startswith("semua"):
+        show_spelling_all(data, texts)
+        return
     column = st.selectbox("Kolom", texts, key="spell_column")
     st.caption(f"{data[column].nunique():,} nilai unik. Rapikan teks dulu (tab Temuan/Operasi) agar spasi tidak "
                "membuat nilai kembar.")
@@ -264,6 +268,53 @@ def show_spelling() -> None:
     st.write(f"{len(mapping)} ejaan dicentang.")
     if mapping:
         common.preview_step("map_values", {"column": column, "mapping": mapping}, f"spell_{column}")
+
+
+@st.cache_data(max_entries=8, show_spinner="Mencari usulan ejaan di semua kolom…")
+def all_proposals(key: str, _data: pd.DataFrame, columns: list[str], method: str, min_count: int,
+                  cutoff: int) -> pd.DataFrame:
+    """Usulan semua kolom teks dalam satu tabel (kolom 'kolom' di depan). key = kunci data (state_key)."""
+    parts = []
+    for column in columns:
+        if method == "key":
+            part = text_tools.fingerprint_groups(_data[column])[["asli", "usulan baku", "jumlah"]]
+        else:
+            part = text_tools.neighbor_groups(_data[column], min_count, cutoff)
+        parts.append(part.assign(kolom=column))
+    table = pd.concat(parts, ignore_index=True) if parts else pd.DataFrame(columns=["kolom", "asli", "usulan baku"])
+    return table[["kolom", *[c for c in table.columns if c != "kolom"]]]
+
+
+def show_spelling_all(data: pd.DataFrame, texts: list[str]) -> None:
+    """Semua kolom teks sekaligus: satu tabel usulan, centang, lalu satu langkah peta nilai per kolom."""
+    method = st.radio("Metode", ["key collision: fingerprint (aman)", "nearest neighbor: rapidfuzz (periksa)"],
+                      horizontal=True, key="spell_all_method")
+    min_count, cutoff = 20, 88
+    if method.startswith("nearest"):
+        left, right = st.columns(2)
+        min_count = left.slider("Nilai 'sering' = muncul minimal … kali", 2, 200, 20, key="nn_all_min")
+        cutoff = right.slider("Skor minimal (token_sort_ratio)", 70, 100, 88, key="nn_all_cut")
+    proposals = all_proposals(common.state_key(), data, texts, method[:3], min_count, cutoff)
+    if proposals.empty:
+        st.info("Tidak ada usulan di kolom teks mana pun: data tidak berubah.")
+        return
+    counts = proposals["kolom"].value_counts()
+    st.caption(f"{len(proposals)} usulan di {len(counts)} kolom: " + ", ".join(f"{c} ({n})" for c, n in counts.items()))
+    st.caption("Fingerprint dicentang otomatis (aman); nearest neighbor tidak. Hapus centang ejaan yang tidak mau "
+               "disatukan. Kolom tanpa centang dibiarkan: tidak ada langkah, data tidak berubah. Ubah 'usulan baku' "
+               "bila perlu.")
+    key = f"spell_all_{method[:3]}"
+    table = proposals.copy()
+    table.insert(0, "setuju", method.startswith("key"))
+    edited = st.data_editor(table, width="stretch", hide_index=True, key=key,
+                            disabled=[c for c in table.columns if c not in ("setuju", "usulan baku")])
+    chosen = edited[edited["setuju"]]
+    plan = [{"column": column, "mapping": dict(zip(part["asli"], part["usulan baku"]))}
+            for column, part in chosen.groupby("kolom", sort=False)]
+    if not plan:
+        st.info("Belum ada ejaan dicentang: tidak ada langkah yang ditambahkan, data tidak berubah.")
+        return
+    common.preview_steps("map_values", plan, key)
 
 
 # ---------------------------------------------------------------- isian bebas
@@ -404,26 +455,7 @@ def show_outlier_table(data: pd.DataFrame, numbers: list[str]) -> None:
     if not plan:
         st.info("Belum ada kolom bertanda **perbaiki**: tidak ada langkah yang ditambahkan, data tidak berubah.")
         return
-    st.subheader(f"Pratinjau {len(plan)} langkah sekaligus")
-    base = common.state()
-    candidate = [{"op": "outlier", "params": p, "on": True} for p in plan]
-    result = engine.run(candidate, common.label(), base["train"], base["test"])
-    if result["error"]:
-        st.error(f"Langkah {result['error']['langkah']} gagal: {result['error']['galat']}")
-        return
-    info = engine.diff(base["train"], result["train"])
-    cols = st.columns(3)
-    cols[0].metric("baris train", f"{len(result['train']):,}", -len(info["baris dibuang"]) or None)
-    cols[1].metric("sel berubah", f"{int(info['sel berubah'].sum()):,}")
-    cols[2].metric("baris test", f"{len(result['test']):,}")
-    with st.expander("Kode langkah-langkah ini"):
-        st.code("\n\n".join(engine.step_code(step) for step in candidate), language="python")
-    if st.button(f"Tambah {len(plan)} langkah outlier", type="primary", key="out_table_add"):
-        for params in plan:
-            engine.add_step(common.project(), "outlier", params)
-        del st.session_state["out_table"]
-        st.toast(f"{len(plan)} langkah ditambahkan")
-        st.rerun()
+    common.preview_steps("outlier", plan, "out_table")
 
 
 def show_outlier_column(data: pd.DataFrame, numbers: list[str]) -> None:

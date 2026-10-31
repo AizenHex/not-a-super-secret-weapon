@@ -5,8 +5,16 @@ Jalankan dari folder _laya_eda_v2:  python -m tests.test_app
 from __future__ import annotations
 
 import copy
+import json
+import os
+import tempfile
+from pathlib import Path
 
 from streamlit.testing.v1 import AppTest
+
+# file simpan otomatis milik uji, BUKAN hasil/sesi_terakhir.json milik pengguna
+SESSION = Path(tempfile.mkdtemp()) / "sesi_uji.json"
+os.environ["LAYA_SESI"] = str(SESSION)
 
 from tests.test_steps import LABEL, project
 
@@ -84,6 +92,17 @@ def main() -> None:
     go(app, "Outlier")
     assert app.selectbox(key="outlier_column").value == "NJOP per Meter", "pilihan harus diingat antar halaman"
     go(app, "Ejaan")
+    check(app, "ejaan semua kolom")
+    count = len(app.session_state["project"]["steps"])
+    add = [b for b in app.button if str(b.key).startswith("add_many_spell_all")]
+    if add:                                            # fingerprint dicentang otomatis → tambah sekaligus
+        add[0].click().run()
+        check(app, "ejaan tambah sekaligus")
+        assert len(app.session_state["project"]["steps"]) > count
+        app.button(key=f"del_{len(app.session_state['project']['steps']) - 1}").click().run()
+    app.radio(key="spell_all_method").set_value("nearest neighbor: rapidfuzz (periksa)").run()
+    check(app, "ejaan semua kolom nearest neighbor")
+    app.radio(key="spell_mode").set_value("satu kolom (rinci)").run()
     app.radio(key="spell_method").set_value("nearest neighbor: rapidfuzz (periksa)").run()
     check(app, "nearest neighbor")
     go(app, "Operasi")
@@ -96,6 +115,14 @@ def main() -> None:
     button(app, "Jalankan cleanlab").click().run()
     check(app, "cleanlab")
     assert any("Akurasi model" in m.value for m in app.markdown)
+
+    # simpan otomatis: sesi baru (= server dinyalakan ulang) membaca langkah yang sama
+    saved = json.loads(SESSION.read_text(encoding="utf-8"))
+    assert saved["steps"] == app.session_state["project"]["steps"]
+    fresh = AppTest.from_file("../app.py", default_timeout=300)
+    fresh.run()
+    check(fresh, "sesi baru")
+    assert fresh.session_state["project"]["steps"] == saved["steps"], "langkah harus kembali sesudah restart"
     print("SEMUA UJI APLIKASI LULUS")
 
 
