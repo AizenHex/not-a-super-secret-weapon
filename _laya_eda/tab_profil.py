@@ -5,6 +5,7 @@ import streamlit as st
 
 import eda
 import helpers
+import kamus
 from outliers import decimal_text
 from penjelasan import show_explanation
 
@@ -56,10 +57,16 @@ def add_profile_findings(ctx, profile):
             "kategori langka).", 0.4)
 
 
+@st.cache_data(max_entries=4, show_spinner=False)
+def cached_profile(data_key, indonesian, _data):
+    # data_key = (path, waktu ubah file) mewakili _data, jadi data tidak di-hash tiap klik
+    return eda.profile_columns(_data, indonesian)
+
+
 def show_profile(ctx):
     st.subheader("1. Profil per kolom")
-    profile = eda.profile_columns(ctx["data"], ctx["indonesian"])
-    st.dataframe(profile, hide_index=True)
+    profile = cached_profile(ctx["data_key"], ctx["indonesian"], ctx["data"])
+    kamus.show_table(profile, hide_index=True)
     show_distribution(ctx, profile)
     add_profile_findings(ctx, profile)
     problems = profile[profile["saran"] != ""]
@@ -128,7 +135,7 @@ def show_relations(ctx):
     if len(table) == 0:
         st.info("Tidak ada kolom yang bisa diuji terhadap label ini.")
         return
-    st.dataframe(table, hide_index=True)
+    kamus.show_table(table, hide_index=True)
     st.caption(THRESHOLD_NOTE)
     features = eda.feature_columns(ctx["data"], ctx["label_column"], ctx["numbers"], ctx["stats"])
     column = st.selectbox("Lihat kolom terhadap label", list(table["kolom"]), key="relation_col")
@@ -168,7 +175,7 @@ def show_correlation(ctx):
     draw_heatmap(eda.correlation_long(matrix))
     pairs = eda.redundant_pairs(matrix)
     st.write(f"Pasangan redundan (|rho| > {eda.REDUNDANT_LIMIT}): **{len(pairs)}**")
-    st.dataframe(pairs, hide_index=True)
+    kamus.show_table(pairs, hide_index=True)
     add_correlation_findings(ctx, pairs)
     show_explanation("korelasi", f"{len(pairs)} pasangan redundan dari {len(matrix.columns)} "
                                  "kolom.")
@@ -198,12 +205,12 @@ def show_missing(ctx):
     if len(table) == 0:
         st.success("Tidak ada sel kosong di seluruh data.")
     else:
-        st.dataframe(table, hide_index=True)
+        kamus.show_table(table, hide_index=True)
         st.bar_chart(table, x="kolom", y="persen_kosong")
         together = eda.missing_together(ctx["data"])
         if len(together) > 0:
             st.write("Kolom yang kosong di baris yang sama:")
-            st.dataframe(together, hide_index=True)
+            kamus.show_table(together, hide_index=True)
         add_missing_findings(ctx, table)
     show_explanation("kosong", f"{len(table)} kolom punya sel kosong.")
 

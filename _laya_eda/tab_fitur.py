@@ -8,6 +8,7 @@ import pandas as pd
 import streamlit as st
 
 import features
+import kamus
 
 BETTER = features.BETTER_BY
 
@@ -381,7 +382,7 @@ def run_lab(ctx, options, chosen, joint, max_rows):
 def show_lab_result(ctx, options, lines):
     task = label_task(ctx)
     table = lab_table(lines)
-    st.dataframe(table.drop(columns=["grup_kode"]), hide_index=True)
+    kamus.show_table(table.drop(columns=["grup_kode"]), hide_index=True)
     st.bar_chart(table, x="grup fitur", y="selisih", horizontal=True)
     st.caption(f"skor = {metric_name(task)} (makin besar makin baik). Baseline = TF-IDF kata. "
                "Tiap kelompok dibandingkan dengan baseline pada baris yang sama.")
@@ -429,7 +430,7 @@ def show_ablation(ctx, table):
     task = label_task(ctx)
     shown = table[["model", "baris", "skor", "std", "kedua", "detik"]].round(4)
     shown = shown.rename(columns={"std": "std antar lipatan", "kedua": "akurasi / MAE"})
-    st.dataframe(shown, hide_index=True)
+    kamus.show_table(shown, hide_index=True)
     sentence = ablation_sentence(table, task)
     st.success(sentence)
     add_finding(ctx, "Ablation Laya", sentence, "TF-IDF vs TF-IDF + Laya vs Laya saja (CV).",
@@ -458,7 +459,7 @@ def show_class_words(words):
     for label in words:
         positive = words[label][0]
         summary.append({"kelas": label, "kata penentu": ", ".join(positive["kata"].head(8))})
-    st.dataframe(pd.DataFrame(summary), hide_index=True)
+    kamus.show_table(pd.DataFrame(summary), hide_index=True)
     chosen = st.selectbox("Lihat kelas", list(words), key=widget_key("kelas_kata"))
     left, right = st.columns(2)
     left.write(f"**Mendorong ke '{chosen}'** (koefisien positif)")
@@ -500,11 +501,11 @@ def show_dense_importance(ctx, permutation, mutual, rows):
     permutation_text, mutual_text = importance_sentences(permutation, mutual, rows)
     st.write("**Permutation importance** (turunnya skor bila kolom diacak)")
     st.bar_chart(permutation.head(25), x="fitur", y="turun_skor", horizontal=True)
-    st.dataframe(permutation.head(40), hide_index=True)
+    kamus.show_table(permutation.head(40), hide_index=True)
     st.success(permutation_text)
     st.write("**Mutual information** (kolom padat vs label)")
     st.bar_chart(mutual.head(25), x="fitur", y="mutual_info", horizontal=True)
-    st.dataframe(mutual.head(40), hide_index=True)
+    kamus.show_table(mutual.head(40), hide_index=True)
     st.success(mutual_text)
     add_finding(ctx, "Permutation importance", permutation_text,
                 "Skor model turun saat kolom diacak.", "Pertahankan fitur teratas.", 0.5)
@@ -553,7 +554,7 @@ def show_issues(ctx, issues, rows):
     st.success(sentence)
     shown = issues.copy()
     shown.insert(0, "teks", ctx["texts"][issues.index])
-    st.dataframe(shown.head(300).round(3))
+    kamus.show_table(shown.head(300).round(3))
     add_finding(ctx, "Label salah", sentence, "Confident learning sederhana (Northcutt dkk. 2021).",
                 "Periksa manual baris teratas, jangan dibuang otomatis.", 0.8)
     return sentence
@@ -579,7 +580,7 @@ def noise_table(mine, other, same, rows):
 
 def show_noise(ctx, result):
     mine, other, same, flipped, rows = result
-    st.dataframe(noise_table(mine, other, same, rows).round(3), hide_index=True)
+    kamus.show_table(noise_table(mine, other, same, rows).round(3), hide_index=True)
     sentence = (f"Saat {flipped} dari {rows} label (10%) sengaja diacak, pencari ini menemukan "
                 f"{mine['recall']:.0%} di antaranya (recall) dengan presisi {mine['presisi']:.0%} "
                 f"(tebakan acak: 10%), jika hanya {flipped} teratas diambil, presisinya "
@@ -648,7 +649,7 @@ def section_imbalance(ctx, options, max_rows):
 # ================= 6. cek fitur bocor =================
 
 def show_leak(ctx, table):
-    st.dataframe(table.round(4), hide_index=True)
+    kamus.show_table(table.round(4), hide_index=True)
     suspects = table[table["status"] == "CURIGA BOCOR"]
     best = table.iloc[0]
     if len(suspects) > 0:

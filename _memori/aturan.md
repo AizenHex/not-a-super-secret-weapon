@@ -25,6 +25,22 @@ Koreksi terbaru pengguna di chat menang atas isi file ini; setelah itu perbarui 
 - Notebook `arsenal/` dan `contoh/` disimpan tanpa output (pengguna minta repo "compact"). Jangan
   membuat lagi salinan sumber `.py` di repo. (2026-10-30)
 
+## Laya EDA (`_laya_eda/`)
+
+- Jangan pernah mengganti nama kolom asli di file hasil (tidak ada `_angka` / `__angka`): kolom angka
+  diisi angka hasil baca di kolom yang sama. Kolom baru (fitur) boleh, kolom asli tetap. Pengguna:
+  "niatnya untuk mempermudah EDA, ini malah dipersulit". (2026-10-31)
+- Tiga tab terakhir selalu Split data → Kode EDA → Ekspor (urutan yang pengguna kenal). (2026-10-31)
+- Kode EDA = semua yang dilakukan ke data dan harus diulang saat inferensi, siap tempel: langkah isi
+  data (angka, isi kosong, fitur, buang kolom) untuk train + test dengan nilai dari train; buang baris
+  dan ganti label hanya train. train_siap di aplikasi harus = hasil kode itu. (2026-10-31)
+- Wajib ada pilihan isi angka kosong (median/mean/modus/0, per kolom). (2026-10-31)
+- Kecepatan penting: klik widget tidak boleh menghitung ulang hal berat (pakai `st.cache_data` dengan
+  kunci `ctx["data_key"]`, unduhan CSV lewat callable). Ukur rerun mode baris pada `data/train.csv`
+  (30k baris) sesudah mengubah tab. (2026-10-31)
+- Setiap kolom yang tampil di tabel harus punya arti di `kamus.py` (nilai apa, dari apa); tabel
+  baru pakai `kamus.show_table`, bukan `st.dataframe`. Pengguna bingung arti "nilai". (2026-10-31)
+
 ## Lingkungan
 
 - Venv: `Z:\GEMASTIK\Vignate-GEMASTIK\.venv` (Python 3.13). Pretrained offline:

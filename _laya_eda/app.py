@@ -5,6 +5,7 @@ import streamlit as st
 import torch
 
 import context
+import kamus
 import sidebar
 import tab_angka
 import tab_data
@@ -27,12 +28,13 @@ LAYA_FOLDER = "../../pretrained/laya"
 MINILM_FOLDER = "../../pretrained/minilm"
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
-# daftar tab, urut dari kiri. Tab baru: tambah namanya di sini, lalu tambah satu blok
-# `with tabs["nama"]: modul.show(ctx)` di bawah (sebelum Temuan utama dan Kode EDA).
+# daftar tab, urut dari kiri. Tiga terakhir selalu Split data -> Kode EDA -> Ekspor.
+# Tab baru: tambah namanya di sini (sebelum Temuan utama), lalu satu blok
+# `with tabs["nama"]: modul.show(ctx)` di bawah. Urutan jalan boleh beda dengan urutan tampil.
 TAB_NAMES = ["Data", "Profil & label", "Cek angka", "Teks & konsistensi", "Temukan kategori",
-             "Lensa Laya", "Peta data", "Outlier", "Telusuri + catatan", "Ekspor",
-             "Split data", "Fitur → label", "Train vs test", "Salah tebak",
-             "Temuan utama", "Kode EDA"]
+             "Lensa Laya", "Peta data", "Outlier", "Telusuri + catatan", "Fitur → label",
+             "Train vs test", "Salah tebak", "Temuan utama", "Split data", "Kode EDA",
+             "Ekspor"]
 
 st.set_page_config(page_title="Laya EDA", layout="wide")
 
@@ -58,6 +60,8 @@ sidebar.pick_label_and_date(ctx)
 sidebar.pick_numbers(ctx)
 st.sidebar.caption(f"Hasil disimpan di `_laya_eda/{ctx['folder']}` · perangkat: {DEVICE}")
 context.prepare(ctx)
+st.session_state["kamus_lensa"] = ctx["lenses"]    # tooltip kolom jawaban lensa
+kamus.show_glossary()
 
 tabs = dict(zip(TAB_NAMES, st.tabs(TAB_NAMES)))
 
@@ -84,20 +88,21 @@ with tabs["Outlier"]:
     tab_outlier.show(ctx)
 with tabs["Telusuri + catatan"]:
     tab_telusuri.show(ctx)
-with tabs["Ekspor"]:
-    tab_ekspor.show(ctx)
-with tabs["Split data"]:    # memakai train_siap dari tab Ekspor, jadi sesudahnya
-    tab_split.show(ctx)
-
 with tabs["Fitur → label"]:
     tab_fitur.show(ctx)
 with tabs["Train vs test"]:
     tab_test.show(ctx)
 with tabs["Salah tebak"]:
     tab_salah.show(ctx)
-
-# ---- dua tab ini paling akhir: memakai temuan dan pilihan dari semua tab di atas ----
-with tabs["Temuan utama"]:
+with tabs["Temuan utama"]:    # memakai temuan dari semua tab di atas
     tab_temuan.show(ctx)
+
+# ---- Kode EDA bagian atas jalan dulu: pilihan langkah -> kode dijalankan -> train_siap ----
 with tabs["Kode EDA"]:
-    tab_kode.show(ctx)
+    code_config = tab_kode.pick_steps(ctx)
+with tabs["Split data"]:    # membagi train_siap
+    tab_split.show(ctx)
+with tabs["Kode EDA"]:      # kode lengkap, termasuk sel split
+    tab_kode.show_code(ctx, code_config)
+with tabs["Ekspor"]:        # menulis file dari semua tab di atas
+    tab_ekspor.show(ctx)

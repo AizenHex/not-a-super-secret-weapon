@@ -2,6 +2,15 @@
 
 Terbaru di atas. Format: `- YYYY-MM-DD: <keputusan>. Alasan: <...>.`
 
+- 2026-10-31: encoding kedekatan makna = vektor MiniLM nilai kategori → PCA (numpy SVD) dari nilai
+  train, `MEANING_SIZE` = 8 angka per kolom. Alasan: isian bebas yang berantakan ("genting",
+  "Genteng") dapat angka mirip dan nilai baru di test tetap terbaca; model yang sama sudah dipakai
+  aplikasi (`../../pretrained/minilm`).
+- 2026-10-31: Laya EDA membuat train_siap dengan menjalankan (exec) sel kode dari `codegen.py`, bukan
+  fungsi terpisah. Alasan: file di aplikasi dan notebook yang ditempel dijamin sama. Akibatnya jawaban
+  lensa Laya dan fitur non-pandas (MiniLM, alay, regex, bin) tidak masuk train_siap karena test tidak
+  bisa dibuat ulang tanpa model; jawaban Laya tetap di data_berlensa.csv.
+
 - 2026-10-30: repo dibuat compact: output 199 notebook `contoh/` dikosongkan, `_alat/sumber_arsenal/`
   dan `_alat/sumber_contoh/` dihapus setelah dicek sel per sel identik dengan notebook. Alasan: pengguna
   minta "compact"; output bisa dibuat ulang dengan Run All, skor tiap alternatif sudah ada di

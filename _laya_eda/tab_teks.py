@@ -5,6 +5,7 @@ import streamlit as st
 
 import eda_teks
 import helpers
+import kamus
 from penjelasan import show_explanation
 
 
@@ -14,8 +15,8 @@ def cached_inconsistent(series):
 
 
 @st.cache_data
-def cached_conflicts(texts, labels):
-    return eda_teks.label_conflicts(texts, labels)
+def cached_conflicts(texts, labels, keys):
+    return eda_teks.label_conflicts(texts, labels, keys)
 
 
 @st.cache_data
@@ -41,7 +42,7 @@ def cached_ratios(texts, slang):
 # ---------------- 1. nilai kategori tidak konsisten ----------------
 
 def show_correction(ctx, column, table):
-    st.dataframe(table, hide_index=True)
+    kamus.show_table(table, hide_index=True)
     mapping = eda_teks.correction_map(table)
     st.write("Peta koreksi (tempel ke notebook):")
     st.code(f'data["{column}"] = data["{column}"].replace({mapping})', language="python")
@@ -88,7 +89,7 @@ def show_conflicts(ctx):
         st.info("Pilih kolom label di panel samping.")
         return
     labels = ctx["data"][ctx["label_column"]].fillna("(kosong)").astype(str)
-    table = cached_conflicts(ctx["texts"], labels)
+    table = cached_conflicts(ctx["texts"], labels, ctx["simple_keys"])
     groups = table["kelompok"].nunique()
     first, second = st.columns(2)
     first.metric("kelompok teks yang labelnya bentrok", groups)
@@ -96,7 +97,7 @@ def show_conflicts(ctx):
     if len(table) == 0:
         st.success("Tidak ada teks sama dengan label berbeda.")
     else:
-        st.dataframe(table, hide_index=True)
+        kamus.show_table(table, hide_index=True)
         add_conflict_finding(ctx, groups, len(table))
     show_explanation("konflik_label", f"{groups} kelompok bentrok, {len(table)} baris terlibat.")
 
@@ -111,7 +112,7 @@ def show_ngrams(ctx):
     labels = ctx["data"][ctx["label_column"]].fillna("(kosong)").astype(str)
     table = cached_ngrams(ctx["texts"], labels)
     chosen = st.selectbox("Kelas", list(table["kelas"].unique()), key="ngram_class")
-    st.dataframe(table[table["kelas"] == chosen], hide_index=True)
+    kamus.show_table(table[table["kelas"] == chosen], hide_index=True)
     st.caption("persen_di_kelas = persen teks kelas ini yang memuat frasa itu; persen_di_lain = "
                "di semua teks kelas lain. chi2 besar = lebih khas.")
     top = table.groupby("kelas").head(1)
@@ -164,7 +165,7 @@ def show_ratios(ctx, ratios, has_slang):
                           "campuran_bahasa_%": 100 * ratios["campuran_bahasa"]})
     st.write("Rata-rata per label:")
     means = table.groupby("label").mean()
-    st.dataframe(means.round(1))
+    kamus.show_table(means.round(1))
 
 
 def add_vocabulary_findings(ctx, stats, ratios):

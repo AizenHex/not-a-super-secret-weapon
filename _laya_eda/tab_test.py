@@ -9,6 +9,7 @@ import streamlit as st
 
 import features
 import helpers
+import kamus
 
 DEFAULT_TEST = "../../data_latihan/text/classification/emot_test.csv"
 LAYA_FOLDER = "../../pretrained/laya"
@@ -189,7 +190,7 @@ def show_ks_table(ctx, test, test_stats):
     for column in numbers.columns:
         lines.append(features.ks_line(column, ctx["numbers"][column], numbers[column]))
     table = pd.DataFrame(lines)
-    st.dataframe(table, hide_index=True)
+    kamus.show_table(table, hide_index=True)
     return table
 
 
@@ -216,7 +217,7 @@ def show_category_shift(ctx, test):
         st.caption("Tidak ada kolom kategori (2-50 nilai) di kolom yang dibaca.")
         return None
     table = pd.DataFrame(lines)[["kolom", "chi2", "p", "cramer_v", "psi", "kesimpulan"]]
-    st.dataframe(table, hide_index=True)
+    kamus.show_table(table, hide_index=True)
     return table
 
 
@@ -255,7 +256,7 @@ def section_vocabulary(ctx, test_texts):
     first.metric("kata test yang baru", f"{summary['persen_kata_baru']:.1f}%")
     second.metric("baris test dengan kata baru", f"{summary['persen_baris_ada_kata_baru']:.1f}%")
     third.metric("jenis kata baru", summary["jenis_kata_baru"])
-    st.dataframe(new_words)
+    kamus.show_table(new_words)
     sentence = (f"{summary['persen_kata_baru']:.1f}% kata di test tidak pernah muncul di train "
                 f"({summary['kata_baru']} dari {summary['kata_test']} kata), "
                 f"{summary['persen_baris_ada_kata_baru']:.0f}% baris test memuat minimal satu "
@@ -282,7 +283,7 @@ def section_overlap(ctx, test_texts):
         conflict = int(overlaps["label_bentrok"].sum())
         sentence = (f"{sentence} {exact} persis sama, {conflict} punya label train yang bentrok "
                     "(teks sama, label beda).")
-        st.dataframe(overlaps.head(300), hide_index=True)
+        kamus.show_table(overlaps.head(300), hide_index=True)
     st.success(sentence)
     add_finding(ctx, "Kebocoran train-test", sentence, "Cocokkan teks persis / ternormalisasi.",
                 "Jawab teks kembar dari train atau hapus dari validasi.",

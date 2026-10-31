@@ -4,6 +4,7 @@ import pandas as pd
 import streamlit as st
 
 import helpers
+import kamus
 import outliers
 from penjelasan import show_explanation
 
@@ -37,7 +38,7 @@ def show_number_table(ctx, checked, dim):
     summary = summary[["count", "25%", "50%", "75%"]]
     summary["outlier_di_kategori"] = per_group["outlier"].sum()
     summary["outlier_di_keseluruhan"] = per_group["outlier_keseluruhan"].sum()
-    st.dataframe(summary)
+    kamus.show_table(summary, notes={"count": "Banyak baris kategori ini yang angkanya terisi."})
     return per_group
 
 
@@ -57,7 +58,7 @@ def show_boxplot(ctx, checked, column, dim):
 def show_flagged(ctx, checked, column, dim):
     st.write("Yang paling menarik biasanya **janggal hanya di kategorinya**: wajar kalau "
              "dilihat global, padahal aneh untuk jenisnya.")
-    st.dataframe(checked["status"].value_counts())
+    kamus.show_table(checked["status"].value_counts())
     status = st.selectbox("Tampilkan status", ["janggal hanya di kategorinya",
                                                "janggal di keduanya",
                                                "janggal hanya di keseluruhan", "normal"])
@@ -70,7 +71,8 @@ def show_flagged(ctx, checked, column, dim):
         if line["status"] != "normal":
             view.at[row, "alasan_kolom_ini"] = outliers.number_reason(column, line, dim)
     view["alasan"] = ctx["reasons"].reindex(view.index)
-    st.dataframe(view)
+    kamus.show_table(view, notes={"nilai": f"Angka di kolom `{column}` pada baris ini (isi sel, "
+                                           "BUKAN jumlah)."})
 
 
 def show_histogram(ctx, per_group, column, dim):
@@ -127,7 +129,8 @@ def show_text_table(ctx, distances, text_view):
     odd = odd.sort_values("jarak_ke_kategorinya", ascending=False)
     view = odd.join(ctx["data"][ctx["columns"]]).head(300)
     view["alasan"] = ctx["reasons"].reindex(view.index)
-    st.dataframe(view)
+    kamus.show_table(view, notes={"nilai": f"Angka di kolom `{column}` pada baris ini (isi sel, "
+                                           "BUKAN jumlah)."})
 
 
 def show_text(ctx, dim):
@@ -164,7 +167,7 @@ def show_similar(ctx):
     pairs["teks_a"] = texts[pairs["row_a"]].to_numpy()
     pairs["teks_b"] = texts[pairs["row_b"]].to_numpy()
     st.write(f"{len(pairs)} pasangan (duplikat persis sudah dibuang; maks 3000)")
-    st.dataframe(pairs.head(300), hide_index=True)
+    kamus.show_table(pairs.head(300), hide_index=True)
     show_explanation("makna_sama", f"{len(pairs)} pasangan pada batas kemiripan {threshold}.")
 
 
@@ -199,7 +202,7 @@ def show_card(ctx, dim):
     st.subheader("Periksa satu baris: outlier atau bukan?")
     data = ctx["data"]
     row = st.number_input("Nomor baris (kolom `row` di tab Telusuri)", 0, len(data) - 1, 0)
-    st.dataframe(ctx["table"].loc[[row], ctx["show_columns"]])
+    kamus.show_table(ctx["table"].loc[[row], ctx["show_columns"]])
     parts = ctx["reason_parts"].get(row, [])
     st.write(f"**Alasan baris {row}: {len(parts)} ditandai** (dibanding kategori `{dim}`)")
     for text in parts:
@@ -208,7 +211,8 @@ def show_card(ctx, dim):
         st.success("Tidak ada alasan yang ditandai untuk baris ini.")
     lines = position_table(ctx, row, dim)
     if len(lines) > 0:
-        st.dataframe(pd.DataFrame(lines), hide_index=True)
+        kamus.show_table(pd.DataFrame(lines), hide_index=True,
+                         notes={"nilai": "Angka baris ini di kolom itu (isi sel, BUKAN jumlah)."})
     if pd.isna(ctx["table"].at[row, dim]):
         st.caption(f"Baris ini belum punya nilai `{dim}`; hanya dibanding keseluruhan.")
     show_explanation("kartu_baris", f"baris {row} punya {len(parts)} alasan.")

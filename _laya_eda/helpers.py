@@ -33,16 +33,23 @@ def row_texts(data, columns):
     return texts
 
 
-def text_stats(texts):
+def simple_keys(texts):
+    # kunci sederhana: huruf kecil, hanya a-z dan 0-9 ("Halo, Dunia!" sama dengan "halo dunia")
+    keys = texts.str.lower()
+    return keys.str.replace(r"[^a-z0-9]+", "", regex=True)
+
+
+def text_stats(texts, keys=None):
+    # keys = simple_keys(texts) yang sudah dihitung (context.py menyimpannya di cache)
+    if keys is None:
+        keys = simple_keys(texts)
     stats = pd.DataFrame(index=texts.index)
     stats["panjang"] = texts.str.len()
     stats["jumlah_kata"] = texts.str.split().str.len()
     letters = texts.str.count(r"[A-Za-z]")
     stats["rasio_bukan_huruf"] = 1 - letters / stats["panjang"].clip(lower=1)
     stats["duplikat"] = texts.duplicated(keep=False)
-    simple = texts.str.lower()
-    simple = simple.str.replace(r"[^a-z0-9]", "", regex=True)
-    stats["duplikat_mirip"] = simple.duplicated(keep=False) & ~stats["duplikat"]
+    stats["duplikat_mirip"] = keys.duplicated(keep=False) & ~stats["duplikat"]
     return stats
 
 

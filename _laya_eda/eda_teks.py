@@ -127,10 +127,11 @@ def correction_map(table):
 
 # ---------------- konflik label ----------------
 
-def label_conflicts(texts, labels):
+def label_conflicts(texts, labels, keys):
     # teks sama (persis atau setelah huruf besar/tanda baca diabaikan) tetapi label berbeda
+    # keys = kunci sederhana tiap teks (helpers.simple_keys)
     lines = []
-    groups = outliers.same_text_groups(texts, True)
+    groups = outliers.groups_by_key(keys)
     number = 0
     for members in groups.values():
         label_set = set(labels[members])

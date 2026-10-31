@@ -12,16 +12,29 @@ DEFAULT_CSV = "../../data_latihan/text/classification/emot_train.csv"
 NO_CHOICE = "(tidak ada)"
 
 
+@st.cache_data(max_entries=4, show_spinner=False)
+def read_csv(csv_path, modified):
+    # modified (waktu ubah file) ikut kunci cache: file berubah = dibaca ulang
+    return pd.read_csv(csv_path).reset_index(drop=True)
+
+
+def save_upload(uploaded):
+    # tulis hanya kalau berbeda, supaya waktu ubah file (kunci cache) tidak berganti tiap klik
+    os.makedirs("data", exist_ok=True)
+    csv_path = f"data/{uploaded.name}"
+    if not os.path.exists(csv_path) or os.path.getsize(csv_path) != uploaded.size:
+        with open(csv_path, "wb") as file:
+            file.write(uploaded.getbuffer())
+    return csv_path
+
+
 def pick_data(ctx):
     csv_path = st.sidebar.text_input("File CSV (path relatif ke folder _laya_eda)", DEFAULT_CSV)
     uploaded = st.sidebar.file_uploader("... atau unggah CSV", type="csv")
     if uploaded is not None:
-        os.makedirs("data", exist_ok=True)
-        csv_path = f"data/{uploaded.name}"
-        with open(csv_path, "wb") as file:
-            file.write(uploaded.getbuffer())
-    data = pd.read_csv(csv_path)
-    ctx["data"] = data.reset_index(drop=True)
+        csv_path = save_upload(uploaded)
+    ctx["data_key"] = (csv_path, os.path.getmtime(csv_path))
+    ctx["data"] = read_csv(csv_path, ctx["data_key"][1])
     ctx["csv_path"] = csv_path
     ctx["folder"] = helpers.work_folder(csv_path)
 

@@ -1,6 +1,6 @@
-"""Buang kustom untuk train_siap (tab Ekspor): kolom yang tidak dipakai + aturan buang baris
-(pandas query, satu per baris). Pilihan disimpan di hasil/<nama_csv>/buang_kustom.json supaya
-tidak hilang saat aplikasi dibuka lagi."""
+"""Buang kustom di tab Kode EDA: aturan buang baris (pandas query, satu per baris, train saja) dan
+kolom yang dibuang (train dan test). Pilihan disimpan di hasil/<nama_csv>/buang_kustom.json
+supaya tidak hilang saat aplikasi dibuka lagi."""
 import json
 import os
 
@@ -8,9 +8,10 @@ import pandas as pd
 import streamlit as st
 
 FILE_NAME = "buang_kustom.json"
-RULE_HELP = ("Baris yang cocok dengan SALAH SATU aturan dibuang. Contoh:\n\n"
-             "`panjang < 5`\n\n`label == \"netral\"`\n\n`harga_angka <= 0`\n\n"
-             "`text.str.contains(\"http\")`\n\n`` `nama kolom` > 3 `` (nama berspasi pakai `)")
+RULE_HELP = ("Baris yang cocok dengan SALAH SATU aturan dibuang (train saja). Kolom angka sudah "
+             "berupa angka, nama kolom tetap. Contoh:\n\n`label == \"netral\"`\n\n`harga <= 0`\n\n"
+             "`text.str.len() < 5`\n\n`text.str.contains(\"http\")`\n\n"
+             "`` `nama kolom` > 3 `` (nama berspasi pakai `)")
 
 
 def load_choices(folder):
@@ -21,7 +22,12 @@ def load_choices(folder):
         return json.load(file)
 
 
-def save_choices(folder, choices):
+def save_choice(folder, name, value):
+    # simpan satu pilihan ("kolom" atau "aturan") tanpa mengubah yang lain
+    choices = load_choices(folder)
+    if choices[name] == value:
+        return
+    choices[name] = value
     with open(f"{folder}/{FILE_NAME}", "w", encoding="utf-8") as file:
         json.dump(choices, file, ensure_ascii=False, indent=2)
 
@@ -34,58 +40,47 @@ def rule_lines(rule_text):
     return rules
 
 
-def mark_rows(train, rules):
-    # tiap aturan = train.query(...); aturan salah tulis ditampilkan error-nya, lalu dilewati
-    drop = pd.Series(False, index=train.index)
+def check_rules(table, rules):
+    # tiap aturan dicoba dengan table.query(...); aturan salah tulis ditampilkan error-nya lalu
+    # tidak ikut ke kode (kode yang ditempel harus bisa jalan)
+    good = []
     counts = pd.DataFrame(columns=["aturan", "baris cocok"])
     for rule in rules:
         try:
-            matched = train.query(rule, engine="python").index
+            matched = table.query(rule, engine="python").index
         except Exception as error:
-            st.error(f"Aturan `{rule}` tidak bisa dijalankan: {error}")
+            st.error(f"Aturan `{rule}` tidak bisa dijalankan, jadi tidak dipakai: {error}")
             continue
-        drop[matched] = True
+        good.append(rule)
         counts.loc[len(counts)] = [rule, len(matched)]
-    return drop, counts
+    return good, counts
 
 
-def droppable_columns(ctx, train):
-    # label dan kolom tanggal dipakai tab Split data, jadi tidak ikut pilihan
-    columns = []
-    for column in train.columns:
-        if column not in [ctx["label_column"], ctx["date_column"]]:
-            columns.append(column)
-    return columns
-
-
-def pick_choices(ctx, train):
+def pick_rules(ctx, table):
+    # table = data dengan kolom angka sudah jadi angka (sama dengan saat kode menjalankan aturan)
     folder = ctx["folder"]
-    saved = load_choices(folder)
-    options = droppable_columns(ctx, train)
-    default = []
-    for column in saved["kolom"]:
-        if column in options:
-            default.append(column)
-    left, right = st.columns(2)
-    drop_columns = left.multiselect("Kolom yang dibuang", options, default=default,
-                                    key=f"buang_kolom__{folder}")
-    rule_text = right.text_area("Aturan buang baris (pandas query, satu per baris)",
-                                saved["aturan"], help=RULE_HELP, key=f"buang_aturan__{folder}")
-    choices = {"kolom": drop_columns, "aturan": rule_text}
-    if choices != saved:
-        save_choices(folder, choices)
-    return drop_columns, rule_lines(rule_text)
-
-
-def show(ctx, train):
-    st.markdown("**Buang kustom** (diterapkan sesudah catatan tab Telusuri)")
-    drop_columns, rules = pick_choices(ctx, train)
-    drop, counts = mark_rows(train, rules)
+    rule_text = st.text_area("Aturan buang baris (pandas query, satu per baris)",
+                             load_choices(folder)["aturan"], help=RULE_HELP,
+                             key=f"buang_aturan__{folder}")
+    save_choice(folder, "aturan", rule_text)
+    good, counts = check_rules(table, rule_lines(rule_text))
     if len(counts) > 0:
         st.dataframe(counts, hide_index=True)
-    if drop.sum() > 0:
-        with st.expander(f"Contoh baris yang dibuang aturan ({int(drop.sum())} baris)"):
-            st.dataframe(train[drop].head(20))
-    train = train[~drop]
-    train = train.drop(columns=drop_columns)
-    return train, int(drop.sum())
+    return good
+
+
+def pick_columns(ctx):
+    # label dan kolom tanggal dipakai tab Split data, jadi tidak ikut pilihan
+    folder = ctx["folder"]
+    options = []
+    for column in ctx["data"].columns:
+        if column not in [ctx["label_column"], ctx["date_column"]]:
+            options.append(column)
+    default = []
+    for column in load_choices(folder)["kolom"]:
+        if column in options:
+            default.append(column)
+    columns = st.multiselect("Kolom yang dibuang (train dan test)", options, default=default,
+                             key=f"buang_kolom__{folder}")
+    save_choice(folder, "kolom", columns)
+    return columns

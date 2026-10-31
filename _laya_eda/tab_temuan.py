@@ -4,6 +4,7 @@ import datetime
 import pandas as pd
 import streamlit as st
 
+import kamus
 from penjelasan import show_explanation
 
 
@@ -59,7 +60,7 @@ def show(ctx):
     shown = table
     if section != "(semua)":
         shown = table[table["bagian"] == section]
-    st.dataframe(shown, hide_index=True)
+    kamus.show_table(shown, hide_index=True)
     report = build_report(ctx, table)
     first, second = st.columns(2)
     first.download_button("Unduh laporan (.md)", report.encode("utf-8"), "laporan_eda.md",

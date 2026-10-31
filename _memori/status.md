@@ -28,9 +28,12 @@ Pengguna berangkat 2026-11-09. Prioritas dan pohon pekerjaan: [`../RENCANA_LOMBA
   `yolo_2cls.pt` tidak ada di laptop).
 - Di luar repo (2026-10-30): salinan repo lama (`PythonProject`, `Sen-3`..`Sen-6`, `Sentiment-2`, ±35 GB)
   dan file lepas di root `Vignate-GEMASTIK` dipindah ke `Z:/GEMASTIK/_arsip/`, tidak dihapus.
-- `_laya_eda/` (2026-10-31): tab baru "Split data" (train/validasi dari `train_siap`) dan "Buang
-  kustom" di tab Ekspor (kolom + aturan `train.query`). `_uji/test_app.py` belum dijalankan ulang
-  sejak penambahan ini. Alasan outlier angka tidak lagi macet pada data besar (perbaikan 2026-10-31).
+- `_laya_eda/` (2026-10-31): tiga tab terakhir Split data → Kode EDA → Ekspor. Kode EDA memilih
+  langkah (buang baris, isi angka kosong, fitur, buang kolom) dan menulis kode train + test yang juga
+  dijalankan aplikasi untuk train_siap; nama kolom asli tidak diubah. Rerun mode baris ±4 s di
+  `data/train.csv`. Kamus kolom (tooltip judul kolom + sidebar) dan encoding kategori (one-hot,
+  kode, target, kedekatan makna MiniLM) di Kode EDA. `_uji/test_app.py` dan
+  `_uji/test_codegen.py` belum dijalankan ulang penuh.
 - `viginte-train.ipynb` dipindah dari root ke `_.Testing/` (diabaikan git).
 - PPT vignette (penyisihan) selesai 2026-10-30. Figur + skripnya di `Z:/GEMASTIK/Vignate-2/outputs/figures/`
   (di luar repo, bukan git); catatan lengkap `Z:/GEMASTIK/Vignate-2/HANDOFF.md`.

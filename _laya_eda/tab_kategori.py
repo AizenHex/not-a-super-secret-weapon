@@ -6,6 +6,7 @@ import pandas as pd
 import streamlit as st
 
 import helpers
+import kamus
 from penjelasan import show_explanation
 
 
@@ -32,7 +33,7 @@ def show_groups(ctx):
     for group, keywords in zip(info["kelompok"], info["kata_kunci"]):
         members = group_rows.loc[group_rows["kelompok"] == group, "row"]
         with st.expander(f"Kelompok {group} · {sizes[group]} baris · {keywords}"):
-            st.dataframe(ctx["data"].loc[members.head(10), ctx["columns"]])
+            kamus.show_table(ctx["data"].loc[members.head(10), ctx["columns"]])
     return info
 
 

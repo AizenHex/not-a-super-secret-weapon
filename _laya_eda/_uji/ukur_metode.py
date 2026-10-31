@@ -116,7 +116,7 @@ def measure_laya_second(properti):
 def measure_conflicts(emot):
     title("4. konflik label")
     texts = helpers.row_texts(emot, ["text"])
-    base = eda_teks.label_conflicts(texts, emot["label"])
+    base = eda_teks.label_conflicts(texts, emot["label"], helpers.simple_keys(texts))
     print("emot_train asli: kelompok bentrok", base["kelompok"].nunique(), "| baris", len(base))
     copies = emot.sample(n=100, random_state=SEED).copy()
     labels = sorted(emot["label"].unique())
@@ -126,7 +126,7 @@ def measure_conflicts(emot):
     copies["label"] = new_labels
     mixed = pd.concat([emot, copies], ignore_index=True)
     texts = helpers.row_texts(mixed, ["text"])
-    found = eda_teks.label_conflicts(texts, mixed["label"])
+    found = eda_teks.label_conflicts(texts, mixed["label"], helpers.simple_keys(texts))
     print("setelah menyisipkan 100 salinan berlabel beda: kelompok bentrok",
           found["kelompok"].nunique(), "(harapan 100 + bawaan", base["kelompok"].nunique(), ")")
 

@@ -3,6 +3,7 @@ import pandas as pd
 import streamlit as st
 
 import helpers
+import kamus
 import outliers
 from penjelasan import show_explanation
 
@@ -32,13 +33,13 @@ def show_column(ctx, column):
     with st.expander(f"lihat {column}"):
         if column in ctx["data"].columns:
             st.write("Nilai yang tidak bisa dibaca sebagai angka:")
-            st.dataframe(ctx["data"].loc[unreadable, column].value_counts().head(30))
-        st.dataframe(values.describe())
+            kamus.show_table(ctx["data"].loc[unreadable, column].value_counts().head(30))
+        kamus.show_table(values.describe())
         order = values[outlier].sort_values(ascending=False).index
         st.write("Outlier (terbesar dulu), dengan alasannya:")
         shown = ctx["data"].loc[order].head(50).copy()
         shown["alasan"] = ctx["reasons"].reindex(shown.index)
-        st.dataframe(shown)
+        kamus.show_table(shown)
     add_findings(ctx, column, int(unreadable.sum()), non_positive, int(outlier.sum()))
 
 

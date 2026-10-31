@@ -1,11 +1,13 @@
-"""Tab Split data: membagi train_siap (tab Ekspor) jadi train + validasi, dengan tiga cara
-(acak / menurut waktu / menurut kelompok), lalu mengecek teks yang sama di kedua sisi (bocor)."""
+"""Tab Split data: membagi train_siap (hasil kode tab Kode EDA) jadi train + validasi, dengan
+tiga cara (acak / menurut waktu / menurut kelompok), lalu mengecek teks yang sama di kedua sisi
+(bocor). Filenya ditulis di tab Ekspor; kodenya ikut ke notebook tab Kode EDA."""
 import pandas as pd
 import streamlit as st
 from sklearn.model_selection import GroupShuffleSplit, train_test_split
 
 import eda
 import helpers
+import kamus
 from penjelasan import show_explanation
 
 METHODS = ["acak", "waktu", "kelompok"]
@@ -13,10 +15,8 @@ SAME_TEXT = "(teks sama = satu kelompok)"
 
 
 def simple_keys(ctx, rows):
-    # kunci sederhana seperti cek duplikat_mirip: huruf kecil, hanya a-z dan 0-9
-    keys = ctx["texts"].str.lower()
-    keys = keys.str.replace(r"[^a-z0-9]", "", regex=True)
-    return keys.reindex(rows)
+    # kunci sederhana teks asli (helpers.simple_keys, dihitung sekali di context.py)
+    return ctx["simple_keys"].reindex(rows)
 
 
 def stratify_label(ctx, train):
@@ -84,7 +84,7 @@ def show_summary(ctx, train, train_rows, valid_rows):
         st.warning(f"{leaks} baris validasi punya teks yang sama dengan train, jadi skor "
                    f"validasi terlalu bagus. Pakai cara **kelompok** + {SAME_TEXT}.")
     if ctx["label_column"] is not None:
-        st.dataframe(label_table(ctx, train, train_rows, valid_rows))
+        kamus.show_table(label_table(ctx, train, train_rows, valid_rows))
     return leaks
 
 
@@ -103,49 +103,51 @@ def pick_method(ctx):
     return method, valid_share, group_column
 
 
-def write_files(ctx, train_part, valid_part):
-    folder = ctx["folder"]
-    first, second, third = st.columns(3)
-    if first.button("Tulis train_split.csv + valid_split.csv", key="split_tulis"):
-        train_part.to_csv(f"{folder}/train_split.csv", index_label="row")
-        valid_part.to_csv(f"{folder}/valid_split.csv", index_label="row")
-        st.success(f"Tersimpan: _laya_eda/{folder}/train_split.csv dan valid_split.csv")
-    second.download_button("Unduh train_split.csv", train_part.to_csv(index_label="row"),
-                           "train_split.csv", key="split_unduh_train")
-    third.download_button("Unduh valid_split.csv", valid_part.to_csv(index_label="row"),
-                          "valid_split.csv", key="split_unduh_valid")
-
-
-def group_code(ctx, group_column):
-    # baris kode untuk kolom kelompok; teks sama = kunci sederhana dari kolom yang dibaca Laya
-    if group_column != SAME_TEXT:
-        return [f'groups = train["{group_column}"].fillna("(kosong)")']
-    lines = ['texts = train["' + ctx["columns"][0] + '"].fillna("").astype(str)']
-    for column in ctx["columns"][1:]:
-        lines.append(f'texts = texts + " | " + train["{column}"].fillna("").astype(str)')
-    lines.append("groups = texts.str.lower()")
-    lines.append('groups = groups.str.replace(r"[^a-z0-9]", "", regex=True)')
+def same_text_code(ctx):
+    # kunci teks sama dari CSV ASLI (sebelum kolom angka diubah / diisi), sama persis dengan
+    # helpers.row_texts + helpers.simple_keys di aplikasi
+    lines = ["raw = pd.read_csv(TRAIN_CSV)    # teks asli untuk kunci kelompok"]
+    if len(ctx["columns"]) == 1:
+        lines.append(f'texts = raw["{ctx["columns"][0]}"].fillna("").astype(str)')
+    else:
+        lines = lines + [f"READ_COLUMNS = {ctx['columns']}",
+                         'texts = pd.Series("", index=raw.index)',
+                         "for column in READ_COLUMNS:",
+                         '    texts = texts + column + ": " + raw[column].fillna("").astype(str)'
+                         ' + " | "']
+    lines.append('groups = texts.str.lower().str.replace(r"[^a-z0-9]+", "", regex=True)')
+    lines.append("groups = groups.loc[train.index]")
     return lines
 
 
+def group_code(ctx, group_column):
+    # baris kode untuk kolom kelompok
+    if group_column != SAME_TEXT:
+        return [f'groups = train["{group_column}"].fillna("(kosong)")']
+    return same_text_code(ctx)
+
+
 def time_code(ctx, valid_share):
+    # baris paling baru jadi validasi; train sendiri tidak diubah urutannya
     date = ctx["date_column"]
-    return [f'train["{date}"] = pd.to_datetime(train["{date}"], errors="coerce")',
-            f'train = train.sort_values("{date}", na_position="first")',
-            f"n_train = len(train) - int(len(train) * {valid_share})",
-            "train_part = train.iloc[:n_train]",
-            "valid_part = train.iloc[n_train:]"]
+    return [f'dates = pd.to_datetime(train["{date}"], errors="coerce")',
+            'order = dates.sort_values(na_position="first").index',
+            f"n_train = len(order) - int(len(order) * {valid_share})",
+            "train_part = train.loc[order[:n_train]].sort_index()",
+            "valid_part = train.loc[order[n_train:]].sort_index()"]
 
 
 def split_code(ctx, method, valid_share, group_column, stratified):
-    # kode notebook yang memberi pembagian yang sama dari train_siap.csv
-    lines = [f'train = pd.read_csv("../_laya_eda/{ctx["folder"]}/train_siap.csv")']
+    # baris kode notebook (sesudah sel Kode EDA, memakai `train`) dengan pembagian yang sama
+    lines = ["from sklearn.model_selection import GroupShuffleSplit, train_test_split", ""]
     if method == "acak":
         stratify = "None"
         if stratified:
             stratify = f'train["{ctx["label_column"]}"]'
-        lines.append(f"train_part, valid_part = train_test_split(train, test_size={valid_share}, "
-                     f"random_state=42, stratify={stratify})")
+        lines.append(f"train_part, valid_part = train_test_split(\n    train, test_size="
+                     f"{valid_share}, random_state=42, stratify={stratify})")
+        lines.append("train_part = train_part.sort_index()")
+        lines.append("valid_part = valid_part.sort_index()")
     elif method == "waktu":
         lines = lines + time_code(ctx, valid_share)
     else:
@@ -155,7 +157,8 @@ def split_code(ctx, method, valid_share, group_column, stratified):
         lines.append("train_numbers, valid_numbers = next(splitter.split(train, groups=groups))")
         lines.append("train_part = train.iloc[train_numbers]")
         lines.append("valid_part = train.iloc[valid_numbers]")
-    return "\n".join(lines)
+    lines.append('print("train:", train_part.shape, "validasi:", valid_part.shape)')
+    return lines
 
 
 def split_rows(ctx, train, method, valid_share, group_column):
@@ -167,8 +170,9 @@ def split_rows(ctx, train, method, valid_share, group_column):
 
 
 def show(ctx):
-    st.write("Membagi **train_siap** (tab Ekspor: catatan + fitur pilihan + buang kustom) jadi "
-             "train dan validasi. Validasi dipakai mengukur model sebelum menebak test.")
+    st.write("Membagi **train_siap** (hasil kode di tab **Kode EDA**) jadi train dan validasi. "
+             "Validasi dipakai mengukur model sebelum menebak test. File ditulis di tab "
+             "**Ekspor**; kode di bawah ikut masuk notebook tab Kode EDA.")
     train = ctx["ready_train"]
     method, valid_share, group_column = pick_method(ctx)
     if method == "waktu" and ctx["date_column"] is None:
@@ -177,8 +181,9 @@ def show(ctx):
         return
     train_rows, valid_rows = split_rows(ctx, train, method, valid_share, group_column)
     leaks = show_summary(ctx, train, train_rows, valid_rows)
-    write_files(ctx, train.loc[train_rows].sort_index(), train.loc[valid_rows].sort_index())
+    ctx["split_parts"] = (train.loc[train_rows].sort_index(), train.loc[valid_rows].sort_index())
     stratified = stratify_label(ctx, train) is not None
-    st.code(split_code(ctx, method, valid_share, group_column, stratified), language="python")
+    ctx["split_lines"] = split_code(ctx, method, valid_share, group_column, stratified)
+    st.code("\n".join(ctx["split_lines"]), language="python")
     show_explanation("split", f"{leaks} dari {len(valid_rows)} baris validasi punya teks yang "
                               "sama dengan train.")

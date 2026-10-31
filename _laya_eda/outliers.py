@@ -203,12 +203,16 @@ def simple_text(text):
 
 
 def same_text_groups(texts, simplify):
-    # {kunci teks: [nomor baris, ...]}, hanya teks yang muncul lebih dari sekali
+    keys = texts
+    if simplify:
+        keys = texts.map(simple_text)
+    return groups_by_key(keys)
+
+
+def groups_by_key(keys):
+    # {kunci teks: [nomor baris, ...]}, hanya kunci yang muncul lebih dari sekali
     groups = {}
-    for row, text in texts.items():
-        key = text
-        if simplify:
-            key = simple_text(text)
+    for row, key in keys.items():
         if key == "":
             continue
         if key not in groups:
@@ -261,10 +265,11 @@ def twin_reason(row, members, texts, labels, first_by_label):
     return " ".join(sentences).strip()
 
 
-def duplicate_reasons(texts, labels):
+def duplicate_reasons(texts, labels, keys):
     # {nomor baris: kalimat} untuk duplikat, hampir duplikat, dan konflik label
+    # keys = kunci sederhana tiap teks (helpers.simple_keys, dihitung sekali di context.py)
     reasons = {}
-    twins = same_text_groups(texts, True)
+    twins = groups_by_key(keys)
     for members in twins.values():
         first_by_label = {}
         if labels is not None:
@@ -432,7 +437,7 @@ def add_duplicate_reasons(parts, ctx):
     labels = None
     if ctx["label_column"] is not None:
         labels = ctx["data"][ctx["label_column"]].fillna("(kosong)").astype(str)
-    reasons = duplicate_reasons(ctx["texts"], labels)
+    reasons = duplicate_reasons(ctx["texts"], labels, ctx["simple_keys"])
     for row in reasons:
         if reasons[row] != "":
             add_reason(parts, row, reasons[row])

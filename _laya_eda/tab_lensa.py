@@ -5,6 +5,7 @@ import pandas as pd
 import streamlit as st
 
 import helpers
+import kamus
 from lenses import PRESETS
 from penjelasan import show_explanation
 
@@ -26,7 +27,7 @@ def show_overview(ctx):
     if len(overview) == 0:
         st.info("Belum ada lensa. Tambah lensa siap pakai atau buat sendiri di bawah.")
     else:
-        st.dataframe(pd.DataFrame(overview), hide_index=True)
+        kamus.show_table(pd.DataFrame(overview), hide_index=True)
 
 
 def remove_result_file(ctx, name):

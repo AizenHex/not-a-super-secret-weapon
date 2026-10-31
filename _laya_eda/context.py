@@ -23,24 +23,40 @@ def new_context(load_minilm, load_laya):
             "load_laya": load_laya, "mode": "teks", "date_column": None, "indonesian": True,
             "number_columns": [], "ratio": None, "reason_dim": None, "reasons": None,
             "reason_parts": {}, "distances": None, "group_rows": None, "doubt": None,
-            "show_columns": [], "ready_train": None}
+            "show_columns": [], "data_key": None, "simple_keys": None,
+            # diisi tab Kode EDA dan Split data, dipakai tab Ekspor
+            "ready_train": None, "ready_test": None, "split_parts": None, "split_lines": None}
 
 
-def build_numbers(ctx):
-    data = ctx["data"]
+def build_numbers(data, number_columns, indonesian, ratio):
     numbers = pd.DataFrame(index=data.index)
-    for column in ctx["number_columns"]:
-        numbers[column] = helpers.to_number(data[column], ctx["indonesian"])
-    if ctx["ratio"] is not None:
-        top, bottom = ctx["ratio"]
+    for column in number_columns:
+        numbers[column] = helpers.to_number(data[column], indonesian)
+    if ratio is not None:
+        top, bottom = ratio
         numbers[f"{top}_per_{bottom}"] = numbers[top] / numbers[bottom].where(numbers[bottom] > 0)
     return numbers
 
 
+@st.cache_data(max_entries=4, show_spinner="Menghitung teks dan angka ...")
+def cached_texts(data_key, columns, number_columns, indonesian, ratio, _data):
+    # dihitung sekali per (file, kolom, pilihan angka); klik widget lain tidak menghitung ulang.
+    # _data tidak di-hash (lambat); data_key = (path, waktu ubah file) mewakilinya
+    texts = helpers.row_texts(_data, columns)
+    keys = helpers.simple_keys(texts)
+    stats = helpers.text_stats(texts, keys)
+    numbers = build_numbers(_data, number_columns, indonesian, ratio)
+    return texts, keys, stats, numbers
+
+
 def prepare(ctx):
-    ctx["texts"] = helpers.row_texts(ctx["data"], ctx["columns"])
-    ctx["stats"] = helpers.text_stats(ctx["texts"])
-    ctx["numbers"] = build_numbers(ctx)
+    texts, keys, stats, numbers = cached_texts(ctx["data_key"], ctx["columns"],
+                                               ctx["number_columns"], ctx["indonesian"],
+                                               ctx["ratio"], ctx["data"])
+    ctx["texts"] = texts
+    ctx["simple_keys"] = keys
+    ctx["stats"] = stats
+    ctx["numbers"] = numbers
     ctx["lenses"] = helpers.load_lenses(ctx["folder"])
 
 

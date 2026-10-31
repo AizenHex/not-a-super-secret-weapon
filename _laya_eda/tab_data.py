@@ -4,13 +4,14 @@ import pandas as pd
 import streamlit as st
 
 import helpers
+import kamus
 from penjelasan import show_explanation
 
 
 def show_overview(ctx):
     data = ctx["data"]
     st.subheader(f"{len(data)} baris × {len(data.columns)} kolom")
-    st.dataframe(data.head(50))
+    kamus.show_table(data.head(50))
     left, right = st.columns(2)
     per_column = pd.DataFrame()
     per_column["tipe"] = data.dtypes.astype(str)
@@ -41,13 +42,13 @@ def show_extremes(ctx):
     stats = ctx["stats"]
     columns = ctx["columns"]
     with st.expander("Duplikat terbanyak"):
-        st.dataframe(ctx["texts"][stats["duplikat"]].value_counts().head(30))
+        kamus.show_table(ctx["texts"][stats["duplikat"]].value_counts().head(30))
     with st.expander("Teks paling pendek"):
-        st.dataframe(data.loc[stats["panjang"].nsmallest(30).index, columns])
+        kamus.show_table(data.loc[stats["panjang"].nsmallest(30).index, columns])
     with st.expander("Teks paling panjang"):
-        st.dataframe(data.loc[stats["panjang"].nlargest(30).index, columns])
+        kamus.show_table(data.loc[stats["panjang"].nlargest(30).index, columns])
     with st.expander("Paling banyak simbol / angka (bukan huruf)"):
-        st.dataframe(data.loc[stats["rasio_bukan_huruf"].nlargest(30).index, columns])
+        kamus.show_table(data.loc[stats["rasio_bukan_huruf"].nlargest(30).index, columns])
 
 
 def add_findings(ctx):

@@ -5,6 +5,7 @@ import streamlit as st
 
 import eda_teks
 import helpers
+import kamus
 from penjelasan import show_explanation
 
 SILHOUETTE_TEXT = [(0.5, "terpisah jelas"), (0.25, "terpisah cukup"), (0.1, "terpisah lemah"),
@@ -64,7 +65,7 @@ def show_summary(ctx):
     labels = None
     if ctx["label_column"] is not None and dim != ctx["label_column"]:
         labels = ctx["data"][ctx["label_column"]]
-    st.dataframe(cached_summary(ctx["table"][dim], ctx["stats"], labels, ctx["texts"]))
+    kamus.show_table(cached_summary(ctx["table"][dim], ctx["stats"], labels, ctx["texts"]))
     st.caption("kata_khas = kata yang jauh lebih sering muncul di kategori ini daripada di "
                "semua teks. Bahan insight untuk slide.")
     show_explanation("ringkasan_kategori")
@@ -99,7 +100,7 @@ def show_cross(ctx):
     dim_b = middle.selectbox("Kolom tabel", dimensions, index=len(dimensions) - 1, key="dim_b")
     show_as = right.radio("Isi sel", ["jumlah", "% per baris", "% per kolom"], horizontal=True)
     cross = crosstab_as(table[dim_a], table[dim_b], show_as)
-    st.dataframe(cross.style.background_gradient(cmap="Blues", axis=None))
+    kamus.show_table(cross.style.background_gradient(cmap="Blues", axis=None))
     value_a = left.selectbox(f"{dim_a} =", list(cross.index), key="value_a")
     value_b = middle.selectbox(f"{dim_b} =", list(cross.columns), key="value_b")
     same_a = top_values(table[dim_a]) == value_a
@@ -108,7 +109,7 @@ def show_cross(ctx):
     st.write(f"{len(picked)} baris")
     view = picked[ctx["show_columns"]].head(300).copy()
     view["alasan"] = ctx["reasons"].reindex(view.index)
-    st.dataframe(view)
+    kamus.show_table(view)
     show_explanation("tabel_silang")
 
 
@@ -128,7 +129,7 @@ def show_separation(ctx, vectors, labels, dim):
         st.info("Butuh minimal dua kelas untuk menghitung pemisahan.")
         return
     table, overall = cached_separation(vectors[keep], kept_labels)
-    st.dataframe(table.sort_values("silhouette_rata2"), hide_index=True)
+    kamus.show_table(table.sort_values("silhouette_rata2"), hide_index=True)
     meaning = silhouette_meaning(overall)
     st.write(f"Silhouette rata-rata (kosinus, vektor asli 384 dimensi): **{overall:.3f}** → kelas "
              f"pada `{dim}` {meaning}. Kelas dengan silhouette kecil / persen lebih mirip kelas "

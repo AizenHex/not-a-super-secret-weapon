@@ -2,6 +2,35 @@
 
 Terbaru di atas. Format di [`README.md`](README.md).
 
+## 2026-10-31 claude-opus-5-5 - Laya EDA: kamus kolom + encoding kategori
+- Dikerjakan: `kamus.py` (arti nama kolom: persis, awalan `teks__`/`kosong_`/`log_`/`oh_`/`makna_`/...,
+  akhiran lensa `__yakin`/`__nilai`/...). Semua `st.dataframe` di tab_*.py lewat `kamus.show_table`
+  (tooltip di judul kolom; `notes=` untuk arti khusus tabel, mis. `nilai` di tab Outlier) + daftar
+  yang bisa dicari di sidebar "Kamus kolom". `category_encoding.py` + langkah 4 tab Kode EDA:
+  one-hot, kode angka, target encoding (dihaluskan, per kelas atau rata-rata), kedekatan makna
+  (MiniLM + PCA dari train, nilai baru di test tetap dapat angka), "saran" (≤10 nilai one-hot, lebih
+  makna), buang kolom asli. Sel model MiniLM ber-role "model": aplikasi memberi MINILM sendiri.
+  Diuji pada `data/train.csv` + test tiruan: tanpa error, encoding saran 19.6 s (muat model), ganti
+  ke target 5 s; kode hasil dijalankan mandiri = train_siap aplikasi (30379 × 99, test 300 × 98).
+  Ikut diperbaiki: f-string patah di `tab_split.split_code` (cara acak).
+- Dikoreksi pengguna: "ini kok kamu lama banget" → kerja lebih ringkas, kabari kemajuan singkat.
+- Berikutnya: jalankan `_uji/test_app.py` + `_uji/test_codegen.py` di mesin yang punya `data_latihan`.
+
+## 2026-10-31 claude-opus-5-5 - Laya EDA: Kode EDA untuk inferensi, isi kosong, urutan tab, cepat
+- Dikerjakan: `codegen.py` + `tab_kode.py` ditulis ulang: pilihan langkah (buang baris train, isi
+  angka kosong `missing_fill.py`, fitur, buang kolom `custom_drop.py`) → kode train + test dengan
+  nilai dari train; kode yang sama dijalankan di aplikasi (exec, cache) jadi train_siap = hasil kode.
+  Kolom angka tidak lagi diganti nama (`_angka` dihapus di Ekspor dan kode). Tab: ... Temuan utama →
+  Split data → Kode EDA → Ekspor; semua file ditulis di Ekspor (unduhan lewat callable). Cache:
+  baca CSV, teks/kunci sederhana/statistik/angka (`context.cached_texts`), profil kolom; kunci teks
+  sederhana dipakai ulang di outlier, konflik label, split. Diukur pada `data/train.csv` mode baris:
+  rerun 13 s → ±4 s; kode hasil dijalankan mandiri (train.csv + test tiruan, properti kecil + test)
+  dan cocok dengan train_siap aplikasi. `_uji/test_app.py`, `_uji/test_codegen.py` disesuaikan tetapi
+  belum dijalankan penuh (butuh GPU / `data_latihan` yang tidak ada di clone ini).
+- Dikoreksi pengguna: nama kolom `_angka`, rerun lambat mode baris, urutan tab, tidak ada isi kosong,
+  Kode EDA harus siap pakai untuk inferensi → semua masuk `aturan.md` bagian Laya EDA.
+- Berikutnya: penjelasan arti tiap nama kolom di aplikasi; encoding kategori (termasuk kedekatan makna).
+
 ## 2026-10-31 claude-opus-5-5 - Laya EDA: perbaikan macet alasan outlier angka
 - Dikerjakan: `_laya_eda/outliers.py` `add_overall_reasons` menghitung `iqr_bounds` + median sekali
   per kolom; sebelumnya `overall_reason` menghitung ulang untuk tiap baris outlier, sehingga data

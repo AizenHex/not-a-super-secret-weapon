@@ -293,20 +293,22 @@ EXPLANATIONS = {
         "juri": "Mesin mengusulkan, manusia memutuskan, dan semua keputusan tercatat.",
     },
     "ekspor": {
-        "apa": ("Dua file: data_berlensa.csv (semua hasil + alasan + catatan, untuk ditelusuri) "
-                "dan train_siap.csv (catatan sudah diterapkan + fitur pilihan, untuk model)."),
-        "cara": ("Semua tabel digabung menurut nomor baris (`row`). Untuk train_siap: label "
-                 "'ganti_label' diganti dulu, lalu baris 'buang' dibuang; fitur dihitung dengan "
-                 "fungsi yang sama dengan tab Fitur → label. Terakhir buang kustom: baris yang "
-                 "cocok dengan salah satu aturan `train.query(...)` dibuang, lalu kolom pilihan "
-                 "dibuang (disimpan di buang_kustom.json)."),
+        "apa": ("Langkah terakhir: menulis train_siap.csv (+ test_siap.csv) dari tab Kode EDA, "
+                "train_split.csv + valid_split.csv dari tab Split data, dan data_berlensa.csv "
+                "(semua hasil + alasan + catatan, untuk ditelusuri)."),
+        "cara": ("train_siap / test_siap = hasil menjalankan kode tab Kode EDA, jadi sama "
+                 "dengan hasil notebook yang kamu tempel. Nama kolom asli tidak diubah: kolom "
+                 "angka berisi angka hasil baca di kolom yang sama. data_berlensa digabung "
+                 "menurut nomor baris (`row`). Isi unduhan baru dibuat saat tombol diklik."),
         "kenapa": "Hasil EDA manual bisa dipakai langsung oleh notebook modelling.",
-        "batasan": "Berisi hanya baris yang sudah dihitung; lensa yang belum jalan berisi kosong.",
+        "batasan": ("data_berlensa hanya berisi jawaban Laya untuk baris yang sudah dibaca; "
+                    "jawaban Laya tidak masuk train_siap karena test tidak dibaca Laya."),
         "juri": "Seluruh temuan dan alasannya diekspor ke satu file yang dipakai ulang oleh model.",
     },
     "split": {
-        "apa": ("Membagi train_siap jadi train_split.csv dan valid_split.csv, plus kode notebook "
-                "yang memberi pembagian yang sama."),
+        "apa": ("Membagi train_siap (hasil kode tab Kode EDA) jadi train dan validasi, plus "
+                "kode yang memberi pembagian yang sama (ikut ke notebook tab Kode EDA). File "
+                "ditulis di tab Ekspor."),
         "cara": ("Acak: sklearn `train_test_split` (stratify menurut label kategori bila tiap "
                  "kelas punya minimal 2 baris). Waktu: diurutkan menurut kolom tanggal, porsi "
                  "terakhir jadi validasi. Kelompok: `GroupShuffleSplit`, semua baris satu "
@@ -378,16 +380,19 @@ EXPLANATIONS = {
                  "perlu tidaknya normalisasi slang dan model multibahasa."),
     },
     "kode": {
-        "apa": ("Kode notebook EDA (.py dengan sel `# %%` atau .ipynb) yang mengulang semua "
-                "langkah yang kamu pilih di web ini, tanpa membutuhkan `_laya_eda`."),
-        "cara": ("codegen.py menyusun sel dari pilihan sidebar dan fitur pilihan; kodenya "
-                 "hanya pandas + numpy, tanpa memanggil Laya. Baris dibuang lewat ATURAN "
-                 "pandas (duplikat, teks kosong, angka tidak terbaca / negatif, outlier IQR "
-                 "per kategori), tiap "
-                 "aturan = loop per kolom yang menambah ke satu penanda `drop`, bukan daftar "
-                 "nomor baris. Hanya keputusan manual tab Telusuri yang ditulis per baris."),
-        "kenapa": ("Keputusan manual harus bisa diulang. Kode yang bisa dijalankan dari awal "
-                   "membuktikan bahwa data bersih untuk model berasal dari langkah yang jelas."),
+        "apa": ("Kode notebook (.py dengan sel `# %%` atau .ipynb) berisi semua yang dilakukan "
+                "ke data, siap tempel: baca angka di kolom yang sama, buang baris (train), isi "
+                "angka kosong, fitur, encoding kategori, buang kolom, split. Sel bertanda "
+                "(train + test) dipakai lagi untuk test saat inferensi."),
+        "cara": ("codegen.py menyusun sel dari pilihanmu; kodenya hanya pandas + numpy. Kode "
+                 "yang sama dijalankan di aplikasi (exec) untuk membuat train_siap, jadi file "
+                 "di tab Ekspor = hasil kode. Nilai isi kosong (median/mean/modus), median "
+                 "kategori, frekuensi, dan encoding (urutan kode, rata-rata label, sumbu PCA "
+                 "makna MiniLM) dihitung dari train lalu dipakai sama untuk test. "
+                 "Baris dibuang lewat aturan pandas yang digabung ke satu penanda `drop`; hanya "
+                 "keputusan manual tab Telusuri yang ditulis per nomor baris."),
+        "kenapa": ("Test harus melewati langkah yang sama persis dengan train, dengan nilai dari "
+                   "train; kalau tidak, model melihat data yang berbeda saat menebak."),
         "batasan": ("Tab Temukan kategori (kelompok) tidak ikut dibuat ulang karena hasil "
                     "pengelompokan bisa berubah tiap jalan; lensa Laya juga tidak ditulis (Laya "
                     "hanya alat bantu melihat data di web ini). Path CSV dianggap dari folder "

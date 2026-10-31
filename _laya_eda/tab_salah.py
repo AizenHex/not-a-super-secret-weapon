@@ -8,6 +8,7 @@ import streamlit as st
 import eda
 import features
 import helpers
+import kamus
 import mistakes
 from penjelasan import show_explanation
 
@@ -50,7 +51,7 @@ def show_class_summary(ctx, table, where):
     right.write("**Skor per kelas**")
     right.dataframe(mistakes.class_report(table))
     st.write("**Tabel silang label asli (baris) × tebakan (kolom)**")
-    st.dataframe(pd.crosstab(table["label"], table["tebakan"]))
+    kamus.show_table(pd.crosstab(table["label"], table["tebakan"]))
 
 
 def filter_class_rows(table, prefix):
@@ -79,7 +80,7 @@ def show_rows(ctx, shown, texts, prefix, with_reasons):
         for name in ctx["lens_done"]:
             view[f"laya_{name}"] = ctx["table"][name].reindex(shown.index)
     st.write(f"{len(view)} baris (500 pertama ditampilkan)")
-    st.dataframe(view.head(500).round(3))
+    kamus.show_table(view.head(500).round(3))
     st.download_button("Unduh tabel ini (.csv)", view.to_csv(index_label="row"),
                        f"{prefix}.csv", key=f"{prefix}_unduh")
 
@@ -106,7 +107,7 @@ def section_train(ctx, groups, max_rows):
         return
     show_class_summary(ctx, table, "train")
     st.write("**Persen salah menurut panjang teks**")
-    st.dataframe(mistakes.error_by_length(table, ctx["texts"]))
+    kamus.show_table(mistakes.error_by_length(table, ctx["texts"]))
     show_rows(ctx, filter_class_rows(table, "salah_train"), ctx["texts"], "salah_train", True)
 
 
@@ -145,7 +146,7 @@ def show_unlabeled_test(ctx, table, texts):
     st.success(f"Test tidak punya label, jadi yang bisa dilihat: {unsure:.1%} baris membuat model "
                f"ragu (peluang < {mistakes.UNSURE:.0%}). Baris paling ragu ada di atas.")
     st.write("**Sebaran label train vs sebaran tebakan di test (%)**")
-    st.dataframe(compare.fillna(0).round(1))
+    kamus.show_table(compare.fillna(0).round(1))
     show_rows(ctx, table.sort_values("peluang_tebakan"), texts, "ragu_test", False)
 
 
