@@ -297,13 +297,13 @@ def number_reason(column, line, dim):
     return text + "Status: " + STATUS_TEXT[line["status"]] + "."
 
 
-def overall_reason(column, value, ranks, values, use_log):
+def overall_reason(column, value, ranks, bounds, median):
     # angka di luar batas wajar seluruh data (baris belum punya kategori)
     money = column_money(column)
-    low, high = iqr_bounds(values, use_log)
+    low, high = bounds
     text = f"{column} {format_number(value, money)} di luar batas wajar seluruh data "
     text = text + f"({format_number(low, money)} sampai {format_number(high, money)}; "
-    text = text + f"median {format_number(values.median(), money)}). "
+    text = text + f"median {format_number(median, money)}). "
     return text + f"Persentil {100 * ranks:.0f} di seluruh data."
 
 
@@ -379,8 +379,11 @@ def add_overall_reasons(parts, column, values, use_log, covered):
     flagged = iqr_outliers(values, use_log)
     rows = flagged[flagged].index.difference(covered)
     ranks = values.rank(pct=True)
+    # batas dan median sama untuk semua baris: hitung sekali, bukan sekali per baris
+    bounds = iqr_bounds(values, use_log)
+    median = values.median()
     for row in rows:
-        add_reason(parts, row, overall_reason(column, values[row], ranks[row], values, use_log))
+        add_reason(parts, row, overall_reason(column, values[row], ranks[row], bounds, median))
 
 
 def add_outlier_reasons(parts, column, values, categories, dim, use_log):

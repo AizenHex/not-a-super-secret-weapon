@@ -30,7 +30,7 @@ Pengguna berangkat 2026-11-09. Prioritas dan pohon pekerjaan: [`../RENCANA_LOMBA
   dan file lepas di root `Vignate-GEMASTIK` dipindah ke `Z:/GEMASTIK/_arsip/`, tidak dihapus.
 - `_laya_eda/` (2026-10-31): tab baru "Split data" (train/validasi dari `train_siap`) dan "Buang
   kustom" di tab Ekspor (kolom + aturan `train.query`). `_uji/test_app.py` belum dijalankan ulang
-  sejak penambahan ini.
+  sejak penambahan ini. Alasan outlier angka tidak lagi macet pada data besar (perbaikan 2026-10-31).
 - `viginte-train.ipynb` dipindah dari root ke `_.Testing/` (diabaikan git).
 - PPT vignette (penyisihan) selesai 2026-10-30. Figur + skripnya di `Z:/GEMASTIK/Vignate-2/outputs/figures/`
   (di luar repo, bukan git); catatan lengkap `Z:/GEMASTIK/Vignate-2/HANDOFF.md`.

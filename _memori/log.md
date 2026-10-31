@@ -2,6 +2,16 @@
 
 Terbaru di atas. Format di [`README.md`](README.md).
 
+## 2026-10-31 claude-opus-5-5 - Laya EDA: perbaikan macet alasan outlier angka
+- Dikerjakan: `_laya_eda/outliers.py` `add_overall_reasons` menghitung `iqr_bounds` + median sekali
+  per kolom; sebelumnya `overall_reason` menghitung ulang untuk tiap baris outlier, sehingga data
+  30.380 baris × 11 kolom angka (mode baris, pembanding lensa sebagian) macet bermenit-menit tiap
+  rerun. Sesudahnya satu putaran 12 detik. Dikerjakan di clone
+  `Z:/GEMASTIK/GEMASTIK-2024/not-a-super-secret-weapon`.
+- Dikoreksi pengguna: -
+- Berikutnya: path CSV default di `sidebar.py` (`../../data_latihan/...`) tidak ada di clone ini,
+  jadi aplikasi error sampai path diisi; tiap rerun penuh masih ±12 detik untuk data sebesar ini.
+
 ## 2026-10-31 claude-opus-5-5 - Laya EDA: tab Split data + buang kustom
 - Dikerjakan: `_laya_eda/tab_split.py` (tab baru "Split data" sesudah Ekspor: acak + stratify,
   waktu, kelompok / teks sama; cek teks bocor; tulis `train_split.csv` + `valid_split.csv`; kode
