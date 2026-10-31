@@ -1,11 +1,13 @@
 """Tab Ekspor: (1) satu file CSV berisi data + jawaban Laya + cek teks + angka + alasan + catatan,
-(2) train siap pakai: catatan sudah diterapkan (buang baris, label baru) + fitur pilihan."""
+(2) train siap pakai: catatan sudah diterapkan (buang baris, label baru) + fitur pilihan,
+lalu buang kustom (kolom + aturan baris, custom_drop.py)."""
 import json
 import os
 
 import pandas as pd
 import streamlit as st
 
+import custom_drop
 import features
 import helpers
 from penjelasan import show_explanation
@@ -96,7 +98,8 @@ def group_title(name):
 def show_ready_train(ctx):
     st.subheader("Train siap pakai")
     st.write("Data asli dengan **catatanmu sudah diterapkan** (baris *buang* dibuang, label "
-             "*ganti_label* diganti) + kolom fitur pilihanmu. File ini langsung dipakai model.")
+             "*ganti_label* diganti) + kolom fitur pilihanmu + buang kustom. File ini langsung "
+             "dipakai model.")
     group_names = list(features.BUILDERS)
     groups = st.multiselect("Fitur yang ditambahkan (pilihan awal = yang lolos di tab Fitur)",
                             group_names, default=saved_groups(ctx),
@@ -106,8 +109,10 @@ def show_ready_train(ctx):
     with_numbers = right.checkbox("Sertakan kolom angka hasil baca (`<kolom>_angka`)",
                                   value=True, key="ekspor_angka")
     train, changed, dropped = build_train(ctx, groups, with_lenses, with_numbers)
+    train, custom_dropped = custom_drop.show(ctx, train)
+    ctx["ready_train"] = train    # dibagi train/validasi di tab Split data
     st.write(f"{len(train)} baris × {len(train.columns)} kolom · label diganti: {changed} · "
-             f"dibuang: {dropped}")
+             f"dibuang (catatan): {dropped} · dibuang (aturan kustom): {custom_dropped}")
     path = f"{ctx['folder']}/train_siap.csv"
     first, second = st.columns(2)
     if first.button("Tulis train_siap.csv", key="ekspor_train_tulis"):

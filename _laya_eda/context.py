@@ -23,7 +23,7 @@ def new_context(load_minilm, load_laya):
             "load_laya": load_laya, "mode": "teks", "date_column": None, "indonesian": True,
             "number_columns": [], "ratio": None, "reason_dim": None, "reasons": None,
             "reason_parts": {}, "distances": None, "group_rows": None, "doubt": None,
-            "show_columns": []}
+            "show_columns": [], "ready_train": None}
 
 
 def build_numbers(ctx):

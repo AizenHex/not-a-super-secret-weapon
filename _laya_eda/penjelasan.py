@@ -297,10 +297,29 @@ EXPLANATIONS = {
                 "dan train_siap.csv (catatan sudah diterapkan + fitur pilihan, untuk model)."),
         "cara": ("Semua tabel digabung menurut nomor baris (`row`). Untuk train_siap: label "
                  "'ganti_label' diganti dulu, lalu baris 'buang' dibuang; fitur dihitung dengan "
-                 "fungsi yang sama dengan tab Fitur → label."),
+                 "fungsi yang sama dengan tab Fitur → label. Terakhir buang kustom: baris yang "
+                 "cocok dengan salah satu aturan `train.query(...)` dibuang, lalu kolom pilihan "
+                 "dibuang (disimpan di buang_kustom.json)."),
         "kenapa": "Hasil EDA manual bisa dipakai langsung oleh notebook modelling.",
         "batasan": "Berisi hanya baris yang sudah dihitung; lensa yang belum jalan berisi kosong.",
         "juri": "Seluruh temuan dan alasannya diekspor ke satu file yang dipakai ulang oleh model.",
+    },
+    "split": {
+        "apa": ("Membagi train_siap jadi train_split.csv dan valid_split.csv, plus kode notebook "
+                "yang memberi pembagian yang sama."),
+        "cara": ("Acak: sklearn `train_test_split` (stratify menurut label kategori bila tiap "
+                 "kelas punya minimal 2 baris). Waktu: diurutkan menurut kolom tanggal, porsi "
+                 "terakhir jadi validasi. Kelompok: `GroupShuffleSplit`, semua baris satu "
+                 "kelompok di sisi yang sama; 'teks sama' memakai kunci sederhana (huruf kecil, "
+                 "hanya a-z dan 0-9). Bocor = baris validasi yang kuncinya juga ada di train."),
+        "kenapa": ("Skor validasi hanya jujur bila validasi mirip test. Data berurutan waktu "
+                   "harus dibagi menurut waktu, dan teks kembar di kedua sisi membuat skor "
+                   "terlalu bagus."),
+        "batasan": ("Pada cara kelompok, porsi validasi dihitung dari jumlah kelompok, jadi "
+                    "jumlah barisnya bisa sedikit berbeda. Teks yang hanya mirip (parafrase) "
+                    "tidak dianggap bocor."),
+        "juri": ("Cara validasi kami pilih supaya meniru test, dan kami cek tidak ada teks yang "
+                 "sama di train dan validasi."),
     },
     "konsistensi": {
         "apa": ("Nilai kolom kategori / teks pendek yang sebenarnya sama tetapi ditulis berbeda, "
