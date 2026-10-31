@@ -13,7 +13,7 @@ import re
 import pandas as pd
 from rapidfuzz import fuzz, process
 
-from core.recipe import MATERIAL_SEPARATORS
+from core.ops import SEPARATORS as MATERIAL_SEPARATORS
 
 ABBREVIATIONS = {"kab": "kabupaten", "kab.": "kabupaten", "kec": "kecamatan", "kel": "kelurahan",
                  "prov": "provinsi", "sd/mi": "sd", "sltp": "smp", "slta": "sma"}
@@ -114,3 +114,24 @@ def deduplicate_map(series: pd.Series, n_clusters: int | None = None) -> pd.Data
         for a, b in zip(table["asli"], table["usulan baku"])
     ]
     return table.reset_index(drop=True)
+
+
+def neighbor_groups(series: pd.Series, min_count: int = 20, cutoff: float = 88) -> pd.DataFrame:
+    """Nearest neighbor (OpenRefine): nilai jarang → nilai sering paling mirip (rapidfuzz token_sort_ratio).
+
+    Lebih berani dari fingerprint (menangkap salah ketik: 'Smarang' → 'Semarang'), jadi tidak dicentang
+    otomatis; baris dengan kata depan berbeda diberi peringatan.
+    """
+    counts = series.dropna().astype(str).value_counts()
+    common, rare = counts[counts >= min_count], counts[counts < min_count]
+    rows = []
+    for value, count in rare.items():
+        match = process.extractOne(value.lower(), [c.lower() for c in common.index], scorer=fuzz.token_sort_ratio,
+                                   score_cutoff=cutoff)
+        if match:
+            target = common.index[match[2]]
+            rows.append({"asli": value, "usulan baku": target, "jumlah": int(count), "skor": round(match[1], 1),
+                         "peringatan": "beda kata depan, periksa"
+                         if fingerprint(value).split()[:1] != fingerprint(target).split()[:1]
+                         else "skor < 95: bisa nilai berbeda (Malang ≠ Magelang)" if match[1] < 95 else ""})
+    return pd.DataFrame(rows, columns=["asli", "usulan baku", "jumlah", "skor", "peringatan"])

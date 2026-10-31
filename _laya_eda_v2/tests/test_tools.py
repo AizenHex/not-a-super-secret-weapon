@@ -7,7 +7,10 @@ from __future__ import annotations
 import pandas as pd
 
 from core import audit, outlier_tools, text_tools
-from tests.test_codegen import DATA, LABEL, SENTINEL_COLUMNS
+from tests.test_steps import LABEL, TRAIN as DATA
+
+SENTINEL_COLUMNS = ["Pengeluaran Bulanan Keluarga", "Jumlah (Perkiraan Harga Pasar) Kendaraan yang Dimiliki",
+                    "Luas Tanah Rumah (m2)", "NJOP per Meter", "Total Hutang", "Cicilan Hutang per Bulan"]
 
 
 def main() -> None:
@@ -61,6 +64,8 @@ def main() -> None:
     for column in ["Luas Tanah Rumah (m2)", "NJOP per Meter", "Jumlah Tanggungan dalam Keluarga"]:
         clean = data[column].where(data[column] < 2e9)
         print(f"\n{column}\n", outlier_tools.compare_methods(clean).to_string())
+    near = text_tools.neighbor_groups(data["Kota"])
+    assert (near["peringatan"] != "").any(), "nearest neighbor harus memberi peringatan (Malang ≠ Magelang)"
     flags = outlier_tools.isolation_flags(data, ["Luas Tanah Rumah (m2)", "NJOP per Meter"])
     print("IsolationForest menandai:", int(flags.sum()))
     print("SEMUA UJI ALAT LULUS")

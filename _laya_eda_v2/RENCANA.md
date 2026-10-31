@@ -1,5 +1,44 @@
 # Rencana rombak total Laya EDA
 
+## 0. Versi 3 (31-10-2026): langkah ala Data Wrangler + OpenRefine + AutoGluon
+
+Bagian ini MENGGANTI resep/codegen berfungsi di bagian 3, 4.2–4.13. Prinsip di bagian 2 tetap berlaku.
+
+Permintaan: kode EDA **tanpa fungsi** (biar tidak membingungkan); AutoGluon dipakai menyeluruh; sistem lebih
+robust; tiru software data cleaning.
+
+```mermaid
+flowchart TD
+  A[data mentah train + test] --> B[langkah 1..n, urut]
+  B --> C{galat?}
+  C -- ya --> D[berhenti, tampilkan galat apa adanya]
+  C -- tidak --> E[grid data di langkah ke-k + wawasan kolom]
+  E --> F[pengguna: tambah / ubah / matikan / pindah / hapus langkah]
+  F --> B
+  B --> G[satu file .py lurus: satu blok # %% per langkah, tanpa def]
+```
+
+- **Langkah** = `{op, params, on}`; katalog 22 operasi di `core/ops.py` (kolom, teks, kosong, baris, angka,
+  encoding). Setiap operasi punya *apa / kapan cocok / kapan berbahaya* dan menghasilkan blok pandas lurus.
+- **Statistik dari train** disimpan di variabel biasa lalu dipakai di `for df in (train, test):`; baris hanya
+  dibuang dari train; `test` selalu ada (kosong bila tidak punya file test) jadi tidak perlu cabang.
+- **Satu sumber**: aplikasi `exec` blok yang sama dengan file unduhan (`core/steps.py`), termasuk batas
+  outlier di tab Outlier.
+- **Pratinjau** setiap langkah sebelum ditambah: baris dibuang, kolom baru/hilang, sel berubah (sebelum | sesudah).
+- **Clustering ejaan** (OpenRefine): key collision (fingerprint, aman, dicentang) + nearest neighbor rapidfuzz
+  (tidak dicentang; contoh salah: Kota Malang → Kota Magelang) + skrub.deduplicate (opsional).
+- **AutoGluon** (`core/ag.py`): (1) skor mentah vs sesudah langkah di baris uji 20% yang sama (bagian uji
+  diperlakukan seperti test), (2) permutation importance (kolom id penting = curiga bocor), (3) probabilitas
+  out-of-fold bagging 5-fold untuk cleanlab (fold berurutan: spawn Windows), (4) langkah opsional
+  `AutoMLPipelineFeatureGenerator`.
+- Tab: Data · Temuan · Operasi · Ejaan · Isian bebas · Outlier · Label · Train vs test · AutoGluon · Kode & ekspor · Laya.
+- Uji: `tests/test_steps.py` (semua operasi di data riil + test berantakan + data sintetis; skrip tanpa
+  def/lambda; skrip mandiri = hasil aplikasi), `tests/test_tools.py`, `tests/test_app.py` (AppTest).
+
+---
+
+## (Rencana versi 2, sebagian diganti bagian 0)
+
 Dibuat ulang dari nol. Kode lama tidak dijadikan patokan. Setiap tab punya flowchart; setiap
 kotak di flowchart = satu fungsi yang bisa diuji.
 

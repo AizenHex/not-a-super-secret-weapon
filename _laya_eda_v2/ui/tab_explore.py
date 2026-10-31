@@ -1,4 +1,4 @@
-"""Tab Data, Ringkasan, Tipe kolom."""
+"""Tab Data (grid + wawasan kolom) dan Temuan (masalah → usulan langkah)."""
 from __future__ import annotations
 
 import json
@@ -8,7 +8,8 @@ import pandas as pd
 import streamlit as st
 
 from core import audit
-from core import recipe as rcp
+from core import steps as engine
+from core.ops import MISSING_MARKERS, OPS, SENTINEL_FLOOR
 from ui import common
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -21,7 +22,7 @@ def read_csv(source) -> pd.DataFrame:
 
 
 def load_frame(title: str, default: str, key: str) -> tuple[pd.DataFrame | None, str]:
-    """Kembalikan (data, kunci sumber). Kunci dipakai cache pipeline (bukan id objek)."""
+    """Kembalikan (data, kunci sumber). Kunci dipakai cache langkah (bukan id objek)."""
     path = st.text_input(f"{title}: path CSV", default, key=f"{key}_path")
     upload = st.file_uploader(f"… atau unggah {title}", type="csv", key=f"{key}_upload")
     if upload is not None:
@@ -33,10 +34,24 @@ def load_frame(title: str, default: str, key: str) -> tuple[pd.DataFrame | None,
     return None, ""
 
 
+def insight(series: pd.Series) -> None:
+    """Wawasan satu kolom: angka → ringkasan + histogram; teks → nilai tersering."""
+    st.caption(f"{series.dtype} · kosong {int(series.isna().sum()):,} ({series.isna().mean():.1%}) · "
+               f"unik {series.nunique():,} · tebakan tipe: {audit.guess_type(series)}")
+    if pd.api.types.is_numeric_dtype(series):
+        values = series.dropna()
+        st.dataframe(values.describe(percentiles=[0.01, 0.25, 0.5, 0.75, 0.99]).to_frame().T, width="stretch")
+        if len(values):
+            st.bar_chart(pd.cut(values.clip(upper=values.quantile(0.99)), 30).value_counts(sort=False)
+                         .rename(index=str))
+    else:
+        st.bar_chart(series.value_counts(dropna=False).head(25).rename(index=str), horizontal=True)
+
+
 def show_data() -> None:
     common.header("data",
-                  "Muat data **train** (wajib) dan **test** (opsional). Semua statistik nanti dipelajari "
-                  "dari train saja, lalu dipakai sama di test.",
+                  "Muat data **train** (wajib) dan **test** (opsional), pilih label, lalu lihat data di "
+                  "**langkah mana pun** (seperti grid Data Wrangler). Semua statistik dipelajari dari train saja.",
                   "Selalu: ini langkah pertama.",
                   "Test yang ikut dipakai menghitung statistik = kebocoran data. Di sini itu tidak terjadi.")
     left, right = st.columns(2)
@@ -46,92 +61,138 @@ def show_data() -> None:
         test, test_key = load_frame("test", "", "test")
     if data is None:
         return
-    st.session_state["train_id"] = f"{train_key}|{test_key}"
+    st.session_state["data_id"] = f"{train_key}|{test_key}"
     st.session_state["train"], st.session_state["test"] = data, test
 
-    r = common.recipe()
+    p = common.project()
     options = [None, *data.columns]
-    current = options.index(r["label"]) if r["label"] in data else 0
-    r["label"] = st.selectbox("Kolom label (target)", options, index=current,
-                              help="Label tidak pernah diubah, di-encode, atau diisi.")
-    st.write(f"train: **{data.shape[0]:,} baris × {data.shape[1]} kolom**"
-             + (f" · test: **{test.shape[0]:,} × {test.shape[1]}**" if test is not None else ""))
-    st.dataframe(data.head(20), width="stretch")
-
-    st.subheader("Resep")
-    st.caption("Resep = semua keputusanmu. Simpan untuk dilanjutkan nanti, atau muat resep lama.")
-    left, right = st.columns(2)
-    left.download_button("Unduh resep (.json)", json.dumps(r, ensure_ascii=False, indent=2),
-                         "resep_eda.json", "application/json")
-    upload = right.file_uploader("Muat resep", type="json", key="recipe_upload")
-    if upload is not None and right.button("Pakai resep ini"):
-        st.session_state["recipe"] = rcp.merge_defaults(json.load(upload))
-        st.rerun()
-    if st.button("Mulai resep baru (kosong)"):
-        st.session_state["recipe"] = rcp.new_recipe(r["label"])
+    chosen = st.selectbox("Kolom label (target)", options, options.index(p["label"]) if p["label"] in data else 0,
+                          help="Label tidak pernah diubah, di-encode, atau diisi oleh langkah mana pun.")
+    if chosen != p["label"]:
+        p["label"] = chosen
         st.rerun()
 
+    steps = p["steps"]
+    at = st.select_slider("Lihat data sesudah langkah", list(range(len(steps) + 1)), len(steps),
+                          format_func=lambda n: "mentah (0)" if n == 0 else f"{n}. {engine.summary(steps[n - 1])}")
+    result = common.state(at)
+    view = result["train"]
+    if result["error"]:
+        st.error(f"Langkah {result['error']['langkah']} gagal: {result['error']['galat']}")
+    st.write(f"train: **{view.shape[0]:,} baris × {view.shape[1]} kolom** · test: **{result['test'].shape[0]:,} × "
+             f"{result['test'].shape[1]}**")
+    st.dataframe(view.head(500), width="stretch", height=320)
 
-def show_summary() -> None:
-    common.header("ringkasan",
-                  "Gambaran data apa adanya. Tab ini **hanya membaca**.",
-                  "Untuk tahu masalah apa yang ada sebelum memilih langkah.",
-                  "Tidak ada: tab ini tidak mengubah data.")
-    if not common.need_data():
-        return
-    data, label = common.train(), common.recipe()["label"]
-    st.dataframe(audit.column_profile(data), width="stretch", hide_index=True)
-    findings = audit.row_findings(data, label)
-    cols = st.columns(3)
-    cols[0].metric("duplikat persis", findings["duplikat persis"])
-    cols[1].metric("duplikat beda label", findings["grup duplikat dengan label berbeda"])
-    cols[2].metric("kosong terbanyak dalam 1 baris", findings["kosong per baris (maks)"])
-    st.caption("Banyak kolom kosong per baris → jumlah baris")
-    st.bar_chart(pd.Series(findings["distribusi kosong per baris"]))
-    if st.button("Buat laporan skrub.TableReport (bisa beberapa detik)"):
+    st.subheader("Wawasan kolom")
+    profile = audit.column_profile(view)
+    st.dataframe(profile, width="stretch", hide_index=True,
+                 column_config={"kosong %": st.column_config.ProgressColumn("kosong %", min_value=0, max_value=100,
+                                                                           format="%.1f")})
+    column = st.selectbox("Detail kolom", list(view.columns), key="insight_column")
+    insight(view[column])
+    if st.button("Laporan lengkap skrub.TableReport (bisa beberapa detik)"):
         import skrub
-        st.components.v1.html(skrub.TableReport(data, max_plot_columns=40).html_snippet(),
-                              height=900, scrolling=True)
+        st.components.v1.html(skrub.TableReport(view, max_plot_columns=40).html_snippet(), height=900,
+                              scrolling=True)
+
+    st.subheader("Simpan / muat daftar langkah")
+    left, right = st.columns(2)
+    left.download_button("Unduh langkah (.json)", json.dumps(p, ensure_ascii=False, indent=2), "langkah_eda.json",
+                         "application/json")
+    upload = right.file_uploader("Muat langkah", type="json", key="project_upload")
+    if upload is not None and right.button("Pakai langkah ini"):
+        loaded = json.load(upload)
+        st.session_state["project"] = {"label": loaded.get("label"), "steps": loaded.get("steps", [])}
+        st.rerun()
 
 
-def show_types() -> None:
-    common.header("tipe",
-                  "Tentukan peran tiap kolom: dibuang, **angka yang tersimpan sebagai teks** "
-                  "(`'Rp 1.500.000'` → 1500000), atau **teks yang dirapikan** (spasi, penanda kosong palsu).",
-                  "Kolom id, kolom kembar (isi hampir sama dengan kolom lain), angka berformat teks.",
-                  "Membuang kolom yang ternyata berguna. Kolom kembar: buang salah satu saja, bukan dua-duanya.")
+# ---------------------------------------------------------------- temuan
+
+def suggestion(title: str, detail: pd.DataFrame | str, op: str, params: dict, key: str) -> None:
+    """Satu temuan: penjelasan operasi, rincian, pratinjau, tombol tambah langkah."""
+    with st.expander(title):
+        common.op_help(op)
+        if isinstance(detail, str):
+            st.write(detail)
+        else:
+            st.dataframe(detail, width="stretch", hide_index=True)
+        if st.toggle("Pratinjau sebelum → sesudah", key=f"pv_{key}"):
+            common.preview_step(op, params, key)
+
+
+def show_findings() -> None:
+    common.header("temuan",
+                  "Pindai data **sesudah langkah terakhir** dan usulkan langkah untuk tiap masalah. Tidak ada yang "
+                  "diterapkan otomatis: buka temuan, baca penjelasan, pratinjau, lalu klik **Tambah langkah**.",
+                  "Setelah memuat data, dan lagi setiap menambah beberapa langkah.",
+                  "Usulan hanyalah tebakan dari pola data; konteks kolom (apa arti '0' atau '-') kamu yang tahu.")
     if not common.need_data():
         return
-    r, data = common.recipe(), common.features()
-    profile = audit.column_profile(data)
-    st.dataframe(profile[["kolom", "tipe tebakan", "dtype pandas", "unik", "contoh tersering"]],
-                 width="stretch", hide_index=True)
+    data, label = common.current(), common.label()
+    found = 0
+    profile = audit.column_profile(data).set_index("kolom")
+    kinds = profile["tipe tebakan"]
 
-    st.subheader("Kolom kembar")
-    st.caption("Cramér's V (skrub.column_associations): 1 = isi dua kolom saling menentukan penuh.")
+    fake = audit.fake_missing(data)
+    if len(fake):
+        found += 1
+        columns = sorted(fake["kolom"].unique())
+        suggestion(f"Penanda kosong palsu di {len(columns)} kolom teks ({fake['jumlah'].sum():,} sel)", fake,
+                   "tidy_text", {"columns": columns, "markers": MISSING_MARKERS}, "fake")
+    texts = [c for c in common.object_columns(data) if kinds[c] in ("kategori", "isian bebas")]
+    if texts and not len(fake):
+        suggestion(f"Rapikan spasi di {len(texts)} kolom teks", "Spasi di awal/akhir/ganda membuat nilai sama "
+                   "terhitung berbeda.", "tidy_text", {"columns": texts, "markers": MISSING_MARKERS}, "tidy")
+
+    sentinel = audit.sentinels(data)
+    if len(sentinel):
+        found += 1
+        suggestion(f"Nilai penjaga ≥ 2.000.000.000 di {len(sentinel)} kolom", sentinel, "sentinel_to_nan",
+                   {"columns": list(sentinel["kolom"]), "floor": SENTINEL_FLOOR}, "sentinel")
+
+    numeric_text = list(kinds[kinds == "angka-teks"].index)
+    if numeric_text:
+        found += 1
+        suggestion(f"Angka tersimpan sebagai teks: {len(numeric_text)} kolom", profile.loc[numeric_text].reset_index(),
+                   "to_number", {"columns": numeric_text, "indonesian": True}, "number")
+
+    single = audit.single_value_columns(data)
+    for row in single.itertuples(index=False):
+        found += 1
+        suggestion(f"Kolom checkbox '{row.kolom}': hanya '{row[1]}' + {row.kosong:,} kosong",
+                   "Biasanya kosong = 'tidak'. Ubah nilai pengisi di tab Operasi bila artinya lain.",
+                   "fill_constant", {"columns": [row.kolom], "value": "Tidak"}, f"single_{row.kolom}")
+
+    ids = list(kinds[kinds.isin(["id", "kosong"])].index)
+    if ids:
+        found += 1
+        suggestion(f"Kolom id / kosong total: {', '.join(ids)}", "Kolom id unik per baris tidak membawa informasi; "
+                   "bila model menganggapnya penting (tab AutoGluon), itu tanda kebocoran urutan data.",
+                   "drop_columns", {"columns": ids}, "ids")
+
+    findings = audit.row_findings(common.state()["train"], label)
+    if findings["duplikat persis"]:
+        found += 1
+        suggestion(f"{findings['duplikat persis']:,} baris duplikat persis di train",
+                   f"Grup duplikat dengan label berbeda: {findings['grup duplikat dengan label berbeda']}",
+                   "drop_duplicates", {}, "dups")
+    if findings["kosong per baris (maks)"] >= max(10, data.shape[1] // 2):
+        found += 1
+        suggestion(f"Ada baris dengan {findings['kosong per baris (maks)']} kolom kosong",
+                   pd.DataFrame({"kosong per baris": list(findings["distribusi kosong per baris"]),
+                                 "jumlah baris": list(findings["distribusi kosong per baris"].values())}),
+                   "drop_missing_rows", {"max_missing": max(10, data.shape[1] // 2)}, "rowsmissing")
+
+    st.subheader("Kolom kembar (opsional)")
+    st.caption("Cramér's V (skrub.column_associations) ≥ 0,85: isi dua kolom saling menentukan. Buang salah satu saja.")
     if st.button("Cari kolom kembar"):
         st.session_state["twins"] = audit.twin_columns(data)
-    if "twins" in st.session_state:
-        st.dataframe(st.session_state["twins"], width="stretch", hide_index=True)
-
-    kinds = profile.set_index("kolom")["tipe tebakan"]
-    columns = list(data.columns)
-    with st.form("types"):
-        drop = st.multiselect("Kolom dibuang", columns, [c for c in r["drop_columns"] if c in columns],
-                              help=f"Saran: {', '.join(kinds[kinds.isin(['id', 'kosong'])].index) or '-'}")
-        numbers = st.multiselect("Angka tersimpan sebagai teks → to_number", columns,
-                                 [c for c in r["number_columns"] if c in columns],
-                                 help=f"Saran: {', '.join(kinds[kinds == 'angka-teks'].index) or '-'}")
-        indonesian = st.checkbox("Format Indonesia (titik = ribuan, koma = desimal)", r["indonesian_numbers"])
-        suggestion = [c for c in common.object_columns(data) if kinds[c] in ("kategori", "isian bebas")]
-        texts = st.multiselect("Kolom teks yang dirapikan (tidy_text)", columns,
-                               [c for c in r["text_columns"] if c in columns],
-                               help="Rapikan spasi + penanda kosong palsu → NaN. Wajib untuk tab Kategori.")
-        use_suggestion = st.checkbox(f"Pakai saran: semua kolom teks ({len(suggestion)})", not r["text_columns"])
-        if st.form_submit_button("Simpan ke resep", type="primary"):
-            r["drop_columns"], r["number_columns"], r["indonesian_numbers"] = drop, numbers, indonesian
-            r["text_columns"] = sorted(set(texts) | set(suggestion)) if use_suggestion else texts
-            common.saved("Tipe kolom disimpan")
-            st.rerun()
-    st.caption(f"Di resep: dibuang {r['drop_columns'] or '-'} · angka-teks {r['number_columns'] or '-'} · "
-               f"teks dirapikan {len(r['text_columns'])} kolom")
+    twins = st.session_state.get("twins")
+    if twins is not None and len(twins):
+        st.dataframe(twins, width="stretch", hide_index=True)
+        pick = st.multiselect("Kolom kembar yang dibuang", sorted(set(twins["kolom 2"])), key="twin_pick")
+        if pick:
+            suggestion(f"Buang {len(pick)} kolom kembar", "", "drop_columns", {"columns": pick}, "twins")
+    if not found:
+        st.success("Tidak ada temuan otomatis di data sesudah langkah terakhir.")
+    st.caption(f"Semua operasi lain ada di tab **Operasi** ({len(OPS)} operasi).")

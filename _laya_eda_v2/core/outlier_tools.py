@@ -1,15 +1,24 @@
-"""Perbandingan metode outlier per kolom. Rumus batas diambil dari kode pipeline (satu sumber)."""
+"""Perbandingan metode outlier per kolom. Batas dihitung dengan MENJALANKAN kode langkah outlier (satu sumber)."""
 from __future__ import annotations
 
 import numpy as np
 import pandas as pd
 
-from core.codegen import OUTLIER_BOUNDS
+from core.ops import outlier
 
-_namespace = {"np": np, "pd": pd, "OUTLIERS": {}}
-exec(OUTLIER_BOUNDS, _namespace)
-outlier_bounds = _namespace["outlier_bounds"]
-is_outside = _namespace["is_outside"]
+
+def outlier_bounds(values: pd.Series, method: str, factor: float) -> tuple[float, float]:
+    """Batas (bawah, atas) persis seperti di kode langkah outlier."""
+    namespace = {"np": np, "pd": pd, "train": pd.DataFrame({"x": values}), "test": pd.DataFrame({"x": []})}
+    code = outlier({"column": "x", "method": method, "factor": factor, "action": "nan"})
+    exec(code.split("print(")[0], namespace)
+    return float(namespace["bawah"]), float(namespace["atas"])
+
+
+def is_outside(values: pd.Series, bounds: tuple[float, float], method: str) -> pd.Series:
+    low, high = bounds
+    outside = (values < low) | (values > high)
+    return outside & (values > 0) if method.endswith("_log") else outside
 
 FACTORS = {"iqr": 1.5, "iqr_log": 1.5, "mad": 3.5, "mad_log": 3.5}
 

@@ -69,7 +69,7 @@ def show_laya() -> None:
     if problem:
         st.warning(f"Laya tidak tersedia: {problem}. Semua tab lain tetap bisa dipakai.")
         return
-    data = common.train()
+    data = common.raw_train()
 
     st.subheader("1. Lensa per baris → kelompok pembanding")
     columns = st.multiselect("Kolom yang dibaca Laya", list(data.columns), key="laya_columns")
@@ -100,7 +100,7 @@ def show_laya() -> None:
 
     st.subheader("2. Pendapat kedua untuk kandidat sinonim")
     from core import text_tools
-    texts = common.object_columns(common.features())
+    texts = common.object_columns(common.current())
     column = st.selectbox("Kolom isian bebas", texts, key="laya_same_column")
     pairs = text_tools.similar_vocabulary(data[column])
     st.dataframe(pairs, width="stretch", hide_index=True)

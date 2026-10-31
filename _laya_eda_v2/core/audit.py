@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import pandas as pd
 
-from core.recipe import MISSING_MARKERS, SENTINEL_FLOOR
+from core.ops import MISSING_MARKERS, SENTINEL_FLOOR
 
 NUMBER_PATTERN = r"^\s*(?:rp\.?\s*)?-?[\d.,]+\s*$"
 
@@ -114,6 +114,41 @@ def row_findings(df: pd.DataFrame, label: str | None) -> dict:
         "kosong per baris (maks)": int(missing.max()),
         "distribusi kosong per baris": missing.value_counts().sort_index().to_dict(),
     }
+
+
+def label_issues(df: pd.DataFrame, label: str, folds: int = 5,
+                 oof: pd.DataFrame | None = None) -> pd.DataFrame:
+    """Label yang mungkin salah: prediksi out-of-fold + cleanlab (inti, tanpa paket tambahan Datalab).
+
+    Tanpa `oof`: HistGradientBoosting 5-fold di kolom angka saja. Dengan `oof` (AutoGluon
+    predict_proba_oof, kolom = kelas): semua kolom ikut. Baris berlabel kosong dilewati. Hasil
+    diurutkan dari skor kualitas label terendah; label tidak pernah diubah.
+    """
+    from cleanlab.filter import find_label_issues
+    from cleanlab.rank import get_label_quality_scores
+    from sklearn.ensemble import HistGradientBoostingClassifier
+    from sklearn.model_selection import StratifiedKFold, cross_val_predict
+
+    data = df[df[label].notna()]
+    codes, classes = pd.factorize(data[label], sort=True)       # cleanlab butuh label 0..K-1
+    if oof is not None:
+        probabilities = oof.loc[data.index, list(classes)].to_numpy()
+    else:
+        features = data.drop(columns=[label]).select_dtypes("number")
+        splitter = StratifiedKFold(n_splits=folds, shuffle=True, random_state=0)
+        probabilities = cross_val_predict(HistGradientBoostingClassifier(random_state=0), features, codes,
+                                          cv=splitter, method="predict_proba")
+    issue = find_label_issues(codes, probabilities)
+    result = data.assign(**{
+        "skor label": get_label_quality_scores(codes, probabilities),
+        "tebakan model": classes[probabilities.argmax(axis=1)],
+        "yakin tebakan": probabilities.max(axis=1).round(3),
+    })
+    columns = [label, "tebakan model", "yakin tebakan", "skor label"]
+    flagged = result[issue].sort_values("skor label")[columns + [c for c in data.columns if c != label]]
+    flagged.attrs["akurasi model"] = float((probabilities.argmax(axis=1) == codes).mean())
+    flagged.attrs["akurasi tebak terbanyak"] = float(pd.Series(codes).value_counts(normalize=True).iloc[0])
+    return flagged
 
 
 def check_rule(df: pd.DataFrame, rule: str) -> pd.DataFrame:
