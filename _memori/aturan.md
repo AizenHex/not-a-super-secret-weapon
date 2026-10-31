@@ -22,6 +22,8 @@ Koreksi terbaru pengguna di chat menang atas isi file ini; setelah itu perbarui 
 - Semua output notebook ke luar repo: `OUTPUT_FOLDER = "../../outputs/<kategori>/<nama>"`. Jangan
   membuat file di folder notebook. (2026-10-24)
 - Uji potongan: `_alat/uji_arsenal.py file.ipynb:1,2 --set NAMA=nilai`.
+- Notebook `arsenal/` dan `contoh/` disimpan tanpa output (pengguna minta repo "compact"). Jangan
+  membuat lagi salinan sumber `.py` di repo. (2026-10-30)
 
 ## Lingkungan
 

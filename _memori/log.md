@@ -2,6 +2,22 @@
 
 Terbaru di atas. Format di [`README.md`](README.md).
 
+## 2026-10-31 claude-opus-5-5 - commit + push, new-gen = rapikan-struktur
+- Dikerjakan: semua perubahan repo compact (sesi 2026-10-30) di-commit dan di-push ke
+  `rapikan-struktur`; `new-gen` (default) dimajukan ke commit yang sama atas permintaan pengguna.
+- Dikoreksi pengguna: -
+- Berikutnya: pekerjaan terbuka di `status.md`; uji bagian 3–6 OCR v2 setelah PaddleOCR dipasang.
+
+## 2026-10-30 claude-opus-5-5 - repo compact + rapikan Z:/GEMASTIK
+- Dikerjakan: output `contoh/` dikosongkan (contoh/ 81 MB → 2,6 MB); `_alat/sumber_arsenal/` +
+  `_alat/sumber_contoh/` dihapus; `bangun_contoh.bat` menjalankan `.ipynb` langsung ke
+  `../outputs/uji_contoh/` (diuji: `sinyal` LOLOS); docstring `lint.py`/`uji_arsenal.py`; PETA.md bagian
+  akhir + README `_alat/`; `pipeline/ocr_end_to_end_v2` ditulis ulang (lint 204 → 0, bagian 0–2 diuji).
+  Di luar repo: 6 salinan repo lama + file lepas root `Vignate-GEMASTIK` → `Z:/GEMASTIK/_arsip/`;
+  `README.dataset.txt`/`README.roboflow.txt` → `Z:/GEMASTIK/Indonesian-plat/`. Di-commit 2026-10-31.
+- Dikoreksi pengguna: "aku mau itu jadi ace compact" → masuk `aturan.md`.
+- Berikutnya: pengguna meninjau diff lalu commit; uji bagian 3–6 OCR v2 setelah PaddleOCR dipasang.
+
 ## 2026-10-30 claude-opus-5-5 - figur PPT vignette (di Vignate-2, bukan repo ini)
 - Dikerjakan: figur kartu `gambar18` (proses YOLO), `gambar20` (inferensi), `gambar21` (orientasi →
   enhance → PaddleOCR → teks), `gambar22` (10 citra uji tanpa entete), `gambar23` (4 contoh ujung ke

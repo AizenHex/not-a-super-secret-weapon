@@ -1,4 +1,5 @@
-"""Cek ATURAN_KODE.md pada file .py bersel `# %%`. Pakai: lint.py nb/tabular/*.py"""
+"""Cek aturan kode (_memori/aturan.md) pada .ipynb atau .py bersel `# %%`.
+Pakai: python _alat/lint.py arsenal/tabular/*/*.ipynb"""
 import ast
 
 from sel import baca_teks_sel

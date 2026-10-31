@@ -2,6 +2,18 @@
 
 Terbaru di atas. Format: `- YYYY-MM-DD: <keputusan>. Alasan: <...>.`
 
+- 2026-10-30: repo dibuat compact: output 199 notebook `contoh/` dikosongkan, `_alat/sumber_arsenal/`
+  dan `_alat/sumber_contoh/` dihapus setelah dicek sel per sel identik dengan notebook. Alasan: pengguna
+  minta "compact"; output bisa dibuat ulang dengan Run All, skor tiap alternatif sudah ada di
+  `contoh/KATALOG.md`. `_laya_eda/_uji/hasil_b/` tetap di git karena dipakai sebagai fixture
+  `test_app.py` dan membuatnya ulang butuh model Laya.
+- 2026-10-30: `ocr_end_to_end_v2` ditulis ulang ke gaya repo (menggantikan keputusan "apa adanya" di
+  bawah). Perilaku dipertahankan; yang berubah: semua path ke `WORK_FOLDER`, `try` di `paddle_field`
+  diganti cek `isinstance(dict)`, `assert` → `raise`, GUI dipecah jadi fungsi top-level + flag
+  `RUN_LABEL_TOOL`, `DRAFT_N = 0` melewati draf, val YOLO ditulis ke `RUNS_FOLDER`.
+- 2026-10-30: salinan repo lama di `Z:/GEMASTIK` diarsipkan, bukan dihapus. Alasan: semua commit-nya
+  sudah ada di repo utama, sisa perubahan hanya path lokal; menghapus ±35 GB menunggu izin pengguna.
+
 - 2026-10-30: angka deteksi figur PPT (664/674 citra uji berkotak entete, 10 tanpa) diambil dari
   prediksi ulang CPU `Downloads/yolo_2cls_v2.pt` (imgsz 416, conf 0,1) ke
   `Vignate-2/outputs/figures/_cache/det_v2_test.csv`, bukan dari output notebook (640/674). Alasan:

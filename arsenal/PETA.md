@@ -82,7 +82,7 @@ Bagian bernomor; tiap file diawali tabel "ingin → bagian". Bagian 0 = data con
 | latih OCR sendiri dari teks sintetis (CNN + Transformer + CTC) | `vision/ocr/ocr_cnn_transformer` | semua |
 | aksara non-Latin (Jawa) dengan label buatan sendiri (CVAT) | `vision/ocr/karakter_label_sendiri` | semua |
 | kotak → potong → OCR → submission, sekali jalan | `pipeline/deteksi_potong_ocr` | Run All |
-| vignette: YOLO 2 kelas → orientasi Paddle → PaddleOCR → submission (patokan v2, belum lolos lint) | `pipeline/ocr_end_to_end_v2` | 0–6 |
+| vignette: YOLO 2 kelas → orientasi Paddle → PaddleOCR → submission (patokan v2) | `pipeline/ocr_end_to_end_v2` | 0–6 |
 
 Format tabel standar vision:
 
@@ -165,13 +165,16 @@ fitur → tuning seperlunya → ensembling. Semua skor dipilih dari **OOF/CV**, 
 Contoh skor di data demo (gambar CIFAR + kolom tabel, akurasi test): tabel saja 0,743, vektor
 saja 0,845, gabung akhir 0,903, gabung awal 0,934, stacking 0,936.
 
-## Membangun ulang notebook dari sumber
+## Mengubah atau menambah notebook
 
-Sumber `.py` (sel `# %%`) ada di `../_alat/sumber_arsenal/` dengan susunan folder yang sama.
-Ubah sumbernya, cek aturan kode, lalu ubah ke notebook:
+`.ipynb` di `arsenal/` dan `contoh/` adalah satu-satunya sumber (tidak ada salinan `.py` lagi).
+Edit notebook-nya langsung, simpan **tanpa output** (Kernel → Restart & Clear Output), lalu cek:
 
 ```bash
-cd _alat
-python lint.py sumber_arsenal/tabular/survival/survival.py
-python py2nb.py sumber_arsenal/tabular/survival/survival.py ../arsenal/tabular/survival/survival.ipynb
+python _alat/lint.py arsenal/tabular/survival/survival.ipynb
+python _alat/uji_arsenal.py arsenal/tabular/survival/survival.ipynb:1,2 --set NAMA=nilai
+_alat\bangun_contoh.bat tabular        # Run All contoh/, hasil ke ../outputs/uji_contoh/
 ```
+
+Draf baru boleh ditulis sebagai `.py` bersel `# %%` lalu diubah dengan
+`python _alat/py2nb.py draf.py arsenal/<kategori>/<nama>.ipynb`; drafnya jangan disimpan di repo.

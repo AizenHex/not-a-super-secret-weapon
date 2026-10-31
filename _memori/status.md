@@ -1,6 +1,6 @@
 # Status repo
 
-Terakhir diperbarui: 2026-10-30.
+Terakhir diperbarui: 2026-10-31.
 
 ## Tujuan
 
@@ -11,16 +11,23 @@ Pengguna berangkat 2026-11-09. Prioritas dan pohon pekerjaan: [`../RENCANA_LOMBA
 ## Keadaan sekarang
 
 - Branch kerja: `rapikan-struktur` (remote `origin` = github.com/AizenHex/not-a-super-secret-weapon).
-  Default remote: `new-gen`.
+  Default remote: `new-gen`, disamakan dengan `rapikan-struktur` 2026-10-31 (pengguna mulai
+  memakai repo dengan serius). Branch `origin/kode-run` ("Add files via upload") bukan dari agen.
 - `.claude/` (2026-10-30): hook memori (`settings.json`, `hooks/memori.sh`). Aktif kalau Claude Code
   dibuka dari root repo ini; tinjau/matikan lewat `/hooks`.
 - `arsenal/`: potongan siap tempel per modalitas (vision, teks, tabular, jembatan, umum, pipeline).
   Peta: [`../arsenal/PETA.md`](../arsenal/PETA.md).
-- `contoh/`: 199 notebook utuh, 19 modalitas.
-- `arsenal/pipeline/ocr_end_to_end_v2.ipynb` (2026-10-30): salinan notebook vignette patokan
-  (YOLOv8n 2 kelas + orientasi Paddle + PaddleOCR → submission). **Belum sesuai aturan repo**:
-  204 masalah `_alat/lint.py`, path relatif `data/`, `work/`, `models/` (menulis ke dalam folder kerja,
-  bukan `../../outputs/`).
+- `contoh/`: 199 notebook utuh, 19 modalitas, disimpan **tanpa output** sejak 2026-10-30
+  (repo 86 MB → 6,8 MB). `_alat/sumber_arsenal/` dan `_alat/sumber_contoh/` dihapus (isinya identik
+  dengan notebook); `.ipynb` satu-satunya sumber. `_alat/bangun_contoh.bat` menjalankan notebook
+  langsung, salinan berisi output ke `Z:/GEMASTIK/Vignate-GEMASTIK/outputs/uji_contoh/`.
+- `arsenal/pipeline/ocr_end_to_end_v2.ipynb` (2026-10-30): notebook vignette patokan (YOLOv8n 2 kelas +
+  orientasi Paddle + PaddleOCR → submission), ditulis ulang ke gaya repo: lint 0 masalah, semua hasil
+  ke `WORK_FOLDER` (default `../../../outputs/pipeline/ocr_end_to_end_v2`). Bagian 0–2 (termasuk GUI
+  label) diuji pada `Vignate-GEMASTIK/data`; bagian 3–6 **belum diuji** (PaddleOCR belum dipasang,
+  `yolo_2cls.pt` tidak ada di laptop).
+- Di luar repo (2026-10-30): salinan repo lama (`PythonProject`, `Sen-3`..`Sen-6`, `Sentiment-2`, ±35 GB)
+  dan file lepas di root `Vignate-GEMASTIK` dipindah ke `Z:/GEMASTIK/_arsip/`, tidak dihapus.
 - `viginte-train.ipynb` dipindah dari root ke `_.Testing/` (diabaikan git).
 - PPT vignette (penyisihan) selesai 2026-10-30. Figur + skripnya di `Z:/GEMASTIK/Vignate-2/outputs/figures/`
   (di luar repo, bukan git); catatan lengkap `Z:/GEMASTIK/Vignate-2/HANDOFF.md`.
@@ -36,5 +43,5 @@ Pengguna berangkat 2026-11-09. Prioritas dan pohon pekerjaan: [`../RENCANA_LOMBA
 6. Pembaca dataset Hugging Face parquet.
 7. Deret waktu ke arsenal.
 8. Log percobaan + latihan 5 jam pakai stopwatch.
-- Tambahan: rapikan `pipeline/ocr_end_to_end_v2` agar lolos lint dan output ke luar repo (kalau
-  pengguna minta).
+- Tambahan: uji bagian 3–6 `pipeline/ocr_end_to_end_v2` setelah PaddleOCR dipasang (pengguna yang
+  memutuskan kapan). Kalau pengguna setuju, hapus `pretrained/`/data dobel di `Z:/GEMASTIK/_arsip/`.

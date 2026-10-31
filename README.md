@@ -13,7 +13,7 @@ dan diubah oleh orang yang terbiasa C++.
 | [`kamus/`](kamus/README.md) | padanan C++ → Python, jebakan, numpy/pandas, arti pesan error | lupa sintaks |
 | `_laya_eda/` | web lokal untuk melihat data (`jalankan.bat`) + ekspor kode EDA | menit awal, kenali data |
 | `_ringkasan_metode/` | ringkasan metode (PDF) | bahan presentasi |
-| `_alat/` | sumber `.py` notebook (`sumber_arsenal/`, `sumber_contoh/`), `lint.py`, `py2nb.py`, skrip unduh | mengubah/menambah notebook |
+| `_alat/` | `lint.py`, `uji_arsenal.py`, `bangun_contoh.bat`, `py2nb.py`, skrip unduh data/model | mengubah/menambah notebook |
 
 Mulai dari [`arsenal/PETA.md`](arsenal/PETA.md) (soal → potongan) atau
 [`contoh/PANDUAN.md`](contoh/PANDUAN.md) (tanda di soal → notebook utuh).
@@ -74,5 +74,5 @@ Urut dari yang paling penting. Centang satu per satu.
 
 Notebook di repo ini dicek oleh `_alat/lint.py`: tanpa comprehension, lambda, ternary, try,
 assert, rantai method ≥ 3; sel ≤ 30 baris; baris ≤ 100 karakter; fungsi ≤ 20 baris dan langsung
-dicoba di sel yang sama. Cara membangun ulang notebook dari sumber: bagian terakhir
-[`arsenal/PETA.md`](arsenal/PETA.md).
+dicoba di sel yang sama. Notebook disimpan tanpa output; cara mengubah/menambah: bagian
+terakhir [`arsenal/PETA.md`](arsenal/PETA.md).

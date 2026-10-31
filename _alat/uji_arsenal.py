@@ -2,7 +2,8 @@
 `NAMA = ...`, lalu jalankan di folder kerja di luar repo.
 
 Pakai:
-  python _alat/uji_arsenal.py arsenal/vision/anotasi_baca.py:1,5 arsenal/vision/anotasi_tulis.py \
+  python _alat/uji_arsenal.py arsenal/vision/deteksi/anotasi_baca.ipynb:1,5 \
+      arsenal/vision/deteksi/anotasi_tulis.ipynb \
       --set COCO_JSON='"Z:/data/train/_annotations.coco.json"' --set IMAGE_FOLDER='"Z:/data/train"'
 
 file[:sel] : sel = nomor sel KODE (mulai 1, markdown tidak dihitung). Tanpa :sel = semua sel.
