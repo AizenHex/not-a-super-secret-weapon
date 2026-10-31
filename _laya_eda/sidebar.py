@@ -33,6 +33,11 @@ def pick_data(ctx):
     uploaded = st.sidebar.file_uploader("... atau unggah CSV", type="csv")
     if uploaded is not None:
         csv_path = save_upload(uploaded)
+    csv_path = csv_path.strip()
+    if not os.path.isfile(csv_path):
+        st.info(f"File `{csv_path}` tidak ada. Isi path CSV di samping (relatif ke folder "
+                "_laya_eda, mis. `data/train.csv`) atau unggah CSV.")
+        st.stop()
     ctx["data_key"] = (csv_path, os.path.getmtime(csv_path))
     ctx["data"] = read_csv(csv_path, ctx["data_key"][1])
     ctx["csv_path"] = csv_path

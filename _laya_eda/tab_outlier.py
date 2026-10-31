@@ -129,8 +129,7 @@ def show_text_table(ctx, distances, text_view):
     odd = odd.sort_values("jarak_ke_kategorinya", ascending=False)
     view = odd.join(ctx["data"][ctx["columns"]]).head(300)
     view["alasan"] = ctx["reasons"].reindex(view.index)
-    kamus.show_table(view, notes={"nilai": f"Angka di kolom `{column}` pada baris ini (isi sel, "
-                                           "BUKAN jumlah)."})
+    kamus.show_table(view)
 
 
 def show_text(ctx, dim):
