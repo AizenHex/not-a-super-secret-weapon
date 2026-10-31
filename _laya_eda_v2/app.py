@@ -30,12 +30,23 @@ TABS = {
     "Laya": tab_laya.show_laya,
 }
 
+KEEP = ["insight_column", "op_group", "op_name", "spell_column", "spell_method", "free_column", "free_min",
+        "free_cut", "outlier_column", "out_mode", "out_m", "out_a", "out_low", "out_high", "out_group", "label_model", "ag_time", "ag_presets",
+        "train_path_input", "test_path_input"]
+
 st.sidebar.title("Laya EDA")
 st.sidebar.caption("Alat bantu EDA: data mentah tidak berubah sampai kamu menambah langkah.")
 with st.sidebar.expander("Cara kerja langkah (flowchart)"):
     st.graphviz_chart(FLOWS["langkah"], width="stretch")
+tab_explore.sidebar_data()
 common.sidebar_steps()
 
-for tab, show in zip(st.tabs(list(TABS)), TABS.values()):
-    with tab:
-        show()
+# pilihan di halaman yang sedang tidak dibuka tetap diingat (Streamlit menghapus state widget yang tidak tampil)
+for name in KEEP:
+    if name in st.session_state:
+        st.session_state[name] = st.session_state[name]
+
+# Hanya halaman yang dibuka yang dihitung (st.tabs menghitung SEMUA tab di setiap klik → terasa macet).
+page = st.radio("Halaman", list(TABS), horizontal=True, key="page", label_visibility="collapsed")
+st.divider()
+TABS[page]()

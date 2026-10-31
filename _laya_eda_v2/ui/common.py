@@ -31,7 +31,7 @@ def raw_test() -> pd.DataFrame | None:
 
 def need_data() -> bool:
     if raw_train() is None:
-        st.info("Muat data train dulu di tab **Data**.")
+        st.info("Muat data train dulu di sidebar **Data**.")
         return False
     return True
 
@@ -46,17 +46,43 @@ def header(flow: str, what: str, fits: str, danger: str) -> None:
         st.graphviz_chart(FLOWS[flow], width="stretch")
 
 
-@st.cache_data(max_entries=12, show_spinner="Menjalankan langkah…")
+def _key(steps: list[dict], lab: str | None) -> str:
+    return json.dumps([steps, lab], sort_keys=True, ensure_ascii=False, default=str)
+
+
+@st.cache_resource(max_entries=64, show_spinner="Menjalankan langkah…")
 def _run(key: str, data_id: str, _train: pd.DataFrame, _test: pd.DataFrame | None) -> dict:
+    """Bertahap: hasil langkah 1..n = langkah n dijalankan di atas hasil 1..n-1 (yang sudah ter-cache).
+
+    Menambah/mengubah langkah terakhir hanya menjalankan langkah itu. cache_resource = tanpa salin/pickle,
+    jadi hasilnya HANYA dibaca (engine.run selalu menyalin sebelum mengubah).
+    """
     steps, lab = json.loads(key)
-    return engine.run(steps, lab, _train, _test)
+    if not steps:
+        return engine.run([], lab, _train, _test)
+    base = _run(_key(steps[:-1], lab), data_id, _train, _test)
+    if base["error"] or not steps[-1].get("on", True):
+        return base
+    last = engine.run(steps[-1:], lab, base["train"], base["test"], first=len(steps))
+    return {"train": last["train"], "test": last["test"], "log": base["log"] + last["log"], "error": last["error"]}
 
 
 def state(upto: int | None = None) -> dict:
-    """Hasil menjalankan langkah 1..upto (None = semua): {'train', 'test', 'log', 'error'}."""
-    steps = project()["steps"][:upto]
-    key = json.dumps([steps, label()], sort_keys=True, ensure_ascii=False, default=str)
-    return _run(key, st.session_state.get("data_id", ""), raw_train(), raw_test())
+    """Hasil menjalankan langkah 1..upto (None = semua): {'train', 'test', 'log', 'error'}. Hanya dibaca."""
+    return _run(_key(project()["steps"][:upto], label()), st.session_state.get("data_id", ""), raw_train(), raw_test())
+
+
+def state_key(upto: int | None = None) -> str:
+    """Kunci data di langkah ke-upto: dipakai juga untuk cache analisis (temuan, wawasan kolom)."""
+    return _key(project()["steps"][:upto], label()) + st.session_state.get("data_id", "")
+
+
+@st.cache_data(max_entries=32, show_spinner=False)
+def analysis(name: str, key: str, _data: pd.DataFrame, *args):
+    """audit.<name>(data, *args), di-cache per kunci data (state_key): tidak dihitung ulang tiap klik."""
+    from core import audit
+
+    return getattr(audit, name)(_data, *args)
 
 
 def current() -> pd.DataFrame:

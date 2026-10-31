@@ -54,14 +54,16 @@ def namespace(steps: list[dict], label: str | None, train: pd.DataFrame, test: p
     return ns
 
 
-def run(steps: list[dict], label: str | None, train: pd.DataFrame, test: pd.DataFrame | None) -> dict:
+def run(steps: list[dict], label: str | None, train: pd.DataFrame, test: pd.DataFrame | None,
+        first: int = 1) -> dict:
     """Jalankan langkah aktif satu per satu. Berhenti di langkah pertama yang galat (galat tidak disembunyikan).
 
     Kembalikan train, test, dan log per langkah: baris/kolom sebelum-sesudah, keluaran print, galat.
+    `first` = nomor langkah pertama di log (untuk menjalankan lanjutan dari hasil langkah sebelumnya).
     """
     ns = namespace(steps, label, train, test)
     log = []
-    for number, step in enumerate(steps, 1):
+    for number, step in enumerate(steps, first):
         if not step.get("on", True):
             continue
         before = ns["train"].shape, list(ns["train"].columns), ns["test"].shape

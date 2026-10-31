@@ -20,7 +20,7 @@ def show_label() -> None:
         return
     label, data = common.label(), common.state()["train"]
     if not label:
-        st.info("Pilih kolom label di tab **Data**.")
+        st.info("Pilih kolom label di sidebar **Data**.")
         return
     counts = data[label].value_counts(dropna=False).sort_index()
     st.bar_chart(counts.rename(index=str))
@@ -64,7 +64,7 @@ def show_test() -> None:
     if not common.need_data():
         return
     if common.raw_test() is None:
-        st.info("Muat file test di tab **Data** untuk membandingkan.")
+        st.info("Muat file test di sidebar **Data** untuk membandingkan.")
         return
     result = common.state()
     train, test, label = common.current(), result["test"], common.label()
@@ -111,7 +111,7 @@ def show_autogluon() -> None:
         return
     label = common.label()
     if not label:
-        st.info("Pilih kolom label di tab **Data**.")
+        st.info("Pilih kolom label di sidebar **Data**.")
         return
     left, right = st.columns(2)
     seconds = left.slider("Batas waktu per model (detik)", 30, 1800, 120, 30, key="ag_time")

@@ -7,10 +7,11 @@ import pandas as pd
 from core.ops import outlier
 
 
-def outlier_bounds(values: pd.Series, method: str, factor: float) -> tuple[float, float]:
-    """Batas (bawah, atas) persis seperti di kode langkah outlier."""
+def outlier_bounds(values: pd.Series, method: str, factor: float, low: float | None = None,
+                   high: float | None = None) -> tuple[float, float]:
+    """Batas (bawah, atas) persis seperti di kode langkah outlier (metode 'manual' memakai low/high)."""
     namespace = {"np": np, "pd": pd, "train": pd.DataFrame({"x": values}), "test": pd.DataFrame({"x": []})}
-    code = outlier({"column": "x", "method": method, "factor": factor, "action": "nan"})
+    code = outlier({"column": "x", "method": method, "factor": factor, "action": "nan", "low": low, "high": high})
     exec(code.split("print(")[0], namespace)
     return float(namespace["bawah"]), float(namespace["atas"])
 
@@ -43,18 +44,20 @@ def compare_methods(values: pd.Series, factors: dict[str, float] = FACTORS) -> p
     return pd.DataFrame(rows)
 
 
-def outside_rows(df: pd.DataFrame, column: str, method: str, factor: float) -> pd.DataFrame:
-    bounds = outlier_bounds(df[column], method, factor)
+def outside_rows(df: pd.DataFrame, column: str, method: str, factor: float, low: float | None = None,
+                 high: float | None = None) -> pd.DataFrame:
+    bounds = outlier_bounds(df[column], method, factor, low, high)
     return df[is_outside(df[column], bounds, method).fillna(False)]
 
 
-def by_group(df: pd.DataFrame, column: str, group: str, method: str, factor: float) -> pd.DataFrame:
+def by_group(df: pd.DataFrame, column: str, group: str, method: str, factor: float, low: float | None = None,
+             high: float | None = None) -> pd.DataFrame:
     """Batas per kelompok (mis. per Golongan UKT): nilai wajar di satu kelompok bisa aneh di lain."""
     rows = []
     for name, part in df.groupby(group, dropna=False):
-        low, high = outlier_bounds(part[column], method, factor)
-        outside = is_outside(part[column], (low, high), method)
-        rows.append({group: name, "baris": len(part), "batas bawah": low, "batas atas": high,
+        bounds = outlier_bounds(part[column], method, factor, low, high)
+        outside = is_outside(part[column], bounds, method)
+        rows.append({group: name, "baris": len(part), "batas bawah": bounds[0], "batas atas": bounds[1],
                      "di luar batas": int(outside.sum())})
     return pd.DataFrame(rows)
 

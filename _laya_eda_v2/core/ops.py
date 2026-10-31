@@ -151,25 +151,32 @@ def drop_rows_query(p):
 # ---------------------------------------------------------------- angka
 
 def outlier(p):
-    column, method, factor, action = p["column"], p["method"], p["factor"], p["action"]
+    column, method, factor, action = p["column"], p["method"], p.get("factor", 0), p["action"]
     log = method.endswith("_log")
-    lines = [f"# outlier {column!r}: {method}, k = {factor}, aksi = {action}",
-             f"nilai = train[{column!r}]" + (f"[train[{column!r}] > 0]" if log else ".dropna()")]
+    if method == "manual":
+        # batas dari pengetahuan tentang datanya (mis. tanggungan > 30 orang mustahil), bukan dari rumus
+        low, high = p.get("low"), p.get("high")
+        lines = [f"# outlier {column!r}: batas manual, aksi = {action}",
+                 f"bawah, atas = {'-np.inf' if low is None else low}, {'np.inf' if high is None else high}"]
+    else:
+        lines = [f"# outlier {column!r}: {method}, k = {factor}, aksi = {action}",
+                 f"nilai = train[{column!r}]" + (f"[train[{column!r}] > 0]" if log else ".dropna()")]
     if log:
         lines.append("nilai = np.log10(nilai)               # skala log: nol tidak dinilai")
     if method.startswith("iqr"):
         lines += ["q1, q3 = nilai.quantile([0.25, 0.75])",
                   "sebaran = q3 - q1",
                   f"bawah, atas = q1 - {factor} * sebaran, q3 + {factor} * sebaran"]
-    else:
+    elif method.startswith("mad"):
         lines += ["tengah = nilai.median()",
                   "sebaran = (nilai - tengah).abs().median() / 0.6745   # MAD (Iglewicz & Hoaglin)",
                   f"bawah, atas = tengah - {factor} * sebaran, tengah + {factor} * sebaran"]
     if log:
         lines.append("bawah, atas = 10 ** bawah, 10 ** atas")
-    lines += ["if not sebaran > 0:                    # mayoritas nilai sama -> metode tidak bisa membedakan",
-              "    bawah, atas = -np.inf, np.inf",
-              f'print("batas {column}:", bawah, atas)']
+    if method != "manual":
+        lines += ["if not sebaran > 0:                    # mayoritas nilai sama -> metode tidak bisa membedakan",
+                  "    bawah, atas = -np.inf, np.inf"]
+    lines.append(f'print("batas {column}:", bawah, atas)')
     inside_low = f"(df[{column!r}] > 0) & " if log else ""
     if action == "clip":
         lines += ["for df in (train, test):",
@@ -236,13 +243,21 @@ def ordinal(p):
 def materials_onehot(p):
     column, share = p["column"], p.get("min_share", 0.01)
     return (f"# satu kolom 0/1 per bahan di {column!r} (pisah ', '); bahan jarang/baru -> {column}_lainnya\n"
-            f"porsi = train[{column!r}].str.get_dummies(sep=\", \").mean()\n"
-            f"bahan = porsi[porsi >= {share}].sort_values(ascending=False).index.tolist()\n"
+            "# (explode + crosstab: jauh lebih cepat dari str.get_dummies bila bahannya ratusan)\n"
+            f"bagian = train[{column!r}].str.split(\", \").explode().dropna()\n"
+            "bagian = bagian.rename_axis(\"baris\").reset_index(name=\"bahan\").drop_duplicates()\n"
+            "porsi = bagian[\"bahan\"].value_counts() / len(train)   # porsi baris train yang punya bahan itu\n"
+            f"bahan = porsi[porsi >= {share}].index.tolist()\n"
             "hasil = []\n"
             "for df in (train, test):\n"
-            f"    semua = df[{column!r}].str.get_dummies(sep=\", \")\n"
-            f"    dummies = semua.reindex(columns=bahan, fill_value=0).add_prefix({column + '_'!r})\n"
-            f"    dummies[{column + '_lainnya'!r}] = semua.drop(columns=bahan, errors=\"ignore\").any(axis=1).astype(int)\n"
+            f"    bagian = df[{column!r}].str.split(\", \").explode().dropna()\n"
+            "    bagian = bagian.rename_axis(\"baris\").reset_index(name=\"bahan\").drop_duplicates()\n"
+            "    dikenal = bagian[bagian[\"bahan\"].isin(bahan)]\n"
+            "    dummies = pd.crosstab(dikenal[\"baris\"], dikenal[\"bahan\"])\n"
+            f"    dummies = dummies.reindex(index=df.index, columns=bahan, fill_value=0).add_prefix({column + '_'!r})\n"
+            "    lain = bagian.loc[~bagian[\"bahan\"].isin(bahan), \"baris\"]\n"
+            f"    dummies[{column + '_lainnya'!r}] = df.index.isin(lain).astype(int)\n"
+            "    dummies.index.name, dummies.columns.name = df.index.name, None\n"
             f"    hasil.append(pd.concat([df.drop(columns={column!r}), dummies], axis=1))\n"
             "train, test = hasil")
 

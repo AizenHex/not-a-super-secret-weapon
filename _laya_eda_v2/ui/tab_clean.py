@@ -8,15 +8,42 @@ import pandas as pd
 import streamlit as st
 
 from core import outlier_tools, text_tools
+from core import steps as engine
 from core.ops import MISSING_MARKERS, OPS, SENTINEL_FLOOR, summary
 from ui import common
 
-METHODS = {"iqr": "IQR (Tukey)", "iqr_log": "IQR skala log", "mad": "MAD", "mad_log": "MAD skala log"}
+METHODS = {"iqr": "IQR (Tukey)", "iqr_log": "IQR skala log", "mad": "MAD", "mad_log": "MAD skala log",
+           "manual": "batas manual (dari pengetahuanmu)"}
 ACTIONS = {"clip": "clip: potong ke batas (train + test)", "nan": "nan: jadikan kosong (train + test)",
            "drop": "drop: buang baris (train saja)"}
 
 
 # ---------------------------------------------------------------- panel operasi
+
+def is_discrete(values: pd.Series) -> bool:
+    """Bilangan bulat dengan sedikit nilai berbeda (jumlah tanggungan, jumlah kamar)."""
+    values = values.dropna()
+    return len(values) > 0 and bool((values == values.round()).all()) and values.nunique() <= 30
+
+
+def bound_widgets(values: pd.Series, key: str, old: dict) -> dict:
+    """Metode + k, atau batas manual. Kembalikan bagian params: method, factor, low, high."""
+    left, middle, right = st.columns(3)
+    names = list(METHODS)
+    method = left.selectbox("Metode", names, names.index(old.get("method", "iqr_log")), format_func=METHODS.get,
+                            key=f"{key}_m")
+    if method == "manual":
+        st.caption("Isi batas yang MUSTAHIL menurut pengetahuanmu (mis. tanggungan > 30 orang). Kosongkan sisi yang "
+                   "tidak dibatasi. Nilai jarang tapi mungkin (keluarga besar 12 orang) tetap aman.")
+        low = middle.number_input("Batas bawah (kosong = tanpa)", value=old.get("low"), key=f"{key}_low",
+                                  placeholder=f"min data {values.min():,.0f}")
+        high = right.number_input("Batas atas (kosong = tanpa)", value=old.get("high"), key=f"{key}_high",
+                                  placeholder=f"maks data {values.max():,.0f}")
+        return {"method": method, "factor": 0, "low": low, "high": high}
+    default = float(old.get("factor") or outlier_tools.FACTORS[method])
+    factor = middle.number_input("k", 0.5, 10.0, default, 0.5, key=f"{key}_k_{method}")
+    return {"method": method, "factor": factor, "low": None, "high": None}
+
 
 def form(op: str, data: pd.DataFrame, old: dict, key: str) -> dict | None:
     """Widget parameter untuk satu operasi. Kembalikan params, atau None bila belum lengkap."""
@@ -107,13 +134,12 @@ def form(op: str, data: pd.DataFrame, old: dict, key: str) -> dict | None:
         return {"rule": rule} if rule else None
     if op == "outlier":
         column = one("Kolom angka", numbers)
-        left, middle, right = st.columns(3)
-        method = left.selectbox("Metode", list(METHODS), list(METHODS).index(old.get("method", "iqr_log")),
-                                format_func=METHODS.get, key=f"{key}_m")
-        factor = middle.number_input("k", 0.5, 10.0, float(old.get("factor", 1.5)), 0.5, key=f"{key}_k")
-        action = right.selectbox("Aksi", list(ACTIONS), list(ACTIONS).index(old.get("action", "clip")),
-                                 format_func=ACTIONS.get, key=f"{key}_a")
-        return {"column": column, "method": method, "factor": factor, "action": action} if column else None
+        if column is None:
+            return None
+        bounds = bound_widgets(data[column], key, old)
+        action = st.selectbox("Aksi", list(ACTIONS), list(ACTIONS).index(old.get("action", "clip")),
+                              format_func=ACTIONS.get, key=f"{key}_a")
+        return {"column": column, **bounds, "action": action}
     if op == "scale":
         picked = many("Kolom angka", numbers)
         method = st.radio("Cara", ["standard", "minmax"], ["standard", "minmax"].index(old.get("method", "standard")),
@@ -146,7 +172,7 @@ def form(op: str, data: pd.DataFrame, old: dict, key: str) -> dict | None:
         return {"column": column, "kind": kind, "n_components": n} if column else None
     if op == "autogluon_features":
         if not common.label():
-            st.error("Butuh kolom label (tab Data).")
+            st.error("Butuh kolom label (sidebar Data).")
             return None
         return {}
     return None
@@ -310,20 +336,113 @@ def show_outliers() -> None:
     if not numbers:
         st.info("Tidak ada kolom angka.")
         return
+    for text in METHOD_TEXT.values():
+        st.markdown(f"- {text}")
+    mode = st.radio("Cara", ["banyak kolom sekaligus (tabel)", "satu kolom (rinci)"], horizontal=True, key="out_mode")
+    if mode.startswith("banyak"):
+        show_outlier_table(data, numbers)
+    else:
+        show_outlier_column(data, numbers)
+
+    with st.expander("Outlier multivariat (IsolationForest, hanya melihat)"):
+        picked = st.multiselect("Kolom", numbers, numbers[:4], key="iforest_columns")
+        share = st.slider("Perkiraan porsi aneh", 0.001, 0.1, 0.01, format="%.3f")
+        if picked and st.button("Jalankan IsolationForest"):
+            flags = outlier_tools.isolation_flags(data, picked, share)
+            st.write(f"{int(flags.sum())} baris ditandai (tidak jadi langkah).")
+            st.dataframe(data.loc[flags, picked].head(50), width="stretch")
+
+
+def show_outlier_table(data: pd.DataFrame, numbers: list[str]) -> None:
+    """Semua kolom angka dalam satu tabel: pilih 'perbaiki' di baris yang mau, lalu tambah semua langkahnya sekaligus."""
+    done = {s["params"].get("column") for s in common.project()["steps"] if s["op"] == "outlier"}
+    rows = []
+    for column in numbers:
+        discrete = is_discrete(data[column])
+        rows.append({"kolom": column, "jenis": "diskret" if discrete else "kontinu", "median": data[column].median(),
+                     "maks": data[column].max(), "sudah ada langkah": column in done, "perlakuan": "biarkan",
+                     "metode": "manual" if discrete else "iqr_log", "k": np.nan, "batas bawah": np.nan,
+                     "batas atas": np.nan, "aksi": "clip"})
+    st.caption("Semua kolom mulai **biarkan** (data tidak berubah). Ubah jadi **perbaiki** hanya di kolom yang mau "
+               "diperbaiki. Kolom **diskret** (mis. jumlah tanggungan) diawali metode **manual**: isi batas atas hanya "
+               "untuk nilai yang mustahil, karena keluarga besar 12 orang itu wajar.")
+    edited = st.data_editor(
+        pd.DataFrame(rows), hide_index=True, width="stretch", key="out_table",
+        disabled=["kolom", "jenis", "median", "maks", "sudah ada langkah"],
+        column_config={
+            "perlakuan": st.column_config.SelectboxColumn(options=["biarkan", "perbaiki"], required=True),
+            "metode": st.column_config.SelectboxColumn(options=list(METHODS), required=True),
+            "k": st.column_config.NumberColumn(min_value=0.5, max_value=10.0, step=0.5,
+                                               help="kosong = bawaan metode (IQR 1,5 · MAD 3,5); diabaikan untuk manual"),
+            "batas bawah": st.column_config.NumberColumn(help="hanya untuk metode manual; kosong = tanpa batas"),
+            "batas atas": st.column_config.NumberColumn(help="hanya untuk metode manual; kosong = tanpa batas"),
+            "aksi": st.column_config.SelectboxColumn(options=list(ACTIONS), required=True,
+                                                     help="clip = potong ke batas, nan = kosongkan, drop = buang baris train"),
+        })
+
+    plan, result_rows = [], []
+    for row in edited.to_dict("records"):
+        method = row["metode"]
+        factor = 0.0 if method == "manual" else float(row["k"] if pd.notna(row["k"]) else outlier_tools.FACTORS[method])
+        low = None if method != "manual" or pd.isna(row["batas bawah"]) else float(row["batas bawah"])
+        high = None if method != "manual" or pd.isna(row["batas atas"]) else float(row["batas atas"])
+        values = data[row["kolom"]]
+        bounds = outlier_tools.outlier_bounds(values, method, factor, low, high)
+        outside = outlier_tools.is_outside(values, bounds, method)
+        result_rows.append({"kolom": row["kolom"], "perlakuan": row["perlakuan"], "batas bawah": bounds[0],
+                            "batas atas": bounds[1], "di luar batas": int(outside.sum()),
+                            "% data": round(outside.mean() * 100, 2)})
+        if row["perlakuan"] == "perbaiki":
+            if method == "manual" and low is None and high is None:
+                st.warning(f"**{row['kolom']}**: metode manual tanpa batas apa pun → dilewati.")
+                continue
+            plan.append({"column": row["kolom"], "method": method, "factor": factor, "low": low, "high": high,
+                         "action": row["aksi"]})
+    st.caption("Hasil dengan pilihan di atas (dihitung dari train sesudah semua langkah):")
+    st.dataframe(pd.DataFrame(result_rows), width="stretch", hide_index=True)
+
+    if not plan:
+        st.info("Belum ada kolom bertanda **perbaiki**: tidak ada langkah yang ditambahkan, data tidak berubah.")
+        return
+    st.subheader(f"Pratinjau {len(plan)} langkah sekaligus")
+    base = common.state()
+    candidate = [{"op": "outlier", "params": p, "on": True} for p in plan]
+    result = engine.run(candidate, common.label(), base["train"], base["test"])
+    if result["error"]:
+        st.error(f"Langkah {result['error']['langkah']} gagal: {result['error']['galat']}")
+        return
+    info = engine.diff(base["train"], result["train"])
+    cols = st.columns(3)
+    cols[0].metric("baris train", f"{len(result['train']):,}", -len(info["baris dibuang"]) or None)
+    cols[1].metric("sel berubah", f"{int(info['sel berubah'].sum()):,}")
+    cols[2].metric("baris test", f"{len(result['test']):,}")
+    with st.expander("Kode langkah-langkah ini"):
+        st.code("\n\n".join(engine.step_code(step) for step in candidate), language="python")
+    if st.button(f"Tambah {len(plan)} langkah outlier", type="primary", key="out_table_add"):
+        for params in plan:
+            engine.add_step(common.project(), "outlier", params)
+        del st.session_state["out_table"]
+        st.toast(f"{len(plan)} langkah ditambahkan")
+        st.rerun()
+
+
+def show_outlier_column(data: pd.DataFrame, numbers: list[str]) -> None:
+    """Satu kolom secara rinci: banding metode, baris yang kena, per kelompok, lalu biarkan atau perbaiki."""
     column = st.selectbox("Kolom angka", numbers, key="outlier_column")
     values = data[column]
     st.caption(f"median {values.median():,.2f} · p99 {values.quantile(0.99):,.2f} · maks {values.max():,.2f} · "
                f"nol {int((values == 0).sum())} · kosong {int(values.isna().sum())}")
-    for text in METHOD_TEXT.values():
-        st.markdown(f"- {text}")
     st.dataframe(outlier_tools.compare_methods(values), width="stretch", hide_index=True)
-
-    left, middle, right = st.columns(3)
-    method = left.selectbox("Metode", list(METHODS), 1, format_func=METHODS.get, key="out_m")
-    factor = middle.number_input("k", 0.5, 10.0, 1.5 if method.startswith("iqr") else 3.5, 0.5, key=f"out_k_{method}")
-    action = right.selectbox("Aksi", list(ACTIONS), format_func=ACTIONS.get, key="out_a")
-    low, high = outlier_tools.outlier_bounds(values, method, factor)
-    outside = outlier_tools.outside_rows(data, column, method, factor)
+    if is_discrete(values):
+        st.warning(f"**{column}** berisi bilangan bulat dengan {values.nunique()} nilai berbeda (diskret). IQR/MAD "
+                   "menandai nilai jarang yang wajar (mis. keluarga besar 12 orang) sebagai outlier. Pilihan aman: "
+                   "**biarkan**, atau **batas manual** hanya untuk nilai yang mustahil.")
+    choice = st.radio("Perlakuan kolom ini", ["biarkan: tidak diperbaiki (hanya dilihat)", "perbaiki dengan langkah"],
+                      horizontal=True, key=f"out_choice_{column}")
+    params = bound_widgets(values, "out", {"method": "manual" if is_discrete(values) else "iqr_log"})
+    method, factor = params["method"], params["factor"]
+    low, high = outlier_tools.outlier_bounds(values, method, factor, params["low"], params["high"])
+    outside = outlier_tools.outside_rows(data, column, method, factor, params["low"], params["high"])
     st.write(f"Batas: **{low:,.2f} … {high:,.2f}** → {len(outside)} baris di luar batas")
     st.dataframe(outside.sort_values(column).iloc[np.r_[0:5, -5:0]] if len(outside) > 10 else outside,
                  width="stretch")
@@ -335,16 +454,13 @@ def show_outliers() -> None:
         if group:
             source = (data.assign(**{group: common.state()["train"][group]}) if group == label
                       else data.assign(**{group: st.session_state["laya_answers"][group]}))
-            st.dataframe(outlier_tools.by_group(source, column, group, method, factor), width="stretch", hide_index=True)
+            st.dataframe(outlier_tools.by_group(source, column, group, method, factor, params["low"], params["high"]),
+                         width="stretch", hide_index=True)
             st.caption("Nilai wajar di satu kelompok bisa aneh di kelompok lain. Jawaban Laya hanya untuk melihat.")
+    if choice.startswith("biarkan"):
+        st.info(f"**{column}** dibiarkan apa adanya: tidak ada langkah yang ditambahkan, data tidak berubah. "
+                "Tabel di atas hanya untuk dilihat.")
+        return
+    action = st.selectbox("Aksi", list(ACTIONS), format_func=ACTIONS.get, key="out_a")
     st.subheader("Pratinjau langkah")
-    common.preview_step("outlier", {"column": column, "method": method, "factor": factor, "action": action},
-                        f"out_{column}")
-
-    with st.expander("Outlier multivariat (IsolationForest, hanya melihat)"):
-        picked = st.multiselect("Kolom", numbers, numbers[:4], key="iforest_columns")
-        share = st.slider("Perkiraan porsi aneh", 0.001, 0.1, 0.01, format="%.3f")
-        if picked and st.button("Jalankan IsolationForest"):
-            flags = outlier_tools.isolation_flags(data, picked, share)
-            st.write(f"{int(flags.sum())} baris ditandai (tidak jadi langkah).")
-            st.dataframe(data.loc[flags, picked].head(50), width="stretch")
+    common.preview_step("outlier", {"column": column, **params, "action": action}, f"out_{column}")

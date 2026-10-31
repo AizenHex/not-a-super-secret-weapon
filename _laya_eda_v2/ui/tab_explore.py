@@ -48,30 +48,36 @@ def insight(series: pd.Series) -> None:
         st.bar_chart(series.value_counts(dropna=False).head(25).rename(index=str), horizontal=True)
 
 
+def sidebar_data() -> None:
+    """Muat data di sidebar: selalu tampil, jadi pindah halaman tidak menghapus file yang diunggah."""
+    with st.sidebar.expander("Data", expanded=common.raw_train() is None):
+        data, train_key = load_frame("train", str(DEFAULT_TRAIN), "train")
+        test, test_key = load_frame("test", "", "test")
+        if data is None:
+            return
+        st.session_state["data_id"] = f"{train_key}|{test_key}"
+        st.session_state["train"], st.session_state["test"] = data, test
+        p = common.project()
+        options = [None, *data.columns]
+        chosen = st.selectbox("Kolom label (target)", options, options.index(p["label"]) if p["label"] in data else 0,
+                              help="Label tidak pernah diubah, di-encode, atau diisi oleh langkah mana pun.")
+        if chosen != p["label"]:
+            p["label"] = chosen
+            st.rerun()
+        st.caption(f"train {data.shape[0]:,} × {data.shape[1]}"
+                   + (f" · test {test.shape[0]:,} × {test.shape[1]}" if test is not None else " · tanpa test"))
+
+
 def show_data() -> None:
     common.header("data",
-                  "Muat data **train** (wajib) dan **test** (opsional), pilih label, lalu lihat data di "
-                  "**langkah mana pun** (seperti grid Data Wrangler). Semua statistik dipelajari dari train saja.",
+                  "Lihat data di **langkah mana pun** (seperti grid Data Wrangler) dan wawasan tiap kolom. "
+                  "File train (wajib), test (opsional), dan label dipilih di sidebar **Data**. "
+                  "Semua statistik dipelajari dari train saja.",
                   "Selalu: ini langkah pertama.",
                   "Test yang ikut dipakai menghitung statistik = kebocoran data. Di sini itu tidak terjadi.")
-    left, right = st.columns(2)
-    with left:
-        data, train_key = load_frame("train", str(DEFAULT_TRAIN), "train")
-    with right:
-        test, test_key = load_frame("test", "", "test")
-    if data is None:
+    if not common.need_data():
         return
-    st.session_state["data_id"] = f"{train_key}|{test_key}"
-    st.session_state["train"], st.session_state["test"] = data, test
-
     p = common.project()
-    options = [None, *data.columns]
-    chosen = st.selectbox("Kolom label (target)", options, options.index(p["label"]) if p["label"] in data else 0,
-                          help="Label tidak pernah diubah, di-encode, atau diisi oleh langkah mana pun.")
-    if chosen != p["label"]:
-        p["label"] = chosen
-        st.rerun()
-
     steps = p["steps"]
     at = st.select_slider("Lihat data sesudah langkah", list(range(len(steps) + 1)), len(steps),
                           format_func=lambda n: "mentah (0)" if n == 0 else f"{n}. {engine.summary(steps[n - 1])}")
@@ -84,7 +90,7 @@ def show_data() -> None:
     st.dataframe(view.head(500), width="stretch", height=320)
 
     st.subheader("Wawasan kolom")
-    profile = audit.column_profile(view)
+    profile = common.analysis("column_profile", common.state_key(at), view)
     st.dataframe(profile, width="stretch", hide_index=True,
                  column_config={"kosong %": st.column_config.ProgressColumn("kosong %", min_value=0, max_value=100,
                                                                            format="%.1f")})
@@ -128,12 +134,12 @@ def show_findings() -> None:
                   "Usulan hanyalah tebakan dari pola data; konteks kolom (apa arti '0' atau '-') kamu yang tahu.")
     if not common.need_data():
         return
-    data, label = common.current(), common.label()
+    data, label, key = common.current(), common.label(), common.state_key() + "|fitur"
     found = 0
-    profile = audit.column_profile(data).set_index("kolom")
+    profile = common.analysis("column_profile", key, data).set_index("kolom")
     kinds = profile["tipe tebakan"]
 
-    fake = audit.fake_missing(data)
+    fake = common.analysis("fake_missing", key, data)
     if len(fake):
         found += 1
         columns = sorted(fake["kolom"].unique())
@@ -144,7 +150,7 @@ def show_findings() -> None:
         suggestion(f"Rapikan spasi di {len(texts)} kolom teks", "Spasi di awal/akhir/ganda membuat nilai sama "
                    "terhitung berbeda.", "tidy_text", {"columns": texts, "markers": MISSING_MARKERS}, "tidy")
 
-    sentinel = audit.sentinels(data)
+    sentinel = common.analysis("sentinels", key, data)
     if len(sentinel):
         found += 1
         suggestion(f"Nilai penjaga ≥ 2.000.000.000 di {len(sentinel)} kolom", sentinel, "sentinel_to_nan",
@@ -156,7 +162,7 @@ def show_findings() -> None:
         suggestion(f"Angka tersimpan sebagai teks: {len(numeric_text)} kolom", profile.loc[numeric_text].reset_index(),
                    "to_number", {"columns": numeric_text, "indonesian": True}, "number")
 
-    single = audit.single_value_columns(data)
+    single = common.analysis("single_value_columns", key, data)
     for row in single.itertuples(index=False):
         found += 1
         suggestion(f"Kolom checkbox '{row.kolom}': hanya '{row[1]}' + {row.kosong:,} kosong",
@@ -170,7 +176,7 @@ def show_findings() -> None:
                    "bila model menganggapnya penting (tab AutoGluon), itu tanda kebocoran urutan data.",
                    "drop_columns", {"columns": ids}, "ids")
 
-    findings = audit.row_findings(common.state()["train"], label)
+    findings = common.analysis("row_findings", common.state_key(), common.state()["train"], label)
     if findings["duplikat persis"]:
         found += 1
         suggestion(f"{findings['duplikat persis']:,} baris duplikat persis di train",
