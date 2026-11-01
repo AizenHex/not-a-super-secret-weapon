@@ -101,6 +101,14 @@ def show_data() -> None:
     if common.split_config():
         st.caption("Grid, wawasan kolom, dan semua halaman EDA melihat bagian **train** saja: valid disimpan untuk "
                    "menilai langkahmu dengan jujur (halaman Split).")
+    focus = st.session_state.get("fokus_baris")
+    if focus:                                          # dari tab Latih: baris dengan salah terbesar (E11)
+        rows = view.index.intersection(focus)
+        st.warning(f"Menampilkan {len(rows):,} baris dari tab **Latih** (salah terbesar). Cari sebabnya di sini.")
+        if st.button("Tampilkan semua baris lagi", key="clear_focus"):
+            st.session_state["fokus_baris"] = None
+            st.rerun()
+        view = view.loc[rows]
     st.dataframe(view.head(500), width="stretch", height=320)
 
     st.subheader("Wawasan kolom")

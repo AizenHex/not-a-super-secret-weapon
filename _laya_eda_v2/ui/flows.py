@@ -103,6 +103,25 @@ FLOWS = {
         f [label="permutation importance: kolom penting,\\nkolom id penting = curiga bocor", fillcolor="#fde2e2"];
         user [label="langkah yang menurunkan skor → periksa / matikan"];
         a -> b -> e; a -> c -> d -> e; e -> f -> user;'''),
+    "latih": dot('''
+        steps; a [label="langkah aktif"];
+        b [label="blok EDA (pandas): langkah tanpa transformer\\n+ semua langkah sebelumnya (train & test)"];
+        c [label="Pipeline sklearn: ColumnTransformer per langkah\\n(SimpleImputer, OrdinalEncoder, TargetEncoder,\\nfeature_engine Winsorizer/RareLabelEncoder) → model"];
+        user [label="pilih tugas, metrik (QWK/F1/RMSE...), model, mode cepat/lengkap,\\nfold, kelas timpang"];
+        d [label="validasi silang (StratifiedKFold / GroupKFold / TimeSeriesSplit):\\npipeline di-fit ULANG per fold → OOF"];
+        e [label="ambang label berurutan / bobot kelas dari OOF;\\nSMOTE (imblearn) hanya di fold latih"];
+        f [label="papan skor LightGBM / CatBoost / XGBoost / HistGB / AutoGluon\\n+ ensemble OOF (hanya bila lebih baik)"];
+        g [label="confusion matrix, baris salah terbesar, permutation importance\\n→ figur PNG 16:9"];
+        h [label="pipeline.joblib + .json (versi sklearn) + percobaan.csv", fillcolor="#d9f2e3"];
+        steps -> a -> b -> c -> d; user -> d; d -> e -> f -> g; f -> h;'''),
+    "submission": dot('''
+        a [label="sample_submission.csv → kolom id, target, urutan id, tipe (3 bukan 3.0)"];
+        b [label="pipeline.joblib + .json dari tab Latih (joblib.load)"];
+        c [label="template lurus: baca → split + blok EDA → skema pandera (lapor)\\n→ predict → pd.DataFrame() baru kolom satu per satu"];
+        d [label="validator: baris, kolom, himpunan & urutan id, NaN, kelas ⊆ train, bilangan bulat"];
+        e [label="submission.csv", fillcolor="#d9f2e3"];
+        f [label="DITOLAK: daftar masalah", fillcolor="#fde2e2"];
+        a -> c; b -> c; c -> d; d -> e [label="lolos"]; d -> f [label="gagal"];'''),
     "kode": dot('''
         steps; a [label="satu blok # %% per langkah\\ntanpa def: pandas/numpy lurus"];
         s [label="blok split (sesudah baca data)"];
@@ -117,3 +136,9 @@ FLOWS = {
         c [label="konteks: kelompok pembanding outlier,\\n\'apakah dua ejaan bermakna sama?\'"];
         user -> a -> b -> c;'''),
 }
+
+# R10: setiap tab aplikasi (app.TABS) punya flowchart; diuji di tests/test_requirements.py
+TAB_FLOWS = {"Data": "data", "Split": "split", "Temuan": "temuan", "Operasi": "operasi", "Ejaan": "ejaan",
+             "Isian bebas": "isian", "Outlier": "outlier", "Label": "label", "Train vs test": "test",
+             "AutoGluon": "autogluon", "Latih": "latih", "Submission": "submission", "Kode & ekspor": "kode",
+             "Laya": "laya"}
