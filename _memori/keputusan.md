@@ -2,6 +2,8 @@
 
 Terbaru di atas. Format: `- YYYY-MM-DD: <keputusan>. Alasan: <...>.`
 
+- 2026-11-02: VISI.md R6 dihitung per entri peta (kunci dict + isi list + alternatif regex), bukan per baris; contoh rapidfuzz memakai `token_sort_ratio` + `utils.default_process` dan tidak mengubah nilai yang sudah ada di train. Alasan: temuan review 7 dan 4 (baris bisa dipadatkan, WRatio menyamakan potongan `Bandung` ~ `Kota Bandung`).
+
 - 2026-11-02: fitur extra Laya v2 (VISI.md bagian 0): langkah pandas (ejaan, isian bebas, penanda kosong)
   tetap blok EDA lurus sebelum Pipeline; hanya langkah yang punya transformer sklearn/feature_engine masuk
   `Pipeline`. `FunctionTransformer` + `def` hanya opsi. pandera default mode lapor, mode ketat opsi.

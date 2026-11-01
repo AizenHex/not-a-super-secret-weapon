@@ -7,7 +7,8 @@ sama dengan yang terlihat di aplikasi, plus (3) fitur **extra** yang menyelesaik
 
 Dokumen ini = **satu-satunya** sumber tujuan, requirement, prinsip, pilihan library, dan uji terima Laya v2.
 `RENCANA.md` hanya berisi status kerja, arsitektur yang sudah jalan, dan hasil uji di data riil (bukti, bukan
-aturan). Kalau keduanya bertentangan, dokumen ini yang benar.
+aturan). Kalau keduanya bertentangan, dokumen ini yang benar. Setiap perubahan dokumen ini atau kodenya ikut
+memperbarui memori agen `../_memori/` (log, status, aturan/keputusan bila berubah) di commit yang sama.
 
 ---
 
@@ -50,18 +51,18 @@ Hubungan dengan R1–R18:
 | # | Requirement | Cara memastikan |
 |---|---|---|
 | R1 | Tidak ada yang berubah sebelum pengguna menambah langkah | data di langkah 0 = data mentah sesudah split; uji: proyek kosong → hash data tetap |
-| R2 | Statistik/model hanya di-*fit* di **train** | semua transformer `fit` di train, `transform` di valid/test; uji: ubah isi test → parameter langkah tidak berubah |
-| R3 | Baris **valid & test tidak pernah dibuang** | op drop hanya menyentuh `train`; uji: `len(test)` sama sebelum/sesudah semua langkah |
+| R2 | Statistik/model hanya di-*fit* di **train** | semua transformer `fit` di train, `transform` di valid/test; uji (valid dan test **tidak kosong**): ubah isi valid dan test → parameter langkah dan hasil train tidak berubah |
+| R3 | Baris **valid & test tidak pernah dibuang** | op drop hanya menyentuh `train`; uji (valid dan test tidak kosong): `len(valid)` dan `len(test)` sama sebelum/sesudah semua langkah |
 | R4 | Kode hasil = satu file lurus: blok `# %%` per langkah, **tanpa `def`/`lambda`/class** (pengecualian: bagian 0) | uji AST: tidak ada `FunctionDef`, `Lambda`, `ClassDef` |
 | R5 | Aplikasi menjalankan **kode yang sama** dengan file unduhan | `exec` blok yang sama; uji: skrip mandiri (subprocess) = hasil aplikasi, sel per sel |
-| R6 | **Peta typo hardcoded ≤ 300 baris total** di seluruh skrip (target ≤ 200) | uji menghitung baris dict literal per langkah; lewat batas → aplikasi menolak dan menawarkan versi aturan/library |
+| R6 | **Peta typo hardcoded ≤ 300 entri total** di seluruh skrip (target ≤ 200) | dihitung per **entri** peta: kunci dict + isi list + alternatif regex (`a\|b\|c` = 3), dijumlah semua langkah; uji: penghitung di skrip contoh; lewat batas → aplikasi menolak menambah langkah dan menawarkan versi aturan/library |
 | R7 | Selain peta typo yang wajar, kode **memakai library**, bukan tulisan ulang manual | katalog op menunjuk satu library per tugas (bagian 3) |
 | R8 | Nama kolom asli **tidak pernah diganti** (tidak ada `_angka`, `__angka`), dan kolom tidak hilang diam-diam | kolom akhir = kolom asli − kolom yang dibuang lewat langkah (dengan alasan) + kolom baru dari op yang memang membuatnya (encoding, indikator kosong), semua terlihat di pratinjau; uji: daftar kolom akhir = daftar yang diturunkan dari langkah |
 | R9 | Setiap metode opsional punya **apa / kapan cocok / kapan berbahaya** | uji: semua entri katalog punya tiga teks itu |
 | R10 | Setiap tab punya **flowchart** cara kerja (nama library di node) | uji: semua tab terdaftar di `ui/flows.py` |
 | R11 | Galat tampil apa adanya, tidak ditelan | langkah gagal → berhenti di langkah itu, pesan asli + nomor langkah |
 | R12 | Kode tahan **kategori/ejaan baru dan bentuk test yang beda** | aturan dipelajari dari train lalu diterapkan ke nilai apa pun (bukan daftar nilai train saja); uji dengan test berantakan buatan: kategori/ejaan baru, kolom hilang, kolom tambahan, urutan kolom beda, tipe beda (`"1.500"` teks), kolom kosong semua, test 1 baris, test 0 baris |
-| R13 | Skrip jalan di Windows (cp1252) & Linux | tanpa non-ASCII di `print`; uji subprocess dengan output dipipe |
+| R13 | Skrip jalan di Windows (cp1252) & Linux | blok pertama skrip: `sys.stdout.reconfigure(errors="replace")`; teks `print` buatan Laya ASCII; uji subprocess dengan `PYTHONIOENCODING=cp1252`, output dipipe, dan data/nama kolom berisi karakter di luar cp1252 |
 | R14 | Reproducible | `random_state` tetap di semua op acak; versi library dicetak di blok pertama skrip |
 | R15 | Setiap langkah terlihat **sebelum → sesudah**, dan langkah buang baris/kolom menulis **alasan** | `steps.run` mencatat per langkah: baris dibuang, kolom baru/hilang, sel berubah, kosong baru; uji: semua op buang punya parameter alasan yang muncul sebagai komentar di kode |
 | R16 | **Jalan tanpa Laya/MiniLM dan offline** | semua tab dan semua op tetap jalan bila model Laya/MiniLM tidak ada; library berat (AutoGluon, skrub) diimpor hanya saat dipakai; uji AppTest tanpa folder model |
@@ -105,18 +106,18 @@ dicek ulang sebelum dipakai.
 | Tugas | Analisis di aplikasi | Kode yang dihasilkan |
 |---|---|---|
 | Profil & laporan | `skrub.TableReport`, profil sendiri yang cepat | — (hanya analisis) |
-| Validasi skema (E4) | `pandera`: tipe, rentang, nilai sah per kolom, dipelajari dari train | `schema = pa.DataFrameSchema({...}); schema.validate(test, lazy=True)` |
+| Validasi skema (E4) | `pandera`: tipe, rentang, nilai sah per kolom, dipelajari dari train | `schema = pa.DataFrameSchema({...}); schema.validate(test, lazy=True)` dalam mode lapor: pelanggaran dicetak, skrip EDA **tidak** berhenti (mode ketat hanya bila dipilih, E4) |
 | Tipe & konversi | deteksi angka-teks, tanggal, checkbox, sentinel (2^31−1, 9999) | `pd.to_numeric(errors="coerce")`, `pd.to_datetime(format=...)`, `skrub.Cleaner` |
 | Penanda kosong palsu | penanda **per kolom** (`-`, `?`, `0` di kolom yang tidak wajar nol seperti NJOP/daya listrik), angka penjaga ≥ 2^31−1 dan variannya (`…483647`, `2000000000`), kolom berisi 1 nilai + kosong (kosong = "tidak") | `replace` per kolom dengan daftar penanda kolom itu; `fillna("tidak")` untuk kolom 1 nilai + kosong. Penanda tidak global: `-` di Riwayat Beasiswa berarti "tidak", bukan kosong |
 | Ejaan kategori | key collision (fingerprint OpenRefine) + kamus singkatan | aturan kunci pandas `.str` + `GABUNG` pendek (≤ R6) |
 | Typo / sinonim panjang | `rapidfuzz` (cdist, extractOne), `skrub.deduplicate` | kosakata baku dipelajari dari train → `rapidfuzz.process.extractOne` untuk nilai apa pun di valid/test (tahan ejaan baru, R12) |
 | Isian bebas (multi-nilai) | peta kata + frasa, kata pengisi; pemisah **hanya** di kolom yang ditandai isian bebas (`Program Studi` berisi koma, `Pendidikan` berisi `/`) | `.str.split().explode()` + peta kata/frasa ringkas, atau `skrub.StringEncoder`/`GapEncoder` bila tujuannya fitur model |
 | Kosong | pola kosong `missingno`, uji MCAR vs bergantung kolom lain | `sklearn.impute.SimpleImputer` (median/mean/most_frequent/constant, per kolom) / `IterativeImputer` / `KNNImputer` + `add_indicator=True`; kosong sebagai kategori bila bermakna |
-| Outlier | IQR, IQR-log (nol dihitung terpisah), MAD (log), `pyod` (ECOD, IsolationForest), per kelompok label; perbandingan jumlah baris tiap metode | `feature_engine.outliers.Winsorizer` (clip) / `ArbitraryOutlierCapper` / jadikan kosong; drop hanya di train; aksi default "biarkan" |
+| Outlier | IQR, IQR-log (nol dihitung terpisah), MAD (log), `pyod` (ECOD, IsolationForest), per kelompok label; perbandingan jumlah baris tiap metode | `feature_engine.outliers.Winsorizer(missing_values="ignore")` (clip) / `ArbitraryOutlierCapper` / jadikan kosong; drop hanya di train; aksi default "biarkan" |
 | Satuan campur | nilai sangat kecil di kolom uang/harga (data riil: Kendaraan < 100 di 4.867 baris, mis. `2` di samping `6.500.000`; NJOP < 1.000 di 4.826 baris), sebaran log yang terbelah dua | penanda + pilihan pengguna dengan alasan: jadikan kosong / kalikan faktor / biarkan. Arti nilai kecil (jumlah unit? ribuan rupiah?) tidak ditebak; aplikasi hanya menunjukkan bukti |
 | Logika antar kolom | mask pandas: bangunan > tanah, cicilan > hutang, hutang 0 tapi cicilan > 0 | — (penanda; aksinya lewat langkah outlier: jadikan kosong atau buang di train) |
-| Kategori langka | frekuensi per kolom, kategori hanya di test | `feature_engine.encoding.RareLabelEncoder` |
-| Encoding | kardinalitas, kebocoran target, urutan ordinal (rentang Rp diurut dari angkanya) | `OneHotEncoder(handle_unknown="infrequent_if_exist")`, `OrdinalEncoder` (urutan dari Laya/ordinal_order), `sklearn.preprocessing.TargetEncoder` (cross-fitting bawaan); one-hot **per bahan** untuk isian bebas multi-nilai (bahan ≥ 1% baris train, sisanya `_lainnya`) |
+| Kategori langka | frekuensi per kolom, kategori hanya di test | `feature_engine.encoding.RareLabelEncoder(missing_values="ignore")` |
+| Encoding | kardinalitas, kebocoran target, urutan ordinal (rentang Rp diurut dari angkanya) | `OneHotEncoder(handle_unknown="infrequent_if_exist")`, `OrdinalEncoder(handle_unknown="use_encoded_value", unknown_value=-1, encoded_missing_value=-1)` (urutan dari Laya/ordinal_order), `sklearn.preprocessing.TargetEncoder` (cross-fitting bawaan: train **wajib** `fit_transform(train[KOLOM], y)`, valid/test `transform`; `fit` lalu `transform` di train = bocor); one-hot **per bahan** untuk isian bebas multi-nilai (bahan ≥ 1% baris train, sisanya `_lainnya`) |
 | Skala & transformasi | skew, distribusi | `PowerTransformer` / `QuantileTransformer` / `StandardScaler` |
 | Duplikat & kolom kembar | baris kembar, konflik label, baris yang sebagian besar kosong, kolom identik/terkorelasi sempurna, kategori kembar (`skrub.column_associations`, Cramér's V) | `drop_duplicates` (train), `feature_engine.selection.DropDuplicateFeatures` / `DropCorrelatedFeatures` |
 | Kolom id / bocor | permutation importance AutoGluon, korelasi dengan label | `drop(columns=[...])` dengan alasan di komentar |
@@ -139,20 +140,24 @@ KOLOM = ["Luas Tanah Rumah (m2)", "NJOP per Meter"]
 imputer = SimpleImputer(strategy="median", add_indicator=True).set_output(transform="pandas")
 imputer.fit(train[KOLOM])
 for df in (train, valid, test):
-    df[imputer.get_feature_names_out()] = imputer.transform(df[KOLOM])
+    if len(df):                      # valid/test 0 baris dilewati: transformer sklearn menolak 0 sampel
+        df[imputer.get_feature_names_out()] = imputer.transform(df[KOLOM])
 
 # %% Langkah 9: bakukan ejaan Kota (kosakata dari train, berlaku untuk ejaan baru di test)
-from rapidfuzz import process, fuzz
+from rapidfuzz import fuzz, process, utils
 jumlah = train["Kota"].value_counts()
 BAKU = list(jumlah[jumlah >= 5].index)
+DIKENAL = set(train["Kota"].dropna())   # nilai yang sudah ada di train tidak diubah (Kota Bandung != Bandung)
 for df in (train, valid, test):
-    unik = df["Kota"].dropna().unique()
-    cocok = {nilai: process.extractOne(nilai, BAKU, scorer=fuzz.WRatio, score_cutoff=90) for nilai in unik}
-    peta = {nilai: hasil[0] for nilai, hasil in cocok.items() if hasil is not None}
-    df["Kota"] = df["Kota"].replace(peta)
+    if len(df):
+        unik = [nilai for nilai in df["Kota"].dropna().unique() if nilai not in DIKENAL]
+        cocok = {nilai: process.extractOne(nilai, BAKU, scorer=fuzz.token_sort_ratio,
+                                           processor=utils.default_process, score_cutoff=90) for nilai in unik}
+        peta = {nilai: hasil[0] for nilai, hasil in cocok.items() if hasil is not None}
+        df["Kota"] = df["Kota"].replace(peta)
 ```
 
-Satu pola untuk semua: **fit di train → simpan di variabel biasa → `for df in (train, valid, test)`**.
+Satu pola untuk semua: **fit di train → simpan di variabel biasa → `for df in (train, valid, test)` → `if len(df):`** (frame 0 baris dilewati, sama seperti `core/ops.py`). Pencocokan ejaan memakai normalisasi (`processor=utils.default_process`) dan `fuzz.ratio`/`token_sort_ratio`, bukan `WRatio` (WRatio memberi skor tinggi untuk potongan: `Bandung` ~ `Kota Bandung`).
 
 ---
 
