@@ -1,5 +1,40 @@
 # Rencana rombak total Laya EDA
 
+## STATUS 02-11-2026 — baca ini dulu (lanjutan di sesi cloud)
+
+**Aturan tetap (jangan dilanggar):** kode hasil tanpa `def`/lambda, pandas/numpy lurus · tiap tab punya
+flowchart (`ui/flows.py`) · tidak ada yang berubah sebelum pengguna menambah langkah · baris test/valid tidak
+pernah dibuang · statistik dari train saja · metode opsional + penjelasan · default tidak ganti nama/tambah kolom ·
+kode EDA harus **ringkas berbasis aturan**, bukan peta per nilai ribuan baris.
+
+**Masalah utama yang sedang dikerjakan:** kode EDA terlalu hardcoded saat memperbaiki typo/ejaan atau drop.
+Sesi pengguna punya langkah `map_values` 758 / 1.584 / 933 baris (Bahan Atap/Tembok/Lantai) yang tetap tidak
+menyatukan Genteng/Genting dan tidak berlaku untuk ejaan baru di test.
+
+**Sudah selesai (belum diuji di cloud):**
+- `spelling` (tab Ejaan, `core/text_tools.merge_proposals`): aturan kunci (huruf kecil → SINGKATAN → tanpa
+  `\W`) + `GABUNG` pendek dengan alasan; union-find menyimpan alasan & centang per sambungan.
+- `free_text` (tab Isian bebas): PEMISAH → PETA_KATA (rapidfuzz, < 4 huruf tidak dicentang) → hapus kata ganda →
+  PENGISI (kata pengisi) → PETA_FRASA (kamus KBBI, urutan kata; "memuat" tidak dicentang). Rantai peta hanya lewat
+  usulan yang dicentang. Pratinjau = hasil kode langkah persis. Atap: genteng 75,8%.
+- `steps.run` mencatat `kosong baru` per langkah → peringatan di sidebar, Temuan ("kosong mencolok"), log.
+- Peringatan langkah kembar dan langkah > 40 baris (kecuali `free_text`/`spelling`).
+- Bug: Temuan crash (mask object kosong → pakai `.astype(bool)`), print non-ASCII di skrip (cp1252),
+  kolom test semua NaN (`astype("string")` sebelum `.str`).
+
+**Berikutnya:**
+1. Audit semua operasi di `core/ops.py` yang masih menulis daftar per nilai (mis. `map_values` besar,
+   `fill_constant`, encoding) → ganti/arahkan ke aturan ringkas; ukur baris kode per langkah di `tests/test_steps.py`.
+2. Drop: pastikan setiap drop punya alasan + pratinjau dan tidak pernah menyentuh valid/test.
+3. Riwayat Beasiswa: "-" = jawaban "tidak", jangan jadi NaN di `tidy_text` (penanda kosong per kolom).
+4. Usulan untuk sesi pengguna (tanya dulu, jangan ubah otomatis): ganti langkah 11–15 dengan Satukan ejaan +
+   3× Isian bebas; keluarkan Riwayat dari langkah 1 dan 4; hapus langkah 7–8 (kembar langkah 6).
+
+**Menjalankan uji** (dari folder `_laya_eda_v2`, set `LAYA_SESI` agar tidak menimpa `hasil/sesi_terakhir.json`):
+`python -m tests.test_steps`, `python -m tests.test_tools`, `python -m tests.test_app`.
+Data riil `../_laya_eda/data/train.csv` (label `Golongan UKT`) **tidak di-commit** (gitignore); di cloud uji
+butuh data itu diunggah terpisah. Saat diubah di Windows: hindari non-ASCII di `print` kode hasil.
+
 ## 0. Versi 3 (31-10-2026): langkah ala Data Wrangler + OpenRefine + AutoGluon
 
 Bagian ini MENGGANTI resep/codegen berfungsi di bagian 3, 4.2–4.13. Prinsip di bagian 2 tetap berlaku.

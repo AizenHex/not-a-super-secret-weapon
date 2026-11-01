@@ -10,7 +10,7 @@ import streamlit as st
 from core import outlier_tools, text_tools
 from core import steps as engine
 from core.ops import MISSING_MARKERS, OPS, SENTINEL_FLOOR, summary
-from ui import common
+from ui import common, jobs
 
 METHODS = {"iqr": "IQR (Tukey)", "iqr_log": "IQR skala log", "mad": "MAD", "mad_log": "MAD skala log",
            "manual": "batas manual (dari pengetahuanmu)"}
@@ -83,6 +83,13 @@ def form(op: str, data: pd.DataFrame, old: dict, key: str) -> dict | None:
         case = st.radio("Jadi", cases, cases.index(old.get("case", "lower")), horizontal=True, key=f"{key}_case",
                         format_func={"lower": "huruf kecil", "upper": "HURUF BESAR", "title": "Huruf Judul"}.get)
         return {"columns": picked, "case": case} if picked else None
+    if op == "spelling":
+        groups = old.get("groups", {})
+        st.caption("Usulan GABUNG (SMA = MA = SLTA, Tidak = Tidak Ada, …) dibuat di tab **Ejaan**. Di sini: pilih kolom "
+                   "untuk aturan kunci; gabungan yang sudah ada di langkah ini dipertahankan.")
+        picked = st.multiselect("Kolom kategori", texts, [c for c in groups if c in texts], key=f"{key}_cols")
+        return ({"groups": {c: groups.get(c, {}) for c in picked}, "examples": old.get("examples", {})}
+                if picked else None)
     if op == "map_values":
         column = one("Kolom", texts)
         if column is None:
@@ -157,8 +164,13 @@ def form(op: str, data: pd.DataFrame, old: dict, key: str) -> dict | None:
         if column is None:
             return None
         values = sorted(data[column].dropna().unique(), key=str)
-        text = st.text_area("Urutan dari terendah (kosongkan = abjad)", "\n".join(map(str, old.get("order", []))),
-                            height=150, key=f"{key}_order", help="Nilai yang ada: " + ", ".join(map(str, values[:40])))
+        guess = text_tools.ordinal_order(data[column]) or {}
+        if guess and not old.get("order"):
+            st.caption(f"Usulan urutan: {guess['alasan']}")
+        order = old.get("order") or guess.get("urutan") or []
+        text = st.text_area("Urutan dari terendah (kosongkan = abjad)", "\n".join(map(str, order)),
+                            height=150, key=f"{key}_order_{column}",
+                            help="Nilai yang ada: " + ", ".join(map(str, values[:40])))
         order = [line.strip() for line in text.splitlines() if line.strip()]
         missing = set(values) - set(order)
         if order and missing:
@@ -215,22 +227,30 @@ def show_operations() -> None:
 
 # ---------------------------------------------------------------- ejaan
 
-def approval(table: pd.DataFrame, key: str, default_ok: bool) -> dict:
-    table = table.copy()
-    table.insert(0, "setuju", default_ok if "peringatan" not in table else default_ok & (table["peringatan"] == ""))
-    edited = st.data_editor(table, width="stretch", hide_index=True, key=key,
-                            disabled=[c for c in table.columns if c not in ("setuju", "usulan baku")])
-    chosen = edited[edited["setuju"]]
-    return dict(zip(chosen["asli"], chosen["usulan baku"]))
+SPELL_METHODS = ["aturan kunci + kamus (aman)", "+ salah ketik rapidfuzz (periksa)",
+                 "+ skrub.deduplicate (opsional, periksa)"]
+
+
+def merge_editor(proposals: pd.DataFrame, key: str) -> pd.DataFrame:
+    """Tabel usulan GABUNG: hanya kolom 'setuju' yang bisa diubah."""
+    first = [c for c in ["setuju", "kolom", "ejaan", "jadi", "jumlah", "alasan"] if c in proposals]   # 'MA' → 'SLTA' terbaca dulu
+    table = proposals[first + [c for c in proposals.columns if c not in first]]
+    return st.data_editor(table, width="stretch", hide_index=True, key=key,
+                          disabled=[c for c in table.columns if c != "setuju"],
+                          column_config={"alasan": st.column_config.TextColumn("alasan", width="large")})
 
 
 def show_spelling() -> None:
     common.header("ejaan",
-                  "Clustering ala **OpenRefine** untuk kolom kategori: satukan ejaan berbeda dari nilai yang sama "
-                  "(`'Kab. Pati'` = `'Kabupaten Pati'`). Hasilnya satu langkah **Satukan ejaan (peta nilai)**.",
-                  "**Key collision (fingerprint)** aman: beda huruf besar, spasi, tanda baca, urutan kata, singkatan.",
-                  "**Nearest neighbor** dan **skrub.deduplicate** bisa menggabung nilai berbeda (`Kota Malang` → "
-                  "`Kota Magelang`). Tidak dicentang otomatis; periksa satu per satu.")
+                  "Satukan ejaan berbeda dari nilai yang sama di kolom **kategori**. Hasilnya satu langkah "
+                  "**Satukan ejaan**: satu aturan kunci (huruf kecil, tanpa spasi/tanda baca, `Kab.` = `Kabupaten`) "
+                  "+ daftar pendek **GABUNG** untuk kunci berbeda yang bermakna sama. Kode tetap pendek berapa pun "
+                  "banyaknya variasi, dan ejaan baru di test ikut dibakukan.",
+                  "**Aturan kunci** (key collision OpenRefine) selalu aman: `S- 2` = `S-2` = `S2`. **Kamus** jenjang "
+                  "pendidikan (SMA = MA = SLTA) dan jawaban 'tidak' (Tidak = Tidak Ada) dicentang dengan alasannya.",
+                  "**Salah ketik rapidfuzz** dan **skrub.deduplicate** bisa menggabung nilai berbeda (`Kota Malang` → "
+                  "`Kota Magelang`): tidak dicentang otomatis. Kolom isian bebas (Bahan …) dibakukan per kata di tab "
+                  "**Isian bebas**, bukan di sini.")
     if not common.need_data():
         return
     data = common.current()
@@ -241,83 +261,142 @@ def show_spelling() -> None:
     mode = st.radio("Cara", ["semua kolom sekaligus (tabel)", "satu kolom (rinci)"], horizontal=True, key="spell_mode")
     if mode.startswith("semua"):
         show_spelling_all(data, texts)
-        return
-    column = st.selectbox("Kolom", texts, key="spell_column")
-    st.caption(f"{data[column].nunique():,} nilai unik. Rapikan teks dulu (tab Temuan/Operasi) agar spasi tidak "
-               "membuat nilai kembar.")
-    method = st.radio("Metode", ["key collision: fingerprint (aman)", "nearest neighbor: rapidfuzz (periksa)",
-                                 "skrub.deduplicate (opsional, periksa)"], horizontal=True, key="spell_method")
-    if method.startswith("key"):
-        proposals, default_ok = text_tools.fingerprint_groups(data[column]), True
-    elif method.startswith("nearest"):
-        left, right = st.columns(2)
-        min_count = left.slider("Nilai 'sering' = muncul minimal … kali", 2, 200, 20, key="nn_min")
-        cutoff = right.slider("Skor minimal (token_sort_ratio)", 70, 100, 88, key="nn_cut")
-        proposals, default_ok = text_tools.neighbor_groups(data[column], min_count, cutoff), False
     else:
-        clusters = st.number_input("Jumlah klaster (0 = otomatis)", 0, max(data[column].nunique(), 1), 0)
-        st.caption("Data uji: 640 nilai ≈ 3 detik, 1.961 nilai ≈ 70 detik.")
-        if st.button("Jalankan skrub.deduplicate"):
-            st.session_state[f"dedup_{column}"] = text_tools.deduplicate_map(data[column], int(clusters) or None)
-        proposals = st.session_state.get(f"dedup_{column}", pd.DataFrame(columns=["asli", "usulan baku", "jumlah"]))
-        default_ok = False
-    if proposals.empty:
-        st.write("Tidak ada usulan.")
-        return
-    mapping = approval(proposals, f"spell_{column}_{method[:4]}", default_ok)
-    st.write(f"{len(mapping)} ejaan dicentang.")
-    if mapping:
-        common.preview_step("map_values", {"column": column, "mapping": mapping}, f"spell_{column}")
+        show_spelling_column(data, texts)
 
 
-@st.cache_data(max_entries=8, show_spinner="Mencari usulan ejaan di semua kolom…")
-def all_proposals(key: str, _data: pd.DataFrame, columns: list[str], method: str, min_count: int,
-                  cutoff: int) -> pd.DataFrame:
-    """Usulan semua kolom teks dalam satu tabel (kolom 'kolom' di depan). key = kunci data (state_key)."""
-    parts = []
+@st.cache_data(max_entries=8, show_spinner="Mencari ejaan berbeda di kolom kategori…")
+def spelling_overview(key: str, _data: pd.DataFrame, columns: list[str], typos: bool, cutoff: int,
+                      min_ratio: float) -> tuple[pd.DataFrame, pd.DataFrame, list[str]]:
+    """Ringkasan per kolom + usulan GABUNG semua kolom dalam satu tabel. Kolom isian bebas dilewati."""
+    summary, parts, free = [], [], []
     for column in columns:
-        if method == "key":
-            part = text_tools.fingerprint_groups(_data[column])[["asli", "usulan baku", "jumlah"]]
-        else:
-            part = text_tools.neighbor_groups(_data[column], min_count, cutoff)
-        parts.append(part.assign(kolom=column))
-    table = pd.concat(parts, ignore_index=True) if parts else pd.DataFrame(columns=["kolom", "asli", "usulan baku"])
-    return table[["kolom", *[c for c in table.columns if c != "kolom"]]]
+        series = _data[column]
+        if text_tools.is_free_text(series):
+            free.append(column)
+            continue
+        proposals = text_tools.merge_proposals(series, typos, cutoff, min_ratio)
+        after_keys = text_tools.key_table(series)["kunci"].nunique()
+        summary.append({"kolom": column, "nilai unik": int(series.nunique()), "sesudah aturan kunci": int(after_keys),
+                        "usulan gabung": len(proposals)})
+        parts.append(proposals.assign(kolom=column))
+    table = pd.concat(parts, ignore_index=True) if parts else pd.DataFrame(columns=["kolom", "setuju"])
+    table = table[["kolom", *[c for c in table.columns if c != "kolom"]]]
+    return pd.DataFrame(summary, columns=["kolom", "nilai unik", "sesudah aturan kunci", "usulan gabung"]), table, free
+
+
+def spelling_params(columns: list[str], proposals: pd.DataFrame) -> dict:
+    """Kolom terpilih + baris usulan yang dicentang → params langkah 'spelling'."""
+    groups, examples = {}, {}
+    for column in columns:
+        part = proposals[proposals["kolom"] == column] if "kolom" in proposals else proposals
+        groups[column], examples[column] = text_tools.plan_groups(part)
+    return {"groups": groups, "examples": examples}
 
 
 def show_spelling_all(data: pd.DataFrame, texts: list[str]) -> None:
-    """Semua kolom teks sekaligus: satu tabel usulan, centang, lalu satu langkah peta nilai per kolom."""
-    method = st.radio("Metode", ["key collision: fingerprint (aman)", "nearest neighbor: rapidfuzz (periksa)"],
-                      horizontal=True, key="spell_all_method")
-    min_count, cutoff = 20, 88
-    if method.startswith("nearest"):
+    """Semua kolom kategori sekaligus: ringkasan per kolom, usulan gabung, lalu SATU langkah untuk semuanya."""
+    method = st.radio("Metode", SPELL_METHODS[:2], horizontal=True, key="spell_all_method")
+    typos, cutoff, ratio = method != SPELL_METHODS[0], 88, 3.0
+    if typos:
         left, right = st.columns(2)
-        min_count = left.slider("Nilai 'sering' = muncul minimal … kali", 2, 200, 20, key="nn_all_min")
+        ratio = left.slider("Kunci tujuan minimal … kali lebih sering", 1.5, 50.0, 3.0, 0.5, key="nn_all_ratio")
         cutoff = right.slider("Skor minimal (token_sort_ratio)", 70, 100, 88, key="nn_all_cut")
-    proposals = all_proposals(common.state_key(), data, texts, method[:3], min_count, cutoff)
+    summary, proposals, free = spelling_overview(common.state_key(), data, texts, typos, cutoff, ratio)
+    if free:
+        st.caption("Dilewati, isian bebas (dibakukan per kata di tab **Isian bebas**): "
+                   + ", ".join(f"{c} ({data[c].nunique():,} nilai)" for c in free))
+    summary.insert(0, "pakai", (summary["sesudah aturan kunci"] < summary["nilai unik"]) | (summary["usulan gabung"] > 0))
+    if not summary["pakai"].any():
+        st.success("Tidak ada ejaan berbeda di kolom kategori mana pun: tidak perlu langkah.")
+        return
+    st.subheader("1. Kolom")
+    st.caption("'sesudah aturan kunci' = nilai unik bila beda huruf besar/spasi/tanda baca/singkatan dianggap sama. "
+               "Kolom tanpa centang tidak disentuh.")
+    summary = st.data_editor(summary, width="stretch", hide_index=True, key="spell_all_columns",
+                             disabled=[c for c in summary.columns if c != "pakai"])
+    columns = list(summary.loc[summary["pakai"], "kolom"])
+    st.subheader("2. Gabung kunci berbeda yang bermakna sama")
+    shown = proposals[proposals["kolom"].isin(columns)]
+    if shown.empty:
+        st.caption("Tidak ada usulan gabung: langkah hanya memakai aturan kunci.")
+        chosen = shown
+    else:
+        st.caption("Baca alasannya. Hapus centang bila dua nilai itu memang berbeda di datamu.")
+        chosen = merge_editor(shown, f"spell_all_merge_{method[:3]}")
+    if not columns:
+        st.info("Belum ada kolom dicentang: tidak ada langkah, data tidak berubah.")
+        return
+    st.subheader("3. Pratinjau langkah")
+    common.preview_step("spelling", spelling_params(columns, chosen), "spell_all")
+
+
+def show_spelling_column(data: pd.DataFrame, texts: list[str]) -> None:
+    column = st.selectbox("Kolom", texts, key="spell_column")
+    series = data[column]
+    if text_tools.is_free_text(series):
+        st.warning(f"'{column}' terlihat seperti isian bebas (beberapa bahan per sel). Pembakuan per kata di tab "
+                   "**Isian bebas** biasanya lebih tepat; di sini setiap kombinasi dianggap nilai sendiri.")
+    same = text_tools.same_key_table(series)
+    after = text_tools.key_table(series)["kunci"].nunique()
+    st.caption(f"{series.nunique():,} nilai unik → {after:,} sesudah aturan kunci ({len(same):,} ejaan disatukan "
+               "tanpa daftar).")
+    if len(same):
+        with st.expander(f"Ejaan yang disatukan aturan kunci ({len(same):,})"):
+            st.dataframe(same.head(300), width="stretch", hide_index=True)
+    method = st.radio("Metode", SPELL_METHODS, horizontal=True, key="spell_method")
+    typos, cutoff, ratio, extra = method == SPELL_METHODS[1], 88, 3.0, None
+    if typos:
+        left, right = st.columns(2)
+        ratio = left.slider("Kunci tujuan minimal … kali lebih sering", 1.5, 50.0, 3.0, 0.5, key="nn_ratio")
+        cutoff = right.slider("Skor minimal (token_sort_ratio)", 70, 100, 88, key="nn_cut")
+    elif method == SPELL_METHODS[2]:
+        clusters = st.number_input("Jumlah klaster (0 = otomatis)", 0, max(series.nunique(), 1), 0)
+        st.caption("Data uji: 640 nilai ≈ 3 detik, 1.961 nilai ≈ 70 detik.")
+        name = f"dedup_{column}"
+        if st.button("Jalankan skrub.deduplicate", disabled=jobs.running(name)):
+            jobs.start(name, f"skrub.deduplicate {column}", text_tools.deduplicate_map, series.copy(),
+                       int(clusters) or None)
+            st.rerun()
+        jobs.status(name)
+        found = jobs.result(name)
+        if found is not None:
+            extra = dict(zip(found["asli"], found["usulan baku"]))
+    proposals = text_tools.merge_proposals(series, typos, cutoff, ratio, extra)
     if proposals.empty:
-        st.info("Tidak ada usulan di kolom teks mana pun: data tidak berubah.")
+        st.caption("Tidak ada usulan gabung.")
+        chosen = proposals
+    else:
+        st.subheader(f"Gabung kunci berbeda ({len(proposals)})")
+        chosen = merge_editor(proposals, f"spell_{column}_{method[:3]}")
+    if not len(same) and not chosen["setuju"].astype(bool).any():
+        st.info("Tidak ada yang perlu disatukan di kolom ini.")
         return
-    counts = proposals["kolom"].value_counts()
-    st.caption(f"{len(proposals)} usulan di {len(counts)} kolom: " + ", ".join(f"{c} ({n})" for c, n in counts.items()))
-    st.caption("Fingerprint dicentang otomatis (aman); nearest neighbor tidak. Hapus centang ejaan yang tidak mau "
-               "disatukan. Kolom tanpa centang dibiarkan: tidak ada langkah, data tidak berubah. Ubah 'usulan baku' "
-               "bila perlu.")
-    key = f"spell_all_{method[:3]}"
-    table = proposals.copy()
-    table.insert(0, "setuju", method.startswith("key"))
-    edited = st.data_editor(table, width="stretch", hide_index=True, key=key,
-                            disabled=[c for c in table.columns if c not in ("setuju", "usulan baku")])
-    chosen = edited[edited["setuju"]]
-    plan = [{"column": column, "mapping": dict(zip(part["asli"], part["usulan baku"]))}
-            for column, part in chosen.groupby("kolom", sort=False)]
-    if not plan:
-        st.info("Belum ada ejaan dicentang: tidak ada langkah yang ditambahkan, data tidak berubah.")
-        return
-    common.preview_steps("map_values", plan, key)
+    common.preview_step("spelling", spelling_params([column], chosen), f"spell_{column}")
 
 
 # ---------------------------------------------------------------- isian bebas
+
+@st.cache_data(max_entries=16, show_spinner="Menghitung hasil peta kata…")
+def free_text_effect(key: str, params_json: str, _before: pd.Series) -> dict:
+    """Langkah isian bebas selalu menulis ulang sel (huruf kecil, urut, pemisah ', '), jadi hampir semua sel
+    'berubah'. Pisahkan yang hanya berubah format dari yang ISINYA dibetulkan (kata, kata pengisi, frasa).
+
+    ±4 detik di 30 ribu baris, jadi di-cache per (data, params): klik lain tidak menghitung ulang.
+    """
+    params = json.loads(params_json)
+    column, frame = params["column"], _before.to_frame()
+    plain = engine.run([{"op": "free_text", "params": {"column": column, "words": {}}, "on": True}],
+                       None, frame, None)["train"][column]
+    fixed = engine.run([{"op": "free_text", "params": params, "on": True}], None, frame, None)["train"][column]
+    words_fixed = (plain != fixed) & plain.notna()
+    return {"hanya format": int(((_before != plain) & _before.notna()).sum()),
+            "kata dibetulkan": int(words_fixed.sum()),
+            "contoh": pd.DataFrame({"asli": _before[words_fixed], "sesudah": fixed[words_fixed]}).drop_duplicates().head(30),
+            "bahan tanpa peta": text_tools.material_preview(_before, {}),
+            "bahan dengan peta": text_tools.material_preview(_before, params["words"], 20, params["fillers"],
+                                                             params["phrases"])}
+
 
 def show_free_text() -> None:
     common.header("isian",
@@ -345,7 +424,7 @@ def show_free_text() -> None:
     words = text_tools.word_map(data[column], min_count, cutoff, [data[c] for c in related])
     st.subheader(f"Usulan salah ketik ({len(words)})")
     edited = st.data_editor(words, width="stretch", hide_index=True, key=f"words_{column}",
-                            disabled=["kata asli", "skor", "jumlah"])
+                            disabled=["kata asli", "skor", "jumlah", "catatan"])
     st.subheader("Kata baku yang mirip (kandidat sinonim)")
     st.caption("Tidak pernah otomatis. Centang bila 'kata 2' sama maknanya dengan 'kata 1' (genteng = genting).")
     similar = text_tools.similar_vocabulary(data[column], min_count)
@@ -358,9 +437,47 @@ def show_free_text() -> None:
     mapping = dict(zip(edited.loc[edited["setuju"], "kata asli"], edited.loc[edited["setuju"], "usulan"]))
     for first, second in synonyms.loc[synonyms["samakan 2 → 1"], ["kata 1", "kata 2"]].to_numpy():
         mapping[second] = first
-    mapping = {w: mapping.get(u, u) for w, u in mapping.items()}          # gentng→genteng→genting
+    mapping = text_tools.resolve_chains(mapping)          # dikramik → kramik → keramik = dikramik → keramik
+
+    st.subheader("Kata pengisi dan frasa")
+    st.caption("Peta kata tidak bisa menyatukan **frasa**: 'lantai keramik' = 'keramik', 'bata merah' = 'batu bata'. "
+               "Kata pengisi dibuang dari tiap bahan dengan satu regex (bahan yang isinya hanya kata pengisi tetap). "
+               "Peta frasa hanya untuk bahan yang cukup sering, jadi tetap pendek.")
+    fillers = st.multiselect("Kata pengisi (kata nama kolom + 'dari', 'biasa')",
+                             sorted(set(text_tools.fillers_for(column)) | set(text_tools.FILLER_WORDS)),
+                             text_tools.fillers_for(column), key=f"fill_{column}")
+    left, right = st.columns(2)
+    phrase_min = left.slider("Frasa diperiksa bila muncul di ≥ … baris", 2, 100, 5, key="phrase_min")
+    phrase_ratio = right.slider("'Memuat bahan lain' bila bahan itu ≥ … kali lebih sering", 1.5, 20.0, 2.0, 0.5,
+                                key="phrase_ratio")
+    phrases = text_tools.phrase_map(data[column], mapping, fillers, phrase_min, phrase_ratio)
+    st.caption(f"{len(phrases)} usulan. Dicentang awal: kamus (KBBI) dan urutan kata. 'Memuat bahan lain' tidak "
+               "dicentang: kata tambahannya bisa rincian penting ('genteng beton' ≠ 'genteng').")
+    chosen = st.data_editor(phrases, width="stretch", hide_index=True, key=f"phrases_{column}",
+                            disabled=[c for c in phrases.columns if c != "setuju"])
+    phrase_mapping = dict(zip(chosen.loc[chosen["setuju"].astype(bool), "frasa"],
+                              chosen.loc[chosen["setuju"].astype(bool), "usulan"]))
+    params = {"column": column, "words": mapping, "fillers": fillers, "phrases": phrase_mapping}
+
+    effect = free_text_effect(common.state_key(), json.dumps(params, sort_keys=True, ensure_ascii=False),
+                              common.state()["train"][column])
+    st.subheader("Hasil peta kata + frasa")
+    cols = st.columns(3)
+    cols[0].metric("kata · frasa dipetakan", f"{len(mapping)} · {len(phrase_mapping)}")
+    cols[1].metric("sel yang isinya dibetulkan", f"{effect['kata dibetulkan']:,}")
+    cols[2].metric("sel yang hanya berubah format", f"{effect['hanya format']:,}",
+                   help="huruf kecil, urutan bahan, pemisah ', ' — tidak mengubah isi")
+    if len(effect["contoh"]):
+        st.dataframe(effect["contoh"], width="stretch")
+    else:
+        st.info("Belum ada kata yang dibetulkan: centang usulan di tabel atas.")
+    left, right = st.columns(2)
+    left.caption("Bahan terbanyak TANPA peta kata (hanya format)")
+    left.dataframe(effect["bahan tanpa peta"], width="stretch", hide_index=True)
+    right.caption("Bahan terbanyak DENGAN peta kata, kata pengisi, frasa")
+    right.dataframe(effect["bahan dengan peta"], width="stretch", hide_index=True)
     st.subheader("Pratinjau langkah")
-    common.preview_step("free_text", {"column": column, "words": mapping}, f"free_{column}")
+    common.preview_step("free_text", params, f"free_{column}")
 
 
 # ---------------------------------------------------------------- outlier
@@ -398,10 +515,20 @@ def show_outliers() -> None:
     with st.expander("Outlier multivariat (IsolationForest, hanya melihat)"):
         picked = st.multiselect("Kolom", numbers, numbers[:4], key="iforest_columns")
         share = st.slider("Perkiraan porsi aneh", 0.001, 0.1, 0.01, format="%.3f")
-        if picked and st.button("Jalankan IsolationForest"):
-            flags = outlier_tools.isolation_flags(data, picked, share)
-            st.write(f"{int(flags.sum())} baris ditandai (tidak jadi langkah).")
-            st.dataframe(data.loc[flags, picked].head(50), width="stretch")
+        if picked and st.button("Jalankan IsolationForest", disabled=jobs.running("iforest")):
+            jobs.start("iforest", "IsolationForest", isolation_job, data[picked].copy(), share,
+                       note=f"{len(picked)} kolom, porsi {share:.3f}")
+            st.rerun()
+        jobs.status("iforest")
+        flagged = jobs.result("iforest")
+        if flagged is not None:
+            st.write(f"{len(flagged)} baris ditandai (tidak jadi langkah).")
+            st.dataframe(flagged.head(50), width="stretch")
+
+
+def isolation_job(data: pd.DataFrame, share: float) -> pd.DataFrame:
+    """Jalan di thread (tanpa st.*): baris yang ditandai, disimpan utuh agar tetap benar walau langkah berubah."""
+    return data[outlier_tools.isolation_flags(data, list(data.columns), share)]
 
 
 def show_outlier_table(data: pd.DataFrame, numbers: list[str]) -> None:

@@ -14,11 +14,12 @@ import json
 import numpy as np
 import pandas as pd
 
+from core import split
 from core.ops import OPS, summary
 
 
 def new_project(label: str | None = None) -> dict:
-    return {"label": label, "steps": []}
+    return {"label": label, "steps": [], "split": None}
 
 
 def add_step(project: dict, op: str, params: dict) -> None:
@@ -43,30 +44,34 @@ def imports(steps: list[dict]) -> str:
     return "\n".join(lines)
 
 
-def namespace(steps: list[dict], label: str | None, train: pd.DataFrame, test: pd.DataFrame | None) -> dict:
-    """Pengganti blok 'baca data' saat dijalankan di aplikasi: train/test diberikan langsung."""
+def namespace(steps: list[dict], label: str | None, train: pd.DataFrame, test: pd.DataFrame | None,
+              valid: pd.DataFrame | None = None) -> dict:
+    """Pengganti blok 'baca data' + 'split' saat dijalankan di aplikasi: train/valid/test diberikan langsung."""
     ns = {}
     exec(imports(steps), ns)
     ns["LABEL"] = label
     ns["train"] = train.copy()
+    ns["valid"] = valid.copy() if valid is not None else train.iloc[:0].copy()
     ns["test"] = (test.copy() if test is not None
                   else train.iloc[:0].drop(columns=[label] if label else [], errors="ignore").copy())
     return ns
 
 
 def run(steps: list[dict], label: str | None, train: pd.DataFrame, test: pd.DataFrame | None,
-        first: int = 1) -> dict:
+        first: int = 1, valid: pd.DataFrame | None = None) -> dict:
     """Jalankan langkah aktif satu per satu. Berhenti di langkah pertama yang galat (galat tidak disembunyikan).
 
-    Kembalikan train, test, dan log per langkah: baris/kolom sebelum-sesudah, keluaran print, galat.
+    Kembalikan train, valid, test, dan log per langkah: baris/kolom sebelum-sesudah, keluaran print, galat.
     `first` = nomor langkah pertama di log (untuk menjalankan lanjutan dari hasil langkah sebelumnya).
+    `valid` = bagian valid hasil split (None = kosong); diperlakukan seperti test yang masih punya label.
     """
-    ns = namespace(steps, label, train, test)
+    ns = namespace(steps, label, train, test, valid)
     log = []
     for number, step in enumerate(steps, first):
         if not step.get("on", True):
             continue
-        before = ns["train"].shape, list(ns["train"].columns), ns["test"].shape
+        before = ns["train"].shape, list(ns["train"].columns), ns["test"].shape, len(ns["valid"])
+        missing = ns["train"].isna().sum()
         output = io.StringIO()
         entry = {"langkah": number, "operasi": summary(step)}
         try:
@@ -77,27 +82,31 @@ def run(steps: list[dict], label: str | None, train: pd.DataFrame, test: pd.Data
             log.append(entry)
             break
         after = ns["train"].columns
+        gained = ns["train"].isna().sum() - missing.reindex(after, fill_value=0)   # sel kosong yang DIBUAT langkah ini
         entry.update({
             "baris train": f"{before[0][0]:,} → {ns['train'].shape[0]:,}",
             "kolom": f"{before[0][1]} → {ns['train'].shape[1]}",
+            "baris valid": f"{before[3]:,} → {len(ns['valid']):,}",
             "baris test": f"{before[2][0]:,} → {ns['test'].shape[0]:,}",
             "kolom baru": [c for c in after if c not in before[1]],
             "kolom hilang": [c for c in before[1] if c not in after],
+            "kosong baru": {c: int(n) for c, n in gained[gained > 0].sort_values(ascending=False).items()},
             "keluaran": output.getvalue().strip(),
             "galat": None,
         })
         log.append(entry)
-    return {"train": ns["train"], "test": ns["test"], "log": log,
+    return {"train": ns["train"], "valid": ns["valid"], "test": ns["test"], "log": log,
             "error": next((e for e in log if e["galat"]), None)}
 
 
 def build_script(project: dict, train_path: str, test_path: str = "") -> str:
-    """Satu file .py tanpa fungsi. `# %%` = sel (VS Code / Jupyter)."""
-    steps, label = project["steps"], project["label"]
+    """Satu file .py tanpa fungsi. `# %%` = sel (VS Code / Jupyter). Urutan: baca → split → langkah → simpan."""
+    steps, label, config = project["steps"], project["label"], project.get("split")
     parts = [
         '"""Pipeline EDA dari Laya EDA. Jalankan dari atas ke bawah; setiap `# %%` adalah satu langkah.\n\n'
-        "Aturan: statistik (median, batas outlier, daftar kategori) dihitung dari train lalu dipakai juga\n"
-        'ke test; baris hanya dibuang dari train."""\n' + imports(steps),
+        "Aturan: split dulu, lalu statistik (median, batas outlier, daftar kategori) dihitung dari train SAJA\n"
+        "dan dipakai ke valid dan test; baris hanya dibuang dari train (valid dan test tidak pernah dibuang).\"\"\"\n"
+        + imports(steps),
         "# %% baca data\n"
         f"TRAIN_CSV = {train_path!r}\n"
         f"TEST_CSV = {test_path!r}   # kosongkan bila tidak ada file test\n"
@@ -105,13 +114,15 @@ def build_script(project: dict, train_path: str, test_path: str = "") -> str:
         "train = pd.read_csv(TRAIN_CSV)\n"
         "test = pd.read_csv(TEST_CSV) if TEST_CSV else train.iloc[:0].drop(columns=[LABEL], errors=\"ignore\")\n"
         'print("train", train.shape, "test", test.shape)',
+        f"# %% split data\n{split.split_code(config)}",
     ]
     for number, step in enumerate(active(steps), 1):
         parts.append(f"# %% langkah {number}: {summary(step)}\n{step_code(step)}")
     parts.append("# %% simpan\n"
-                 'print("train", train.shape, "test", test.shape)\n'
+                 'print("train", train.shape, "valid", valid.shape, "test", test.shape)\n'
                  'train.to_csv("train_bersih.csv", index=False)\n'
-                 'test.to_csv("test_bersih.csv", index=False)')
+                 + ('valid.to_csv("valid_bersih.csv", index=False)\n' if config else "")
+                 + 'test.to_csv("test_bersih.csv", index=False)')
     parts.append("# %% (opsional) latih model AutoGluon dengan data bersih\n"
                  "# from autogluon.tabular import TabularPredictor\n"
                  "# predictor = TabularPredictor(label=LABEL).fit(train, time_limit=600)\n"

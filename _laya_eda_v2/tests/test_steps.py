@@ -9,7 +9,7 @@ import pandas as pd
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from core import steps  # noqa: E402
+from core import split, steps  # noqa: E402
 from core.ops import OPS  # noqa: E402
 
 TRAIN = ROOT.parent / "_laya_eda" / "data" / "train.csv"
@@ -24,6 +24,8 @@ def project() -> dict:
     add("tidy_text", columns=texts)
     add("sentinel_to_nan", columns=list(data.select_dtypes("number").columns.drop(LABEL, errors="ignore")))
     add("free_text", column="Bahan Atap Rumah", words={"gentng": "genteng", "asbas": "asbes"})
+    add("spelling", groups={"Pendidikan Orang Tua/Wali": {"sltasederajat": ["ma", "sma"]}, "Kota": {}},
+        examples={"Pendidikan Orang Tua/Wali": {"sltasederajat": "SLTA Sederajat ← SMA, MA"}})
     add("map_values", column=texts[0], mapping={"zzz tidak ada": "y"})
     add("outlier", column="Luas Tanah Rumah (m2)", method="iqr_log", factor=3.0, action="clip")
     add("outlier", column="Luas Bangunan Rumah (m2)", method="mad", factor=3.5, action="drop")
@@ -81,6 +83,73 @@ def test_standalone_script_matches_app(tmp_path):
     standalone = pd.read_csv(tmp_path / "train_bersih.csv")
     app = steps.run(p["steps"], LABEL, pd.read_csv(TRAIN), None)["train"].reset_index(drop=True)
     pd.testing.assert_frame_equal(standalone, app, check_dtype=False)
+
+
+SPLIT = {"method": "acak", "share": 0.2, "seed": 42, "stratify": True}
+
+
+def test_split_partitions_rows():
+    """Setiap metode: train + valid = semua baris, tidak ada yang dobel; kelompok tidak terbelah."""
+    train = pd.read_csv(TRAIN)
+    text = [c for c in train.columns if train[c].dtype == object and c != LABEL][0]
+    configs = [SPLIT, {**SPLIT, "stratify": False},
+               {"method": "kelompok", "share": 0.2, "seed": 1, "column": text},
+               {"method": "kelompok", "share": 0.2, "seed": 1, "column": split.ROW_GROUP}]
+    for config in configs:
+        part, valid = split.apply(config, LABEL, train)
+        assert not part.index.intersection(valid.index).size, config
+        assert sorted(part.index.append(valid.index)) == list(train.index), config
+        assert 0.1 < len(valid) / len(train) < 0.3, (config, len(valid))
+        if config["method"] == "kelompok" and config["column"] != split.ROW_GROUP:
+            assert not set(part[text].astype(str)) & set(valid[text].astype(str))
+    part, valid = split.apply(SPLIT, LABEL, train)            # stratified: proporsi kelas hampir sama
+    gap = (part[LABEL].value_counts(normalize=True) - valid[LABEL].value_counts(normalize=True)).abs().max()
+    assert gap < 0.01, gap
+    print("baris valid kembar dengan train (acak):", split.twins_across(part, valid, LABEL))
+
+
+def test_split_by_time():
+    dates = pd.date_range("2020-01-01", periods=100, freq="D").astype(str).tolist()
+    train = pd.DataFrame({"tanggal": dates[:95] + ["bukan tanggal"] * 5, "x": range(100), "y": [0, 1] * 50})
+    part, valid = split.apply({"method": "waktu", "share": 0.2, "seed": 42, "column": "tanggal"}, "y", train)
+    latest_train = pd.to_datetime(part["tanggal"], errors="coerce").max()
+    assert len(valid) == 19 and pd.to_datetime(valid["tanggal"]).min() > latest_train, (len(valid), latest_train)
+    assert (part["tanggal"] == "bukan tanggal").sum() == 5                # waktu kosong tetap di train
+    part, valid = split.apply({"method": "waktu", "share": 0.2, "seed": 42, "column": "x", "numeric": True}, "y", train)
+    assert valid["x"].min() > part["x"].max()
+
+
+def test_statistics_from_train_part_only():
+    """Median pengisi dari bagian train SAJA; baris valid tidak pernah dibuang."""
+    train = pd.read_csv(TRAIN)
+    column = "Luas Tanah Rumah (m2)"
+    part, valid = split.apply(SPLIT, LABEL, train)
+    p = steps.new_project(LABEL)
+    steps.add_step(p, "impute", {"columns": [column], "strategy": "median"})
+    steps.add_step(p, "drop_missing_rows", {"max_missing": 3})
+    result = steps.run(p["steps"], LABEL, part, None, valid=valid)
+    assert result["error"] is None, result["error"]
+    holes = valid[column].isna()
+    assert holes.any()
+    assert (result["valid"].loc[holes, column] == part[column].median()).all()
+    assert result["valid"].index.equals(valid.index)                   # valid utuh, walau train dibuang barisnya
+    assert len(result["train"]) < len(part)
+
+
+def test_standalone_script_with_split_matches_app(tmp_path):
+    p = project()
+    p["split"] = SPLIT
+    script = steps.build_script(p, str(TRAIN))
+    assert script.index("# %% split data") < script.index("# %% langkah 1")
+    (tmp_path / "pipa.py").write_text(script, encoding="utf-8")
+    subprocess.run([sys.executable, "pipa.py"], cwd=tmp_path, check=True, capture_output=True)
+    part, valid = split.apply(SPLIT, LABEL, pd.read_csv(TRAIN))
+    app = steps.run(p["steps"], LABEL, part, None, valid=valid)
+    assert app["error"] is None, app["error"]
+    assert len(app["valid"]) == len(valid)
+    for name in ("train", "valid"):
+        standalone = pd.read_csv(tmp_path / f"{name}_bersih.csv")
+        pd.testing.assert_frame_equal(standalone, app[name].reset_index(drop=True), check_dtype=False)
 
 
 def test_synthetic_messy():

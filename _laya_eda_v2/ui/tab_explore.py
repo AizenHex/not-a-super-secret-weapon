@@ -10,7 +10,7 @@ import streamlit as st
 from core import audit
 from core import steps as engine
 from core.ops import MISSING_MARKERS, OPS, SENTINEL_FLOOR
-from ui import common
+from ui import common, jobs
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_TRAIN = ROOT.parent / "_laya_eda" / "data" / "train.csv"
@@ -69,6 +69,12 @@ def sidebar_data() -> None:
                    + (f" · test {test.shape[0]:,} × {test.shape[1]}" if test is not None else " · tanpa test"))
 
 
+def table_report_job(view: pd.DataFrame) -> str:
+    """Jalan di thread (tanpa st.*)."""
+    import skrub
+    return skrub.TableReport(view, max_plot_columns=40).html_snippet()
+
+
 def show_data() -> None:
     common.header("data",
                   "Lihat data di **langkah mana pun** (seperti grid Data Wrangler) dan wawasan tiap kolom. "
@@ -80,14 +86,18 @@ def show_data() -> None:
         return
     p = common.project()
     steps = p["steps"]
+    start = "mentah (0)" if not common.split_config() else "sesudah split (0)"
     at = st.select_slider("Lihat data sesudah langkah", list(range(len(steps) + 1)), len(steps),
-                          format_func=lambda n: "mentah (0)" if n == 0 else f"{n}. {engine.summary(steps[n - 1])}")
+                          format_func=lambda n: start if n == 0 else f"{n}. {engine.summary(steps[n - 1])}")
     result = common.state(at)
     view = result["train"]
     if result["error"]:
         st.error(f"Langkah {result['error']['langkah']} gagal: {result['error']['galat']}")
-    st.write(f"train: **{view.shape[0]:,} baris × {view.shape[1]} kolom** · test: **{result['test'].shape[0]:,} × "
-             f"{result['test'].shape[1]}**")
+    st.write(f"train: **{view.shape[0]:,} baris × {view.shape[1]} kolom** · valid: **{len(result['valid']):,}** · "
+             f"test: **{result['test'].shape[0]:,} × {result['test'].shape[1]}**")
+    if common.split_config():
+        st.caption("Grid, wawasan kolom, dan semua halaman EDA melihat bagian **train** saja: valid disimpan untuk "
+                   "menilai langkahmu dengan jujur (halaman Split).")
     st.dataframe(view.head(500), width="stretch", height=320)
 
     st.subheader("Wawasan kolom")
@@ -97,10 +107,14 @@ def show_data() -> None:
                                                                            format="%.1f")})
     column = st.selectbox("Detail kolom", list(view.columns), key="insight_column")
     insight(view[column])
-    if st.button("Laporan lengkap skrub.TableReport (bisa beberapa detik)"):
-        import skrub
-        st.components.v1.html(skrub.TableReport(view, max_plot_columns=40).html_snippet(), height=900,
-                              scrolling=True)
+    if st.button("Laporan lengkap skrub.TableReport (bisa beberapa detik)", disabled=jobs.running("table_report")):
+        jobs.start("table_report", "skrub.TableReport", table_report_job, view.copy(),
+                   note="mentah" if at == 0 else f"sesudah langkah {at}")
+        st.rerun()
+    jobs.status("table_report")
+    report = jobs.result("table_report")
+    if report is not None:
+        st.components.v1.html(report, height=900, scrolling=True)
 
     st.subheader("Simpan / muat daftar langkah")
     left, right = st.columns(2)
@@ -109,7 +123,8 @@ def show_data() -> None:
     upload = right.file_uploader("Muat langkah", type="json", key="project_upload")
     if upload is not None and right.button("Pakai langkah ini"):
         loaded = json.load(upload)
-        st.session_state["project"] = {"label": loaded.get("label"), "steps": loaded.get("steps", [])}
+        st.session_state["project"] = {"label": loaded.get("label"), "steps": loaded.get("steps", []),
+                                       "split": loaded.get("split")}
         st.rerun()
 
 
@@ -141,15 +156,48 @@ def show_findings() -> None:
     kinds = profile["tipe tebakan"]
 
     fake = common.analysis("fake_missing", key, data)
-    if len(fake):
+    messy = common.analysis("messy_text", key, data)
+    answers = fake[fake["mungkin kategori"].astype(bool)]
+    for row in answers.itertuples(index=False):
         found += 1
-        columns = sorted(fake["kolom"].unique())
-        suggestion(f"Penanda kosong palsu di {len(columns)} kolom teks ({fake['jumlah'].sum():,} sel)", fake,
-                   "tidy_text", {"columns": columns, "markers": MISSING_MARKERS}, "fake")
-    texts = [c for c in common.object_columns(data) if kinds[c] in ("kategori", "isian bebas")]
-    if texts and not len(fake):
-        suggestion(f"Rapikan spasi di {len(texts)} kolom teks", "Spasi di awal/akhir/ganda membuat nilai sama "
-                   "terhitung berbeda.", "tidy_text", {"columns": texts, "markers": MISSING_MARKERS}, "tidy")
+        st.warning(f"**{row.penanda} di '{row.kolom}' = {row[3]}% isi kolom.** Penanda kosong yang sesering jawaban "
+                   "lain biasanya sebuah jawaban ('tidak ada'), bukan sel yang lupa diisi. Tidak diusulkan jadi kosong; "
+                   "bila memang berarti 'tidak', satukan di tab **Ejaan** (kamus 'tidak').")
+    share = data.isna().mean()
+    usual = share.median()
+    made = {}                                         # kolom → [(nomor langkah, sel kosong yang dibuatnya, nama)]
+    for entry in common.state()["log"]:
+        for column, count in (entry.get("kosong baru") or {}).items():
+            made.setdefault(column, []).append((entry["langkah"], count, entry["operasi"]))
+    for column in share[(share >= 0.05) & (share >= 5 * usual)].index:
+        found += 1
+        causes = [f"langkah {number} ({name.split(' · ')[0]}) membuat {count:,}"
+                  for number, count, name in made.get(column, []) if count >= 0.01 * len(data)]
+        st.warning(f"**'{column}' kosong {share[column]:.0%}, kolom lain umumnya {usual:.1%}.** "
+                   + (f"Dibuat oleh langkahmu: {'; '.join(causes)}. Kosong sebanyak ini yang muncul karena langkah "
+                      "biasanya jawaban yang terhapus (mis. '-' = 'tidak ada'), bukan data hilang: keluarkan kolom ini "
+                      "dari langkah tersebut, lalu satukan '-' di tab **Ejaan**."
+                      if causes else
+                      "Sudah kosong sejak data mentah. Jangan buang barisnya; pertimbangkan kategori sendiri "
+                      "('tidak diisi') atau penanda kosong, karena kosong di sini bisa membawa informasi."))
+    plain = fake[~fake["mungkin kategori"].astype(bool)]
+    columns = sorted((set(plain["kolom"]) | set(messy["kolom"])) - set(answers["kolom"]))
+    if columns:
+        found += 1
+        detail = messy.merge(plain.groupby("kolom")["jumlah"].sum().rename("penanda kosong").reset_index(),
+                             on="kolom", how="outer").fillna(0)
+        suggestion(f"Rapikan teks di {len(columns)} kolom: {int(detail['sel berspasi lebih'].sum()):,} sel berspasi lebih, "
+                   f"{int(detail['penanda kosong'].sum()):,} penanda kosong",
+                   detail[detail["kolom"].isin(columns)], "tidy_text", {"columns": columns, "markers": MISSING_MARKERS},
+                   "tidy")
+
+    spelling = common.analysis("spelling_findings", key, data)
+    if len(spelling):
+        found += 1
+        suggestion(f"Ejaan berbeda untuk nilai yang sama di {len(spelling)} kolom kategori",
+                   spelling[["kolom", "nilai unik", "sesudah", "contoh"]], "spelling",
+                   {"groups": dict(zip(spelling["kolom"], spelling["groups"])),
+                    "examples": dict(zip(spelling["kolom"], spelling["examples"]))}, "spelling")
 
     sentinel = common.analysis("sentinels", key, data)
     if len(sentinel):
@@ -190,11 +238,29 @@ def show_findings() -> None:
                                  "jumlah baris": list(findings["distribusi kosong per baris"].values())}),
                    "drop_missing_rows", {"max_missing": max(10, data.shape[1] // 2)}, "rowsmissing")
 
+    ordinal = common.analysis("ordinal_findings", key, data)
+    if len(ordinal):
+        st.subheader("Kolom berurutan (encoding opsional)")
+        st.caption("Model pohon memakai urutan ini lebih baik daripada kategori acak. Tidak wajib: AutoGluon menerima "
+                   "teks kategori apa adanya.")
+        for row in ordinal.itertuples(index=False):
+            if row.urutan is None:
+                st.caption(f"'{row.kolom}': {row.alasan}")
+                continue
+            counts = data[row.kolom].value_counts()
+            detail = pd.DataFrame({"kode": range(len(row.urutan)), "nilai": row.urutan,
+                                   "jumlah": [int(counts.get(v, 0)) for v in row.urutan]})
+            suggestion(f"'{row.kolom}' berurutan: {row.alasan}", detail, "ordinal",
+                       {"column": row.kolom, "order": row.urutan}, f"ordinal_{row.kolom}")
+
     st.subheader("Kolom kembar (opsional)")
     st.caption("Cramér's V (skrub.column_associations) ≥ 0,85: isi dua kolom saling menentukan. Buang salah satu saja.")
-    if st.button("Cari kolom kembar"):
-        st.session_state["twins"] = audit.twin_columns(data)
-    twins = st.session_state.get("twins")
+    if st.button("Cari kolom kembar", disabled=jobs.running("twins")):
+        jobs.start("twins", "Cari kolom kembar", audit.twin_columns, data.copy(),
+                   note=f"{len(common.project()['steps'])} langkah saat dimulai")
+        st.rerun()
+    jobs.status("twins")
+    twins = jobs.result("twins")
     if twins is not None and len(twins):
         st.dataframe(twins, width="stretch", hide_index=True)
         pick = st.multiselect("Kolom kembar yang dibuang", sorted(set(twins["kolom 2"])), key="twin_pick")

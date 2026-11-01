@@ -2,9 +2,11 @@
 
 Aturan kode yang dihasilkan:
 - tanpa `def`: hanya baris pandas/numpy biasa, `for` dan `if` seperlunya;
-- `train` dan `test` selalu ada (test kosong bila tidak punya file test), jadi tidak perlu cabang;
-- statistik (median, batas outlier, daftar kategori) dihitung dari `train`, lalu dipakai ke keduanya;
-- baris hanya dibuang dari `train`; `test` tidak pernah dibuang.
+- `train`, `valid`, dan `test` selalu ada (valid kosong bila belum di-split, test kosong bila tidak punya
+  file test), jadi tidak perlu cabang;
+- statistik (median, batas outlier, daftar kategori) dihitung dari `train` SAJA, lalu dipakai ke ketiganya:
+  valid menilai langkahmu dengan jujur karena tidak pernah dipelajari;
+- baris hanya dibuang dari `train`; `valid` dan `test` tidak pernah dibuang.
 
 Setiap operasi: group, title, what (apa), fits (kapan cocok), danger (kapan berbahaya),
 code(params) -> str, summary(params) -> str.
@@ -17,6 +19,11 @@ import re
 MISSING_MARKERS = ["", "-", "--", "?", "nan", "null", "none", "n/a", "na", "tidak tahu"]
 SEPARATORS = r"\s*(?:,|&|/|\+|;|\bdan\b|\batau\b|\(|\))\s*"
 SENTINEL_FLOOR = 2_000_000_000
+# kunci ejaan: huruf kecil, singkatan dipanjangkan, tanda baca & spasi dibuang ('S-1/D4' = 's1 / d-4' = 's1d4');
+# tanda baca di antara dua angka diganti '_' supaya '1-2' tidak sama dengan '12'
+ABBREVIATIONS = {r"\bkab\b": "kabupaten", r"\bkec\b": "kecamatan", r"\bkel\b": "kelurahan", r"\bprov\b": "provinsi"}
+KEY_DIGITS = r"(?<=\d)\W+(?=\d)"
+KEY_DROP = r"\W"
 
 
 def lit(value) -> str:
@@ -24,8 +31,11 @@ def lit(value) -> str:
 
 
 def word_regex(words: dict[str, str]) -> dict[str, str]:
-    """{kata salah: kata baku} -> {regex kata utuh: kata baku} untuk Series.replace(regex=True)."""
-    return {rf"\b{re.escape(wrong)}\b": right for wrong, right in words.items()}
+    """{kata salah: kata baku} -> {regex: kata baku}, satu regex per kata baku: '\\b(?:kramik|keramk)\\b'."""
+    wrong_by_right = {}
+    for wrong, right in words.items():
+        wrong_by_right.setdefault(right, []).append(re.escape(wrong))
+    return {rf"\b(?:{'|'.join(sorted(wrong))})\b": right for right, wrong in wrong_by_right.items()}
 
 
 # ---------------------------------------------------------------- kolom
@@ -33,18 +43,20 @@ def word_regex(words: dict[str, str]) -> dict[str, str]:
 def drop_columns(p):
     return (f"KOLOM_DIBUANG = {lit(p['columns'])}\n"
             "train = train.drop(columns=KOLOM_DIBUANG)\n"
+            "valid = valid.drop(columns=KOLOM_DIBUANG)\n"
             'test = test.drop(columns=KOLOM_DIBUANG, errors="ignore")')
 
 
 def rename_column(p):
     return (f"NAMA_BARU = {lit({p['column']: p['new']})}\n"
             "train = train.rename(columns=NAMA_BARU)\n"
+            "valid = valid.rename(columns=NAMA_BARU)\n"
             "test = test.rename(columns=NAMA_BARU)")
 
 
 def to_number(p):
     lines = [f"KOLOM_ANGKA_TEKS = {lit(p['columns'])}",
-             "for df in (train, test):",
+             "for df in (train, valid, test):",
              "    for kolom in KOLOM_ANGKA_TEKS:",
              '        teks = df[kolom].astype(str).str.replace(r"[^\\d,.\\-]", "", regex=True)']
     if p.get("indonesian", True):
@@ -61,7 +73,7 @@ def to_number(p):
 def tidy_text(p):
     return (f"KOLOM_TEKS = {lit(p['columns'])}\n"
             f"PENANDA_KOSONG = {lit(p.get('markers', MISSING_MARKERS))}\n"
-            "for df in (train, test):\n"
+            "for df in (train, valid, test):\n"
             "    for kolom in KOLOM_TEKS:\n"
             '        teks = df[kolom].astype(str).str.strip().str.replace(r"\\s+", " ", regex=True)\n'
             "        df[kolom] = teks.where(df[kolom].notna() & ~teks.str.lower().isin(PENANDA_KOSONG))")
@@ -69,7 +81,7 @@ def tidy_text(p):
 
 def change_case(p):
     return (f"KOLOM_HURUF = {lit(p['columns'])}\n"
-            "for df in (train, test):\n"
+            "for df in (train, valid, test):\n"
             "    for kolom in KOLOM_HURUF:\n"
             f"        df[kolom] = df[kolom].str.{p['case']}()")
 
@@ -77,23 +89,75 @@ def change_case(p):
 def map_values(p):
     name = "PETA_" + re.sub(r"\W+", "_", p["column"].upper()).strip("_")[:24]
     return (f"{name} = {lit(p['mapping'])}\n"
-            "for df in (train, test):\n"
+            "for df in (train, valid, test):\n"
             f"    ganti = df[{p['column']!r}].isin({name}.keys())\n"
             f"    df.loc[ganti, {p['column']!r}] = df.loc[ganti, {p['column']!r}].map({name})")
 
 
+def spelling(p):
+    """p['groups'] = {kolom: {kunci baku: [kunci lain, ...]}}; contoh ejaan (p['examples']) hanya untuk komentar."""
+    examples = p.get("examples", {})
+    lines = ["# satukan ejaan: nilai berkunci sama = nilai yang sama ('Kab. Pati' = 'Kabupaten Pati', 'S- 2' = 'S2');",
+             "# ejaan baku tiap kunci = ejaan tersering di train; GABUNG menyatukan kunci berbeda yang bermakna sama",
+             "SINGKATAN = {" + ", ".join(f'r"{k}": "{v}"' for k, v in ABBREVIATIONS.items()) + "}",
+             "GABUNG = {"]
+    for column, groups in p["groups"].items():
+        if not groups:
+            lines.append(f"    {column!r}: {{}},")
+            continue
+        lines.append(f"    {column!r}: {{")
+        for target, others in groups.items():
+            note = examples.get(column, {}).get(target)
+            lines.append(f"        {target!r}: {others!r}," + (f"   # {note}" if note else ""))
+        lines.append("    },")
+    lines += ["}",
+              "for kolom, kelompok in GABUNG.items():",
+              "    ke_baku = {}",
+              "    for baku, lain in kelompok.items():",
+              "        for kunci in lain:",
+              "            ke_baku[kunci] = baku",
+              "    kunci_tiap = []",
+              "    for df in (train, valid, test):",
+              "        kunci = df[kolom].astype(\"string\").str.lower().replace(SINGKATAN, regex=True)",
+              f'        kunci_tiap.append(kunci.str.replace(r"{KEY_DIGITS}", "_", regex=True)'
+              f'.str.replace(r"{KEY_DROP}", "", regex=True))',
+              '    ejaan = train[kolom].str.strip().str.replace(r"\\s+", " ", regex=True)',
+              '    ejaan_baku = pd.DataFrame({"kunci": kunci_tiap[0], "ejaan": ejaan}).value_counts().reset_index()',
+              '    ejaan_baku = ejaan_baku.drop_duplicates("kunci").set_index("kunci")["ejaan"]   # tersering per kunci',
+              "    sebelum = train[kolom].nunique()",
+              "    for df, kunci in zip((train, valid, test), kunci_tiap):",
+              "        df[kolom] = kunci.replace(ke_baku).map(ejaan_baku).fillna(df[kolom])",
+              '    print(kolom, ":", sebelum, "->", train[kolom].nunique(), "nilai unik di train")']
+    return "\n".join(lines)
+
+
 def free_text(p):
-    column = p["column"]
-    return (f"# isian bebas {column!r}: pecah per bahan, betulkan salah ketik per kata, urutkan\n"
-            f"PEMISAH = {SEPARATORS!r}\n"
-            f"PETA_KATA = {lit(word_regex(p['words']))}\n"
-            "for df in (train, test):\n"
-            f"    bagian = df[{column!r}].str.lower().str.replace(\".\", \" \", regex=False)\n"
-            "    bagian = bagian.str.split(PEMISAH, regex=True).explode().str.strip()\n"
-            "    bagian = bagian.replace(PETA_KATA, regex=True).dropna()\n"
-            '    bagian = bagian[bagian != ""].rename_axis("baris").reset_index(name="bahan")\n'
-            '    bagian = bagian.drop_duplicates().sort_values("bahan")\n'
-            f"    df[{column!r}] = bagian.groupby(\"baris\")[\"bahan\"].agg(\", \".join)")
+    """p: column, words {kata salah: kata baku}; opsional fillers [kata pengisi] dan phrases {bahan: bahan baku}."""
+    column, fillers, phrases = p["column"], p.get("fillers") or [], p.get("phrases") or {}
+    words = "".join(f'\n    r"{pattern}": "{right}",' for pattern, right in word_regex(p["words"]).items())
+    lines = [f"# isian bebas {column!r}: pecah per bahan, betulkan salah ketik per kata, urutkan",
+             f'PEMISAH = r"{SEPARATORS}"',
+             f"PETA_KATA = {{{words}\n}}   # regex kata salah: kata baku"]
+    if fillers:
+        pattern = "|".join(re.escape(word) for word in fillers)
+        lines.append(f'PENGISI = r"\\b(?:{pattern})\\b"   # kata pengisi: \'lantai keramik\' = \'keramik\'')
+    if phrases:
+        lines.append("PETA_FRASA = {" + "".join(f"\n    {a!r}: {b!r}," for a, b in phrases.items()) + "\n}   # bahan: bahan baku")
+    lines += ["for df in (train, valid, test):",
+              f"    bagian = df[{column!r}].astype(\"string\").str.lower().str.replace(r\"[.\\-]\", \" \", regex=True)"
+              "   # 'batu-bata.' → 'batu bata '",
+              "    bagian = bagian.str.split(PEMISAH, regex=True).explode().dropna()",
+              '    bagian = bagian.replace(PETA_KATA, regex=True).str.split().str.join(" ")   # spasi dirapikan',
+              '    bagian = bagian.str.replace(r"\\b(\\w+)(?: \\1\\b)+", r"\\1", regex=True)   # \'tegel ubin\' → \'ubin ubin\' → \'ubin\'']
+    if fillers:
+        lines += ['    bersih = bagian.str.replace(PENGISI, "", regex=True).str.split().str.join(" ")',
+                  '    bagian = bersih.where(bersih != "", bagian)   # isi hanya kata pengisi (\'tembok\') tetap']
+    if phrases:
+        lines.append("    bagian = bagian.replace(PETA_FRASA)")
+    lines += ['    bagian = bagian[bagian != ""].rename_axis("baris").reset_index(name="bahan")',
+              '    bagian = bagian.drop_duplicates().sort_values("bahan")',
+              f"    df[{column!r}] = bagian.groupby(\"baris\")[\"bahan\"].agg(\", \".join)"]
+    return "\n".join(lines)
 
 
 # ---------------------------------------------------------------- kosong
@@ -101,19 +165,19 @@ def free_text(p):
 def sentinel_to_nan(p):
     return (f"KOLOM_PENJAGA = {lit(p['columns'])}\n"
             f"BATAS_PENJAGA = {int(p.get('floor', SENTINEL_FLOOR)):_}  # 2.147.483.647 (2^31 - 1) dan variannya\n"
-            "for df in (train, test):\n"
+            "for df in (train, valid, test):\n"
             "    df[KOLOM_PENJAGA] = df[KOLOM_PENJAGA].mask(df[KOLOM_PENJAGA] >= BATAS_PENJAGA)")
 
 
 def zero_to_nan(p):
     return (f"KOLOM_NOL_KOSONG = {lit(p['columns'])}\n"
-            "for df in (train, test):\n"
+            "for df in (train, valid, test):\n"
             "    df[KOLOM_NOL_KOSONG] = df[KOLOM_NOL_KOSONG].replace(0, np.nan)")
 
 
 def fill_constant(p):
     return (f"ISI_TETAP = {lit({c: p['value'] for c in p['columns']})}\n"
-            "for df in (train, test):\n"
+            "for df in (train, valid, test):\n"
             "    df.fillna(ISI_TETAP, inplace=True)")
 
 
@@ -122,7 +186,7 @@ def impute(p):
     return (f"KOLOM_ISI = {lit(p['columns'])}\n"
             f"nilai_isi = {{kolom: train[kolom]{stat} for kolom in KOLOM_ISI}}   # dipelajari dari train\n"
             'print("nilai pengisi:", nilai_isi)\n'
-            "for df in (train, test):\n"
+            "for df in (train, valid, test):\n"
             "    df.fillna(nilai_isi, inplace=True)")
 
 
@@ -179,11 +243,11 @@ def outlier(p):
     lines.append(f'print("batas {column}:", bawah, atas)')
     inside_low = f"(df[{column!r}] > 0) & " if log else ""
     if action == "clip":
-        lines += ["for df in (train, test):",
+        lines += ["for df in (train, valid, test):",
                   f"    df[{column!r}] = df[{column!r}].mask({inside_low}(df[{column!r}] < bawah), bawah)",
                   f"    df[{column!r}] = df[{column!r}].mask(df[{column!r}] > atas, atas)"]
     elif action == "nan":
-        lines += ["for df in (train, test):",
+        lines += ["for df in (train, valid, test):",
                   f"    df[{column!r}] = df[{column!r}].mask({inside_low}(df[{column!r}] < bawah) | (df[{column!r}] > atas))"]
     else:
         low = f"(train[{column!r}] > 0) & " if log else ""
@@ -195,7 +259,7 @@ def outlier(p):
 
 def log_transform(p):
     return (f"KOLOM_LOG = {lit(p['columns'])}\n"
-            "for df in (train, test):\n"
+            "for df in (train, valid, test):\n"
             "    df[KOLOM_LOG] = np.log1p(df[KOLOM_LOG].clip(lower=0))")
 
 
@@ -207,7 +271,7 @@ def scale(p):
         stats = ("pusat = train[KOLOM_SKALA].min()\n"
                  "lebar = (train[KOLOM_SKALA].max() - pusat).replace(0, 1)")
     return (f"KOLOM_SKALA = {lit(p['columns'])}\n{stats}   # dari train\n"
-            "for df in (train, test):\n"
+            "for df in (train, valid, test):\n"
             "    df[KOLOM_SKALA] = (df[KOLOM_SKALA] - pusat) / lebar")
 
 
@@ -219,13 +283,13 @@ def onehot(p):
             f"porsi = train[{column!r}].value_counts(normalize=True)\n"
             f"kategori = porsi[porsi >= {share}].index.tolist()\n"
             "hasil = []\n"
-            "for df in (train, test):\n"
+            "for df in (train, valid, test):\n"
             f"    dummies = pd.get_dummies(pd.Categorical(df[{column!r}], categories=kategori), "
             f"prefix={column!r}, prefix_sep=\"_\", dtype=int)\n"
             "    dummies.index = df.index\n"
             f"    dummies[{column + '_lainnya'!r}] = (df[{column!r}].notna() & ~df[{column!r}].isin(kategori)).astype(int)\n"
             f"    hasil.append(pd.concat([df.drop(columns={column!r}), dummies], axis=1))\n"
-            "train, test = hasil")
+            "train, valid, test = hasil")
 
 
 def ordinal(p):
@@ -236,7 +300,7 @@ def ordinal(p):
         source = f"URUTAN = sorted(train[{column!r}].dropna().unique())   # abjad, dari train\n"
     return (f"# kode angka {column!r}: posisi di URUTAN; kosong / nilai baru = -1\n{source}"
             "kode = {nilai: nomor for nomor, nilai in enumerate(URUTAN)}\n"
-            "for df in (train, test):\n"
+            "for df in (train, valid, test):\n"
             f"    df[{column!r}] = df[{column!r}].map(kode).fillna(-1).astype(int)")
 
 
@@ -249,7 +313,7 @@ def materials_onehot(p):
             "porsi = bagian[\"bahan\"].value_counts() / len(train)   # porsi baris train yang punya bahan itu\n"
             f"bahan = porsi[porsi >= {share}].index.tolist()\n"
             "hasil = []\n"
-            "for df in (train, test):\n"
+            "for df in (train, valid, test):\n"
             f"    bagian = df[{column!r}].str.split(\", \").explode().dropna()\n"
             "    bagian = bagian.rename_axis(\"baris\").reset_index(name=\"bahan\").drop_duplicates()\n"
             "    dikenal = bagian[bagian[\"bahan\"].isin(bahan)]\n"
@@ -259,7 +323,7 @@ def materials_onehot(p):
             f"    dummies[{column + '_lainnya'!r}] = df.index.isin(lain).astype(int)\n"
             "    dummies.index.name, dummies.columns.name = df.index.name, None\n"
             f"    hasil.append(pd.concat([df.drop(columns={column!r}), dummies], axis=1))\n"
-            "train, test = hasil")
+            "train, valid, test = hasil")
 
 
 SKRUB = {"string": "StringEncoder", "minhash": "MinHashEncoder", "gap": "GapEncoder"}
@@ -273,6 +337,12 @@ def skrub_encoder(p):
             f"angka_train = encoder.fit_transform(train[{column!r}])\n"
             "angka_train.index = train.index\n"
             f"train = pd.concat([train.drop(columns={column!r}), angka_train], axis=1)\n"
+            "if len(valid):\n"
+            f"    angka_valid = encoder.transform(valid[{column!r}])\n"
+            "    angka_valid.index = valid.index\n"
+            f"    valid = pd.concat([valid.drop(columns={column!r}), angka_valid], axis=1)\n"
+            "else:\n"
+            "    valid = train.iloc[:0]\n"
             "if len(test):\n"
             f"    angka_test = encoder.transform(test[{column!r}])\n"
             "    angka_test.index = test.index\n"
@@ -287,6 +357,12 @@ def autogluon_features(p):
             "fitur = generator.fit_transform(train.drop(columns=[LABEL]))   # dipelajari dari train\n"
             "fitur.index = train.index\n"
             "train = pd.concat([fitur, train[[LABEL]]], axis=1)\n"
+            "if len(valid):\n"
+            "    fitur_valid = generator.transform(valid.drop(columns=[LABEL]))\n"
+            "    fitur_valid.index = valid.index\n"
+            "    valid = pd.concat([fitur_valid, valid[[LABEL]]], axis=1)\n"
+            "else:\n"
+            "    valid = train.iloc[:0]\n"
             "if len(test):\n"
             "    fitur_test = generator.transform(test.drop(columns=[LABEL], errors=\"ignore\"))\n"
             "    fitur_test.index = test.index\n"
@@ -299,11 +375,11 @@ def autogluon_features(p):
 
 OPS = {
     "drop_columns": dict(group="Kolom", title="Buang kolom", code=drop_columns,
-                         what="Hapus kolom dari train dan test.",
+                         what="Hapus kolom dari train, valid, dan test.",
                          fits="Kolom id, kolom kembar (isi sama dengan kolom lain), kolom bocoran label.",
                          danger="Membuang kolom yang ternyata berguna. Lihat tab AutoGluon → kolom penting."),
     "rename_column": dict(group="Kolom", title="Ganti nama kolom", code=rename_column,
-                          what="Ganti nama satu kolom (train dan test).",
+                          what="Ganti nama satu kolom (train, valid, dan test).",
                           fits="Nama terlalu panjang/berspasi untuk dipakai di kode.",
                           danger="Nama baru harus dipakai juga di langkah sesudahnya."),
     "to_number": dict(group="Kolom", title="Teks → angka", code=to_number,
@@ -318,10 +394,16 @@ OPS = {
                         what="Semua huruf kecil/besar/judul.",
                         fits="'Genteng' dan 'genteng' harus dianggap sama.",
                         danger="Singkatan (SMA, KIPK) ikut berubah."),
-    "map_values": dict(group="Teks", title="Satukan ejaan (peta nilai)", code=map_values,
-                       what="Ganti nilai tertentu dengan ejaan baku: {'Kab. Pati': 'Kabupaten Pati'}.",
-                       fits="Hasil clustering di tab Ejaan, atau cari & ganti manual.",
-                       danger="Menyatukan dua nilai yang sebenarnya berbeda (Kab. Semarang ≠ Kota Semarang)."),
+    "spelling": dict(group="Teks", title="Satukan ejaan (kunci + gabung)", code=spelling,
+                     what="Nilai yang hanya beda huruf besar/spasi/tanda baca/singkatan disatukan oleh satu aturan "
+                          "('S- 2' = 'S2', 'Kab. Pati' = 'Kabupaten Pati'); kunci berbeda yang bermakna sama "
+                          "(SMA = MA = SLTA) digabung lewat daftar pendek GABUNG.",
+                     fits="Kolom kategori. Usulan dari tab Ejaan. Kode tetap pendek berapa pun variasinya.",
+                     danger="GABUNG yang salah (Kota Malang ≠ Kota Magelang, D1 ≠ D3). Periksa alasan tiap gabungan."),
+    "map_values": dict(group="Teks", title="Ganti nilai (peta nilai)", code=map_values,
+                       what="Ganti nilai tertentu persis: {'Lainnya ': 'Lainnya'}. Untuk ejaan, pakai Satukan ejaan.",
+                       fits="Cari & ganti manual beberapa nilai.",
+                       danger="Peta ratusan pasangan = kode panjang yang tidak berlaku untuk ejaan baru di test."),
     "free_text": dict(group="Teks", title="Bakukan isian bebas (per bahan)", code=free_text,
                       what="'Genteng & asbas.' → 'asbes, genteng': pecah per bahan, betulkan kata, urutkan.",
                       fits="Kolom bahan atap/tembok/lantai, daftar fasilitas.",
@@ -339,7 +421,7 @@ OPS = {
                           fits="Kolom checkbox: satu nilai + kosong (kosong = tidak).",
                           danger="Kosong yang artinya 'tidak tahu' dianggap 'tidak'."),
     "impute": dict(group="Kosong", title="Isi kosong (median/rata-rata/modus)", code=impute,
-                   what="Isi kosong dengan statistik dari train; nilai yang sama dipakai untuk test.",
+                   what="Isi kosong dengan statistik dari train; nilai yang sama dipakai untuk valid dan test.",
                    fits="Kolom dengan sedikit kosong. Angka miring → median.",
                    danger="Kosong banyak → info hilang. Banyak model (AutoGluon, LightGBM) menerima kosong."),
     "drop_duplicates": dict(group="Baris", title="Buang duplikat (train)", code=drop_duplicates,
@@ -393,8 +475,10 @@ OPS = {
 def summary(step: dict) -> str:
     """Teks pendek untuk daftar langkah."""
     p, op = step["params"], OPS[step["op"]]["title"]
-    target = p.get("column") or ", ".join(p.get("columns", [])[:3]) + ("…" if len(p.get("columns", [])) > 3 else "")
+    columns = p.get("columns") or list(p.get("groups", {}))
+    target = p.get("column") or ", ".join(columns[:3]) + ("…" if len(columns) > 3 else "")
     extra = {"outlier": f" ({p.get('method')}, {p.get('action')})", "impute": f" ({p.get('strategy')})",
-             "map_values": f" ({len(p.get('mapping', {}))} nilai)", "free_text": f" ({len(p.get('words', {}))} kata)",
+             "spelling": f" ({sum(len(o) for g in p.get('groups', {}).values() for o in g.values())} gabung)",
+             "map_values": f" ({len(p.get('mapping', {}))} nilai)", "free_text": f" ({len(p.get('words', {}))} kata, {len(p.get('phrases') or {})} frasa)",
              "drop_rows_query": f": {p.get('rule')}", "skrub_encoder": f" ({p.get('kind')})"}.get(step["op"], "")
     return f"{op}" + (f" · {target}" if target else "") + extra

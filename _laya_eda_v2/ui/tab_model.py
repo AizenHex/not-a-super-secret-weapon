@@ -4,8 +4,38 @@ from __future__ import annotations
 import pandas as pd
 import streamlit as st
 
+import copy
+
 from core import audit
-from ui import common
+from ui import common, jobs
+
+
+# ---------------------------------------------------------------- tugas latar (tanpa st.*: jalan di thread)
+
+def label_issues_job(data: pd.DataFrame, label: str, seconds: int) -> pd.DataFrame:
+    oof = None
+    if seconds:
+        from core import ag
+        oof, _ = ag.oof_probabilities(data, label, seconds)
+    return audit.label_issues(data, label, oof=oof)
+
+
+def compare_job(train: pd.DataFrame, label: str, steps: list[dict], config: dict | None, seconds: int,
+                presets: str) -> dict:
+    from core import ag
+    return {**ag.compare(train, label, steps, config, seconds, presets), "langkah": steps, "split": config}
+
+
+def importance_job(train: pd.DataFrame, label: str, steps: list[dict], config: dict | None, which: str,
+                   model) -> tuple:
+    from core import ag
+    from core import steps as engine
+    fit_part, hold_part = ag.parts(train, label, config)
+    if which == "mentah":
+        data = hold_part
+    else:
+        data = engine.run(steps, label, fit_part, None, valid=hold_part)["valid"]
+    return which, ag.importance(model, ag.labelled(data, label))
 
 
 # ---------------------------------------------------------------- label
@@ -33,14 +63,12 @@ def show_label() -> None:
                                                               "kuat: AutoGluon bagging 5-fold (semua kolom)"],
                      key="label_model")
     seconds = st.slider("Batas waktu AutoGluon (detik)", 60, 1800, 300, 60, key="label_time") if "AutoGluon" in model else 0
-    if st.button("Jalankan cleanlab"):
-        with st.spinner("Melatih model out-of-fold…"):
-            oof = None
-            if seconds:
-                from core import ag
-                oof, _ = ag.oof_probabilities(data, label, seconds)
-            st.session_state["label_flags"] = audit.label_issues(data, label, oof=oof)
-    flagged = st.session_state.get("label_flags")
+    if st.button("Jalankan cleanlab", disabled=jobs.running("cleanlab")):
+        jobs.start("cleanlab", "cleanlab (AutoGluon)" if seconds else "cleanlab (cepat)", label_issues_job,
+                   data.copy(), label, seconds, note=f"{len(data):,} baris, label {label!r}")
+        st.rerun()
+    jobs.status("cleanlab")
+    flagged = jobs.result("cleanlab")
     if flagged is not None:
         accuracy, baseline = flagged.attrs["akurasi model"], flagged.attrs["akurasi tebak terbanyak"]
         share = len(flagged) / len(data)
@@ -102,8 +130,9 @@ def show_test() -> None:
 def show_autogluon() -> None:
     common.header("autogluon",
                   "**AutoGluon** (`TabularPredictor`) sebagai juri: apakah daftar langkahmu membuat model lebih baik? "
-                  "Train dibagi sekali (80% latih, 20% uji); data **mentah** dan data **sesudah langkah** dinilai di "
-                  "baris uji yang sama. Lalu **kolom penting** (permutation importance).",
+                  "Model dilatih di **train** dan dinilai di **valid** dari halaman Split (bila belum di-split: "
+                  "80/20 sementara). Data **mentah** dan data **sesudah langkah** dinilai di baris valid yang sama. "
+                  "Lalu **kolom penting** (permutation importance).",
                   "Setelah beberapa langkah: untuk tahu langkah mana yang membantu, dan kolom mana yang mencurigakan.",
                   "Skor naik-turun sedikit bisa karena acak. Langkah yang membuang baris uji tidak berlaku (bagian uji "
                   "diperlakukan seperti test). Kolom id yang penting = tanda kebocoran urutan data.")
@@ -120,11 +149,15 @@ def show_autogluon() -> None:
     steps = common.project()["steps"]
     st.caption(f"Dua model dilatih (mentah dan sesudah {sum(s.get('on', True) for s in steps)} langkah aktif): "
                f"± {2 * seconds // 60 + 1} menit.")
-    if st.button("Bandingkan mentah vs sesudah langkah", type="primary"):
-        from core import ag
-        with st.spinner("AutoGluon melatih dua model…"):
-            st.session_state["ag_result"] = ag.compare(common.raw_train(), label, steps, seconds, presets)
-    result = st.session_state.get("ag_result")
+    if st.button("Bandingkan mentah vs sesudah langkah", type="primary", disabled=jobs.running("ag_compare")):
+        active = sum(s.get("on", True) for s in steps)
+        jobs.start("ag_compare", "AutoGluon: mentah vs sesudah langkah", compare_job, common.raw_train().copy(),
+                   label, copy.deepcopy(steps), copy.deepcopy(common.split_config()), seconds, presets,
+                   note=f"{active} langkah aktif saat dimulai, {seconds} dtk/model, {presets}")
+        jobs.forget("ag_importance")                   # kolom penting lama milik model lama
+        st.rerun()
+    jobs.status("ag_compare")
+    result = jobs.result("ag_compare")
     if result is None:
         return
     if result["galat"]:
@@ -137,26 +170,26 @@ def show_autogluon() -> None:
     cols[1].metric(f"{metric} sesudah langkah", f"{clean['skor'][metric]:.4f}",
                    f"{clean['skor'][metric] - raw['skor'][metric]:+.4f}")
     cols[2].metric("baris latih", f"{result['baris latih'][1]:,}", result["baris latih"][1] - result["baris latih"][0] or None)
-    st.caption(f"Baris uji yang sama: {result['baris uji']:,}. Metrik lain:")
+    # .get: hasil tugas yang dimulai sebelum fitur split (registri tugas bertahan selama server hidup)
+    st.caption(f"Dinilai di {result.get('uji', '80/20 sementara')}: {result['baris uji']:,} baris yang sama untuk "
+               "kedua model. Metrik lain:")
+    if not result.get("split"):
+        st.info("Belum ada split proyek: bagian uji 80/20 ini hanya sementara dan tidak ada di kode. Pakai halaman "
+                "**Split** agar valid yang dinilai di sini sama dengan valid yang diekspor.")
     st.dataframe(pd.DataFrame({"mentah": raw["skor"], "sesudah langkah": clean["skor"]}), width="stretch")
     with st.expander("Papan model (leaderboard)"):
         st.dataframe(clean["papan"], width="stretch", hide_index=True)
 
     st.subheader("Kolom penting (permutation importance)")
     which = st.radio("Model", ["sesudah langkah", "mentah"], horizontal=True, key="ag_which")
-    if st.button("Hitung kolom penting"):
-        from core import ag
-        from core import steps as engine
-        fit_part, hold_part = ag.split(common.raw_train(), label)
-        if which == "mentah":
-            data = hold_part
-        else:
-            run = engine.run(steps, label, fit_part, hold_part.drop(columns=[label]))
-            data = run["test"].assign(**{label: hold_part[label]})
+    if st.button("Hitung kolom penting", disabled=jobs.running("ag_importance")):
+        # langkah yang dipakai = langkah saat model 'sesudah langkah' dilatih, bukan daftar yang mungkin sudah berubah
         model = (raw if which == "mentah" else clean)["model"]
-        with st.spinner("Mengacak kolom satu per satu…"):
-            st.session_state["ag_importance"] = (which, ag.importance(model, data))
-    stored = st.session_state.get("ag_importance")
+        jobs.start("ag_importance", f"Kolom penting (model {which})", importance_job, common.raw_train().copy(),
+                   label, result["langkah"], result.get("split"), which, model)
+        st.rerun()
+    jobs.status("ag_importance")
+    stored = jobs.result("ag_importance")
     if stored:
         which, table = stored
         st.caption(f"Model {which}. importance = turunnya {metric} bila isi kolom diacak; ≤ 0 = tidak dipakai.")

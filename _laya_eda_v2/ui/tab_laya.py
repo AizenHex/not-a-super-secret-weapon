@@ -12,7 +12,7 @@ from pathlib import Path
 import pandas as pd
 import streamlit as st
 
-from ui import common
+from ui import common, jobs
 
 ROOT = Path(__file__).resolve().parents[1]
 LAYA_FOLDER = ROOT.parent.parent / "pretrained" / "laya"
@@ -80,20 +80,18 @@ def show_laya() -> None:
                                 "sedang: bahan umum, lantai keramik biasa\n"
                                 "mewah: bahan mahal, lantai granit/marmer")
     rows = st.slider("Jumlah baris (sampel acak tetap)", 100, len(data), min(2000, len(data)), 100)
-    if columns and st.button("Jalankan lensa", type="primary"):
+    if columns and st.button("Jalankan lensa", type="primary", disabled=jobs.running("laya_lens")):
         choices = {}
         for line in choices_text.splitlines():
             key, _, text = line.partition(":")
             if key.strip():
                 choices[key.strip()] = text.strip() or key.strip()
         sample = data.sample(rows, random_state=0) if rows < len(data) else data
-        with st.spinner(f"Laya menjawab {len(sample)} baris…"):
-            answers = ask_rows(load_laya(), sample, columns, name, question, choices)
-        st.session_state.setdefault("laya_answers", {})[f"laya: {name}"] = answers["jawaban"].reindex(data.index)
-        folder = ROOT / "hasil"
-        folder.mkdir(exist_ok=True)
-        answers.to_csv(folder / f"laya_{name}.csv")
-        st.success(f"Tersimpan di hasil/laya_{name}.csv · dipakai sebagai kelompok di tab Outlier.")
+        jobs.start("laya_lens", f"Laya: lensa {name}", lens_job, sample[columns].copy(), columns, name, question,
+                   choices, data.index, note=f"{len(sample):,} baris · hasil/laya_{name}.csv")
+        st.rerun()
+    jobs.status("laya_lens")
+    collect()
     for key, answers in st.session_state.get("laya_answers", {}).items():
         st.write(f"**{key}**: {int(answers.notna().sum())} baris dijawab")
         st.bar_chart(answers.value_counts())
@@ -104,8 +102,41 @@ def show_laya() -> None:
     column = st.selectbox("Kolom isian bebas", texts, key="laya_same_column")
     pairs = text_tools.similar_vocabulary(data[column])
     st.dataframe(pairs, width="stretch", hide_index=True)
-    if not pairs.empty and st.button("Tanya Laya: pasangan ini sama?"):
+    if not pairs.empty and st.button("Tanya Laya: pasangan ini sama?", disabled=jobs.running("laya_same")):
         tuples = list(zip(pairs["kata 1"], pairs["kata 2"]))
-        with st.spinner("Laya membandingkan…"):
-            st.session_state.setdefault("laya_same", {}).update(ask_same(load_laya(), tuples, column))
+        jobs.start("laya_same", "Laya: pasangan sama?", same_job, tuples, column, note=column)
+        st.rerun()
+    if jobs.status("laya_same") is not None and jobs.result("laya_same") is not None:
         st.success("Jawaban tampil sebagai kolom 'Laya: sama?' di tab Isian bebas (peluang 'ya').")
+
+
+# ---------------------------------------------------------------- tugas latar (tanpa st.*: jalan di thread)
+
+def lens_job(sample: pd.DataFrame, columns: list[str], name: str, question: str, choices: dict,
+             index: pd.Index) -> tuple[str, pd.Series]:
+    answers = ask_rows(load_laya(), sample, columns, name, question, choices)
+    folder = ROOT / "hasil"
+    folder.mkdir(exist_ok=True)
+    answers.to_csv(folder / f"laya_{name}.csv")
+    return f"laya: {name}", answers["jawaban"].reindex(index)
+
+
+def same_job(pairs: list[tuple[str, str]], column: str) -> dict:
+    return ask_same(load_laya(), pairs, column)
+
+
+def collect() -> None:
+    """Jawaban Laya dari tugas latar yang sudah selesai → session_state (dibaca tab Outlier dan Isian bebas).
+
+    Dipanggil di setiap run (app.py), jadi jawaban masuk walau halaman Laya tidak sedang dibuka.
+    """
+    for name in ("laya_lens", "laya_same"):
+        job = jobs.get(name)
+        if job is None or jobs.result(name) is None or st.session_state.get(f"_{name}_at") == job.finished:
+            continue
+        st.session_state[f"_{name}_at"] = job.finished
+        if name == "laya_lens":
+            key, answers = job.result
+            st.session_state.setdefault("laya_answers", {})[key] = answers
+        else:
+            st.session_state.setdefault("laya_same", {}).update(job.result)

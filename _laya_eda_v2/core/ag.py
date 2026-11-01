@@ -1,8 +1,9 @@
 """AutoGluon sebagai pemeriksa: apakah langkah pembersihan membantu model, kolom mana yang penting,
 dan probabilitas out-of-fold yang lebih kuat untuk cleanlab.
 
-Perbandingan adil: train dibagi SEKALI jadi bagian latih (80%) dan bagian uji (20%, stratified).
-Bagian uji diperlakukan seperti file test: ikut semua langkah tapi tidak pernah dibuang barisnya,
+Perbandingan adil: bagian latih dan bagian uji = split proyek (halaman Split) bila ada, jadi skor dinilai
+di valid yang sama dengan yang diekspor; bila belum di-split, train dibagi sementara 80/20 (stratified).
+Bagian uji diperlakukan seperti valid: ikut semua langkah tapi tidak pernah dibuang barisnya,
 jadi data mentah dan data bersih dinilai di baris yang SAMA.
 """
 from __future__ import annotations
@@ -12,6 +13,7 @@ import tempfile
 import pandas as pd
 from sklearn.model_selection import train_test_split
 
+from core import split as splitter
 from core import steps as engine
 
 
@@ -27,6 +29,18 @@ def split(train: pd.DataFrame, label: str, share: float = 0.2, seed: int = 0):
     return train_test_split(data, test_size=share, random_state=seed, stratify=stratify)
 
 
+def parts(train: pd.DataFrame, label: str, config: dict | None) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """(bagian latih, bagian uji): split proyek bila ada, kalau tidak 80/20 sementara (tidak masuk kode)."""
+    if config:
+        return splitter.apply(config, label, train)
+    return split(train, label)
+
+
+def labelled(data: pd.DataFrame, label: str) -> pd.DataFrame:
+    """Baris yang labelnya terisi: hanya itu yang bisa dinilai."""
+    return data[data[label].notna()]
+
+
 def fit_and_score(fit_part: pd.DataFrame, hold_part: pd.DataFrame, label: str, time_limit: int,
                   presets: str) -> dict:
     model = predictor(label).fit(fit_part, time_limit=time_limit, presets=presets)
@@ -35,19 +49,18 @@ def fit_and_score(fit_part: pd.DataFrame, hold_part: pd.DataFrame, label: str, t
     return {"model": model, "skor": scores, "papan": board, "metrik": model.eval_metric.name}
 
 
-def compare(train: pd.DataFrame, label: str, steps: list[dict], time_limit: int = 60,
-            presets: str = "medium_quality") -> dict:
+def compare(train: pd.DataFrame, label: str, steps: list[dict], config: dict | None = None,
+            time_limit: int = 60, presets: str = "medium_quality") -> dict:
     """Skor AutoGluon di data mentah vs data setelah langkah, pada baris uji yang sama."""
-    fit_part, hold_part = split(train, label)
-    raw = fit_and_score(fit_part, hold_part, label, time_limit, presets)
-    hold_features = hold_part.drop(columns=[label])
-    result = engine.run(steps, label, fit_part, hold_features)
+    fit_part, hold_part = parts(train, label, config)
+    raw = fit_and_score(fit_part, labelled(hold_part, label), label, time_limit, presets)
+    result = engine.run(steps, label, fit_part, None, valid=hold_part)
     if result["error"]:
         return {"mentah": raw, "galat": result["error"]}
-    clean_hold = result["test"].assign(**{label: hold_part[label]})
-    clean = fit_and_score(result["train"], clean_hold, label, time_limit, presets)
+    clean = fit_and_score(result["train"], labelled(result["valid"], label), label, time_limit, presets)
     return {"mentah": raw, "bersih": clean, "baris latih": (len(fit_part), len(result["train"])),
-            "baris uji": len(hold_part), "galat": None}
+            "baris uji": len(labelled(hold_part, label)), "uji": "valid split proyek" if config else "80/20 sementara",
+            "galat": None}
 
 
 def importance(model, hold_part: pd.DataFrame, rows: int = 2000) -> pd.DataFrame:

@@ -8,6 +8,7 @@ from pathlib import Path
 import pandas as pd
 import streamlit as st
 
+from core import split as splitter
 from core import steps as engine
 from core.ops import OPS, summary
 from ui.flows import FLOWS
@@ -28,7 +29,8 @@ def restore_session() -> None:
             saved = json.loads(SESSION_FILE.read_text(encoding="utf-8"))
         except (OSError, ValueError):
             saved = {}
-    st.session_state["project"] = {"label": saved.get("label"), "steps": saved.get("steps", [])}
+    st.session_state["project"] = {"label": saved.get("label"), "steps": saved.get("steps", []),
+                                   "split": saved.get("split")}
     for key in ("train_path", "test_path"):
         if saved.get(key):
             st.session_state[key] = saved[key]
@@ -38,8 +40,8 @@ def restore_session() -> None:
 def save_session() -> None:
     """Dipanggil di akhir app.py: tulis file hanya bila ada yang berubah."""
     p = project()
-    data = {"label": p["label"], "steps": p["steps"], "train_path": st.session_state.get("train_path", ""),
-            "test_path": st.session_state.get("test_path", "")}
+    data = {"label": p["label"], "steps": p["steps"], "split": p.get("split"),
+            "train_path": st.session_state.get("train_path", ""), "test_path": st.session_state.get("test_path", "")}
     text = json.dumps(data, sort_keys=True, ensure_ascii=False, default=str)
     if text != st.session_state.get("saved_session"):
         SESSION_FILE.parent.mkdir(parents=True, exist_ok=True)
@@ -82,35 +84,53 @@ def header(flow: str, what: str, fits: str, danger: str) -> None:
         st.graphviz_chart(FLOWS[flow], width="stretch")
 
 
-def _key(steps: list[dict], lab: str | None) -> str:
-    return json.dumps([steps, lab], sort_keys=True, ensure_ascii=False, default=str)
+def split_config() -> dict | None:
+    return project().get("split")
+
+
+def _key(steps: list[dict], lab: str | None, split: dict | None = None) -> str:
+    return json.dumps([steps, lab, split], sort_keys=True, ensure_ascii=False, default=str)
 
 
 @st.cache_resource(max_entries=64, show_spinner="Menjalankan langkah…")
 def _run(key: str, data_id: str, _train: pd.DataFrame, _test: pd.DataFrame | None) -> dict:
     """Bertahap: hasil langkah 1..n = langkah n dijalankan di atas hasil 1..n-1 (yang sudah ter-cache).
 
+    Langkah 0 = data mentah SESUDAH split (kode split yang sama dengan skrip). Mengganti split = kunci
+    berubah = semua langkah dihitung ulang dari train yang baru: statistik selalu dari train saja.
     Menambah/mengubah langkah terakhir hanya menjalankan langkah itu. cache_resource = tanpa salin/pickle,
     jadi hasilnya HANYA dibaca (engine.run selalu menyalin sebelum mengubah).
     """
-    steps, lab = json.loads(key)
+    steps, lab, config = json.loads(key)
     if not steps:
-        return engine.run([], lab, _train, _test)
-    base = _run(_key(steps[:-1], lab), data_id, _train, _test)
+        train, valid = splitter.apply(config, lab, _train)
+        return engine.run([], lab, train, _test, valid=valid)
+    base = _run(_key(steps[:-1], lab, config), data_id, _train, _test)
     if base["error"] or not steps[-1].get("on", True):
         return base
-    last = engine.run(steps[-1:], lab, base["train"], base["test"], first=len(steps))
-    return {"train": last["train"], "test": last["test"], "log": base["log"] + last["log"], "error": last["error"]}
+    last = engine.run(steps[-1:], lab, base["train"], base["test"], first=len(steps), valid=base["valid"])
+    return {**last, "log": base["log"] + last["log"]}
 
 
 def state(upto: int | None = None) -> dict:
-    """Hasil menjalankan langkah 1..upto (None = semua): {'train', 'test', 'log', 'error'}. Hanya dibaca."""
-    return _run(_key(project()["steps"][:upto], label()), st.session_state.get("data_id", ""), raw_train(), raw_test())
+    """Hasil split + langkah 1..upto (None = semua): {'train', 'valid', 'test', 'log', 'error'}. Hanya dibaca."""
+    return _run(_key(project()["steps"][:upto], label(), split_config()), st.session_state.get("data_id", ""),
+                raw_train(), raw_test())
+
+
+def split_state(config: dict | None) -> dict:
+    """Data sesudah split `config`, sebelum langkah (pratinjau halaman Split). Cache-nya = cache state(0),
+    jadi sesudah 'Pakai split ini' tidak dihitung ulang."""
+    return _run(_key([], label(), config), st.session_state.get("data_id", ""), raw_train(), raw_test())
+
+
+def split_key(config: dict | None) -> str:
+    return _key([], label(), config) + st.session_state.get("data_id", "")
 
 
 def state_key(upto: int | None = None) -> str:
     """Kunci data di langkah ke-upto: dipakai juga untuk cache analisis (temuan, wawasan kolom)."""
-    return _key(project()["steps"][:upto], label()) + st.session_state.get("data_id", "")
+    return _key(project()["steps"][:upto], label(), split_config()) + st.session_state.get("data_id", "")
 
 
 @st.cache_data(max_entries=32, show_spinner=False)
@@ -143,6 +163,14 @@ def op_help(op: str) -> None:
     right.warning(f"**Kapan berbahaya.** {spec['danger']}")
 
 
+@st.cache_resource(max_entries=16, show_spinner="Menghitung pratinjau…")
+def _preview_run(base_key: str, candidate_key: str, _base: dict) -> dict:
+    """Pratinjau satu langkah calon, di-cache per (data sebelumnya, langkah): klik lain di halaman yang sama
+    (centang, buka expander) tidak menjalankan ulang langkahnya. Hasil HANYA dibaca."""
+    candidate, lab, _ = json.loads(candidate_key)
+    return engine.run(candidate, lab, _base["train"], _base["test"], valid=_base["valid"])
+
+
 def preview_step(op: str, params: dict, key: str, replace: int | None = None) -> None:
     """Pratinjau satu langkah (sebelum → sesudah) di atas data sesudah langkah sebelumnya.
 
@@ -150,7 +178,7 @@ def preview_step(op: str, params: dict, key: str, replace: int | None = None) ->
     """
     base = state(replace)
     candidate = [{"op": op, "params": params, "on": True}]
-    result = engine.run(candidate, label(), base["train"], base["test"])
+    result = _preview_run(state_key(replace), _key(candidate, label()), base)
     with st.expander("Kode langkah ini"):
         st.code(engine.step_code(candidate[0]), language="python")
     if result["error"]:
@@ -162,7 +190,8 @@ def preview_step(op: str, params: dict, key: str, replace: int | None = None) ->
     cols[0].metric("baris train", f"{len(after):,}", -len(info["baris dibuang"]) or None)
     cols[1].metric("kolom", after.shape[1], after.shape[1] - before.shape[1] or None)
     cols[2].metric("sel berubah", f"{int(info['sel berubah'].sum()):,}")
-    cols[3].metric("baris test", f"{len(result['test']):,}")
+    cols[3].metric("baris valid · test", f"{len(result['valid']):,} · {len(result['test']):,}",
+                   help="Valid dan test tidak pernah dibuang barisnya; langkah hanya mengubah isinya.")
     if result["log"][0]["keluaran"]:
         st.caption(result["log"][0]["keluaran"])
     if info["kolom baru"]:
@@ -175,8 +204,16 @@ def preview_step(op: str, params: dict, key: str, replace: int | None = None) ->
     if len(info["baris dibuang"]):
         st.caption("Contoh baris yang dibuang")
         st.dataframe(before.loc[info["baris dibuang"][:20]], width="stretch")
+    same = [i + 1 for i, step in enumerate(project()["steps"])
+            if step["op"] == op and step["params"] == params and step.get("on", True) and i != replace]
+    unchanged = (after.equals(before) and result["valid"].equals(base["valid"])
+                 and result["test"].equals(base["test"]))
+    if same:
+        st.warning(f"Langkah yang sama persis sudah ada (langkah {', '.join(map(str, same))}).")
+    elif unchanged:
+        st.info("Langkah ini tidak mengubah train, valid, maupun test saat ini.")
     if replace is None:
-        if st.button(f"Tambah langkah: {OPS[op]['title']}", type="primary", key=f"add_{key}"):
+        if st.button(f"Tambah langkah: {OPS[op]['title']}", type="primary", key=f"add_{key}", disabled=bool(same)):
             engine.add_step(project(), op, params)
             st.toast("Langkah ditambahkan")
             st.rerun()
@@ -194,7 +231,7 @@ def preview_steps(op: str, plan: list[dict], key: str) -> None:
     st.subheader(f"Pratinjau {len(plan)} langkah sekaligus")
     base = state()
     candidate = [{"op": op, "params": params, "on": True} for params in plan]
-    result = engine.run(candidate, label(), base["train"], base["test"])
+    result = engine.run(candidate, label(), base["train"], base["test"], valid=base["valid"])
     if result["error"]:
         st.error(f"Langkah {result['error']['langkah']} gagal: {result['error']['galat']}")
         return
@@ -202,7 +239,7 @@ def preview_steps(op: str, plan: list[dict], key: str) -> None:
     cols = st.columns(3)
     cols[0].metric("baris train", f"{len(result['train']):,}", -len(info["baris dibuang"]) or None)
     cols[1].metric("sel berubah", f"{int(info['sel berubah'].sum()):,}")
-    cols[2].metric("baris test", f"{len(result['test']):,}")
+    cols[2].metric("baris valid · test", f"{len(result['valid']):,} · {len(result['test']):,}")
     if len(info["sel berubah"]):
         st.caption("Sel berubah per kolom: " + ", ".join(f"{c} ({n:,})" for c, n in info["sel berubah"].head(12).items()))
     with st.expander("Kode langkah-langkah ini"):
@@ -218,6 +255,10 @@ def preview_steps(op: str, plan: list[dict], key: str) -> None:
 def sidebar_steps() -> None:
     """Daftar langkah ala Data Wrangler: nyalakan/matikan, pindah, hapus; galat ditandai."""
     p = project()
+    if raw_train() is not None:
+        base = state(0)
+        st.sidebar.caption(f"**Split:** {splitter.describe(split_config())} → train {len(base['train']):,} · "
+                           f"valid {len(base['valid']):,} (halaman **Split**)")
     st.sidebar.subheader(f"Langkah ({len(p['steps'])})")
     if not p["steps"]:
         st.sidebar.caption("Belum ada langkah: data belum diubah sama sekali. Tambah langkah dari tab "
@@ -246,6 +287,14 @@ def sidebar_steps() -> None:
             box.error(entry["galat"])
         elif entry:
             box.caption(f"baris {entry['baris train']} · kolom {entry['kolom']}")
+            gained = entry.get("kosong baru") or {}
+            if sum(gained.values()) >= 0.01 * len(state()["train"]):    # ≥ 1% baris: layak diperhatikan
+                box.warning(f"membuat {sum(gained.values()):,} sel kosong baru: "
+                            + ", ".join(f"{c} +{n:,}" for c, n in list(gained.items())[:3]))
+        twin = next((k + 1 for k in range(i) if on and p["steps"][k].get("on", True)
+                     and p["steps"][k]["op"] == step["op"] and p["steps"][k]["params"] == step["params"]), None)
+        if twin:
+            box.caption(f"⚠ sama persis dengan langkah {twin}: biasanya tidak perlu diulang (cek log: baris tidak berubah?)")
         cols = box.columns(4)
         if cols[0].button("⏸" if on else "▶", key=f"on_{i}", help="matikan / nyalakan"):
             step["on"] = not on

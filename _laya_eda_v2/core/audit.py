@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import pandas as pd
 
+from core import text_tools
 from core.ops import MISSING_MARKERS, SENTINEL_FLOOR
 
 NUMBER_PATTERN = r"^\s*(?:rp\.?\s*)?-?[\d.,]+\s*$"
@@ -26,10 +27,7 @@ def guess_type(series: pd.Series) -> str:
     text = tidy(series)
     if text.str.lower().str.match(NUMBER_PATTERN).mean() > 0.95:
         return "angka-teks"
-    unique = text.nunique()
-    if unique <= 30 or unique / len(text) < 0.002:
-        return "kategori"
-    return "isian bebas"
+    return "isian bebas" if text_tools.is_free_text(series) else "kategori"
 
 
 def column_profile(df: pd.DataFrame) -> pd.DataFrame:
@@ -50,14 +48,59 @@ def column_profile(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def fake_missing(df: pd.DataFrame, markers: list[str] = MISSING_MARKERS) -> pd.DataFrame:
-    """Sel teks yang sebenarnya berarti 'kosong': '-', '?', 'null', ..."""
+    """Sel teks yang mungkin berarti 'kosong': '-', '?', 'null', ...
+
+    Penanda yang SERING (>= 5% isi kolom, mis. '-' 21% di Riwayat Beasiswa, setara 'Tidak') lebih mungkin
+    sebuah jawaban ('tidak ada') daripada sel yang lupa diisi: ditandai 'mungkin kategori', bukan kosong.
+    """
     rows = []
     for column in df.select_dtypes(exclude="number").columns:
         text = tidy(df[column]).str.lower()
         hits = text[text.isin(markers)].value_counts()
         for marker, count in hits.items():
-            rows.append({"kolom": column, "penanda": repr(marker), "jumlah": int(count)})
-    return pd.DataFrame(rows, columns=["kolom", "penanda", "jumlah"])
+            share = count / max(len(text), 1)
+            rows.append({"kolom": column, "penanda": repr(marker), "jumlah": int(count),
+                         "% isi kolom": round(share * 100, 1), "mungkin kategori": bool(share >= 0.05)})
+    table = pd.DataFrame(rows, columns=["kolom", "penanda", "jumlah", "% isi kolom", "mungkin kategori"])
+    return table.astype({"mungkin kategori": bool})     # kosong → tetap bool, agar tabel[topeng] menyaring baris
+
+
+def messy_text(df: pd.DataFrame) -> pd.DataFrame:
+    """Sel teks dengan spasi di awal/akhir atau spasi ganda: 'Kota Semarang ' terhitung beda dari 'Kota Semarang'."""
+    rows = []
+    for column in df.select_dtypes(exclude="number").columns:
+        text = df[column].dropna().astype(str)
+        messy = int((text != text.str.strip().str.replace(r"\s+", " ", regex=True)).sum())
+        if messy:
+            rows.append({"kolom": column, "sel berspasi lebih": messy})
+    return pd.DataFrame(rows, columns=["kolom", "sel berspasi lebih"])
+
+
+def spelling_findings(df: pd.DataFrame) -> pd.DataFrame:
+    """Kolom kategori dengan ejaan berbeda untuk nilai yang sama (aturan kunci + gabung yang dicentang awal)."""
+    rows = []
+    for column in df.select_dtypes(exclude="number").columns:
+        series = df[column]
+        if series.nunique() < 2 or text_tools.is_free_text(series):
+            continue
+        proposals = text_tools.merge_proposals(series)
+        after = text_tools.key_table(series)["kunci"].nunique() - int(proposals["setuju"].astype(bool).sum())
+        if after < series.nunique():
+            groups, examples = text_tools.plan_groups(proposals)
+            rows.append({"kolom": column, "nilai unik": int(series.nunique()), "sesudah": int(after),
+                         "contoh": "; ".join(examples.values())[:160] or "beda huruf besar/spasi/tanda baca",
+                         "groups": groups, "examples": examples})
+    return pd.DataFrame(rows, columns=["kolom", "nilai unik", "sesudah", "contoh", "groups", "examples"])
+
+
+def ordinal_findings(df: pd.DataFrame) -> pd.DataFrame:
+    """Kolom kategori berurutan (jenjang pendidikan, rentang angka) + usulan urutannya."""
+    rows = []
+    for column in df.select_dtypes(exclude="number").columns:
+        found = text_tools.ordinal_order(df[column])
+        if found:
+            rows.append({"kolom": column, "urutan": found["urutan"], "alasan": found["alasan"]})
+    return pd.DataFrame(rows, columns=["kolom", "urutan", "alasan"])
 
 
 def sentinels(df: pd.DataFrame, floor: int = SENTINEL_FLOOR) -> pd.DataFrame:

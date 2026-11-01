@@ -11,13 +11,14 @@ import streamlit as st
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from ui import common, tab_clean, tab_code, tab_explore, tab_laya, tab_model  # noqa: E402
+from ui import common, jobs, tab_clean, tab_code, tab_explore, tab_laya, tab_model, tab_split  # noqa: E402
 from ui.flows import FLOWS  # noqa: E402
 
 st.set_page_config(page_title="Laya EDA", layout="wide")
 
 TABS = {
     "Data": tab_explore.show_data,
+    "Split": tab_split.show_split,          # urutan buku teks: split dulu, baru EDA, lalu ekspor
     "Temuan": tab_explore.show_findings,
     "Operasi": tab_clean.show_operations,
     "Ejaan": tab_clean.show_spelling,
@@ -32,7 +33,8 @@ TABS = {
 
 KEEP = ["insight_column", "op_group", "op_name", "spell_column", "spell_method", "free_column", "free_min",
         "free_cut", "outlier_column", "out_mode", "out_m", "out_a", "out_low", "out_high", "out_group", "label_model", "ag_time", "ag_presets",
-        "spell_mode", "spell_all_method"]
+        "spell_mode", "spell_all_method", "split_method", "split_share", "split_seed", "split_stratify",
+        "split_group", "split_time"]
 
 st.sidebar.title("Laya EDA")
 st.sidebar.caption("Alat bantu EDA: data mentah tidak berubah sampai kamu menambah langkah.")
@@ -41,6 +43,8 @@ with st.sidebar.expander("Cara kerja langkah (flowchart)"):
 common.restore_session()
 tab_explore.sidebar_data()
 common.sidebar_steps()
+jobs.sidebar()            # tugas latar (AutoGluon, cleanlab, …): tetap jalan walau halaman dipindah
+tab_laya.collect()
 
 # pilihan di halaman yang sedang tidak dibuka tetap diingat (Streamlit menghapus state widget yang tidak tampil)
 for name in KEEP:
