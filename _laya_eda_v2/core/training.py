@@ -13,6 +13,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import tempfile
 import time
 from pathlib import Path
 
@@ -365,8 +366,9 @@ def autogluon_experiment(setelan: dict, data: dict) -> dict:
     for fit_rows, val_rows in folds(setelan["fold"], int(setelan["n_fold"]), int(setelan.get("seed", 0))).split(X, y, data["grup"]):
         frame = X.iloc[fit_rows].assign(_y=y[fit_rows])
         problem = "multiclass" if task == "kelas" else "regression"
-        model = TabularPredictor("_y", problem_type=problem, verbosity=0).fit(frame, time_limit=seconds,
-                                                                             presets="medium_quality")
+        folder = tempfile.mkdtemp(prefix="laya_ag_")      # bukan ./AutogluonModels di folder kerja/repo
+        model = TabularPredictor("_y", problem_type=problem, path=folder, verbosity=0).fit(
+            frame, time_limit=seconds, presets="medium_quality")
         part = (model.predict_proba(X.iloc[val_rows]).reindex(columns=range(k), fill_value=0).to_numpy()
                 if task == "kelas" else model.predict(X.iloc[val_rows]).to_numpy())
         oof[val_rows] = part
