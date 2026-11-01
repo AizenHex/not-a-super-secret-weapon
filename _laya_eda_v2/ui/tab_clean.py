@@ -62,10 +62,6 @@ def form(op: str, data: pd.DataFrame, old: dict, key: str) -> dict | None:
     if op in ("drop_columns",):
         picked = many("Kolom", columns)
         return {"columns": picked} if picked else None
-    if op == "rename_column":
-        column = one("Kolom", columns)
-        new = st.text_input("Nama baru", old.get("new", ""), key=f"{key}_new")
-        return {"column": column, "new": new} if column and new else None
     if op == "to_number":
         picked = many("Kolom teks berisi angka", texts)
         indonesian = st.checkbox("Format Indonesia (titik = ribuan, koma = desimal)", old.get("indonesian", True),
@@ -182,6 +178,34 @@ def form(op: str, data: pd.DataFrame, old: dict, key: str) -> dict | None:
         kind = st.radio("Encoder", kinds, kinds.index(old.get("kind", "string")), horizontal=True, key=f"{key}_kind")
         n = st.slider("Jumlah kolom hasil", 2, 30, int(old.get("n_components", 10)), key=f"{key}_n")
         return {"column": column, "kind": kind, "n_components": n} if column else None
+    if op in ("target_encode", "onehot_sklearn", "rare_label"):
+        picked = many("Kolom kategori", texts)
+        params = {"columns": picked}
+        if op == "target_encode":
+            kinds = ["kelas", "angka"]
+            params["kind"] = st.radio("Label dibaca sebagai", kinds, kinds.index(old.get("kind", "kelas")),
+                                      horizontal=True, key=f"{key}_kind",
+                                      help="kelas: satu kolom per kelas (rata-rata 0/1); angka: satu kolom rata-rata label.")
+            if not common.label():
+                st.error("Butuh kolom label (sidebar Data).")
+                return None
+        if op == "onehot_sklearn":
+            params["min_share"] = st.slider("min_frequency (porsi)", 0.0, 0.1, float(old.get("min_share", 0.01)), 0.005,
+                                            format="%.3f", key=f"{key}_share")
+        if op == "rare_label":
+            params["tol"] = st.slider("Porsi minimal (tol)", 0.001, 0.1, float(old.get("tol", 0.01)), 0.001,
+                                      format="%.3f", key=f"{key}_tol")
+        return params if picked else None
+    if op in ("winsorize", "power"):
+        picked = many("Kolom angka", numbers)
+        params = {"columns": picked}
+        if op == "winsorize":
+            methods = ["iqr", "mad", "gaussian", "quantiles"]
+            params["method"] = st.radio("Metode batas", methods, methods.index(old.get("method", "iqr")),
+                                        horizontal=True, key=f"{key}_wm")
+            params["fold"] = st.number_input("fold (k; quantiles: porsi ekor, mis. 0.05)", 0.0, 10.0,
+                                             float(old.get("fold", 1.5)), 0.05, key=f"{key}_wf")
+        return params if picked else None
     if op == "autogluon_features":
         if not common.label():
             st.error("Butuh kolom label (sidebar Data).")

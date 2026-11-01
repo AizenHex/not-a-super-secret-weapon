@@ -2,6 +2,17 @@
 
 Terbaru di atas. Format di [`README.md`](README.md).
 
+## 2026-11-02 claude-opus-5-5 (cloud) - Laya v2: bagian B (inti E1–E12) + data sintetis
+- Dikerjakan: `tests/sintetis.py` (data sintetis 28 kolom meniru tabel audit RENCANA bagian 1), `tests/bantu.py`
+  (runner lulus/gagal/dilewati, data riil bila ada). Inti: `core/pipeline.py` (E1/E2), `core/training.py`
+  (E3, E5, E7, E8, E10, E12), `core/schema.py` (E4), `core/ensemble.py` (E9), `core/diagnose.py` (E11),
+  `core/submission.py` (E6). `core/ops.py`: `ops.transformer` + 5 op sklearn/feature_engine baru (target_encode,
+  onehot_sklearn, rare_label, winsorize, power), `scale` std ddof=0, `rename_column` dihapus (R8). `core/steps.py`:
+  `script_blocks`, blok selaraskan test (R12), reconfigure stdout (R13), cetak versi (R14). `tests/test_extra.py`:
+  14 lulus, 2 dilewati (data riil) di venv cloud (requirements persis; torch 2.11.0 dari PyPI, bukan +cu128).
+- Dikoreksi pengguna: -
+- Berikutnya: tab Latih + Submission (UI), lalu bagian C (uji R1–R18).
+
 ## 2026-11-02 claude-opus-5-5 (cloud) - Laya v2: bagian A, VISI.md sesuai review
 - Dikerjakan: VISI.md poin review 1 (TargetEncoder fit_transform di train), 2 (setelan toleran OrdinalEncoder/
   Winsorizer/RareLabelEncoder, pandera mode lapor), 3 (`if len(df):`), 4 (rapidfuzz default_process +

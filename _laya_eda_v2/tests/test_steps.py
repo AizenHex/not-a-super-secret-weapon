@@ -11,13 +11,14 @@ sys.path.insert(0, str(ROOT))
 
 from core import split, steps  # noqa: E402
 from core.ops import OPS  # noqa: E402
+from tests import bantu  # noqa: E402
 
-TRAIN = ROOT.parent / "_laya_eda" / "data" / "train.csv"
-LABEL = "Golongan UKT"
+TRAIN = bantu.train_csv()          # data riil bila ada, kalau tidak data sintetis (tests/sintetis.py)
+LABEL = bantu.LABEL
 
 
 def project() -> dict:
-    data = pd.read_csv(TRAIN, nrows=5)
+    data = pd.read_csv(TRAIN)
     texts = [c for c in data.columns if data[c].dtype == object and c != LABEL]
     p = steps.new_project(LABEL)
     add = lambda op, **params: steps.add_step(p, op, params)  # noqa: E731
@@ -178,13 +179,4 @@ def test_synthetic_messy():
 
 
 if __name__ == "__main__":
-    import tempfile
-    for name, check in list(globals().items()):
-        if name.startswith("test_"):
-            if "tmp_path" in check.__code__.co_varnames[:check.__code__.co_argcount]:
-                with tempfile.TemporaryDirectory() as folder:
-                    check(Path(folder))
-            else:
-                check()
-            print("lulus", name)
-    print("SEMUA UJI LULUS")
+    bantu.main(globals())

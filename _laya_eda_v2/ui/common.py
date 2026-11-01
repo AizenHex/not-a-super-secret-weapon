@@ -103,8 +103,9 @@ def _run(key: str, data_id: str, _train: pd.DataFrame, _test: pd.DataFrame | Non
     """
     steps, lab, config = json.loads(key)
     if not steps:
+        test = engine.align(_train, _test, lab)            # = blok 'selaraskan test' di skrip (R12)
         train, valid = splitter.apply(config, lab, _train)
-        return engine.run([], lab, train, _test, valid=valid)
+        return engine.run([], lab, train, test, valid=valid)
     base = _run(_key(steps[:-1], lab, config), data_id, _train, _test)
     if base["error"] or not steps[-1].get("on", True):
         return base

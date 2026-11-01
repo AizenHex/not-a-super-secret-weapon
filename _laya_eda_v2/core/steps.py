@@ -99,25 +99,74 @@ def run(steps: list[dict], label: str | None, train: pd.DataFrame, test: pd.Data
             "error": next((e for e in log if e["galat"]), None)}
 
 
-def build_script(project: dict, train_path: str, test_path: str = "") -> str:
-    """Satu file .py tanpa fungsi. `# %%` = sel (VS Code / Jupyter). Urutan: baca → split → langkah → simpan."""
+# Selaraskan test dengan train (R12), dijalankan di skrip (sesudah baca data) DAN di aplikasi (align):
+# kolom hilang -> kosong, urutan kolom = train, kolom tambahan tetap di belakang, tipe mengikuti train
+# ('1.500' teks di kolom angka -> 1500; kolom teks yang terbaca angka/kosong semua -> object).
+ALIGN = (
+    "KOLOM_FITUR = [kolom for kolom in train.columns if kolom != LABEL]\n"
+    "tambahan = [kolom for kolom in test.columns if kolom not in KOLOM_FITUR]\n"
+    "hilang = [kolom for kolom in KOLOM_FITUR if kolom not in test.columns]\n"
+    "test = test.reindex(columns=KOLOM_FITUR + tambahan)\n"
+    "for kolom in KOLOM_FITUR:\n"
+    "    if pd.api.types.is_numeric_dtype(train[kolom]) and not pd.api.types.is_numeric_dtype(test[kolom]):\n"
+    '        teks = test[kolom].astype("string").str.strip()\n'
+    '        ribuan = teks.str.fullmatch(r"-?\\d{1,3}(?:\\.\\d{3})+(?:,\\d+)?").fillna(False).astype(bool)\n'
+    '        teks = teks.where(~ribuan, teks.str.replace(".", "", regex=False).str.replace(",", ".", regex=False))\n'
+    '        test[kolom] = pd.to_numeric(teks, errors="coerce")\n'
+    "    elif not pd.api.types.is_numeric_dtype(train[kolom]):\n"
+    "        test[kolom] = test[kolom].astype(object)\n"
+    'print("test: kolom hilang", len(hilang), "| kolom tambahan", len(tambahan))'
+)
+
+
+def align(train: pd.DataFrame, test: pd.DataFrame | None, label: str | None) -> pd.DataFrame | None:
+    """Jalankan ALIGN apa adanya (satu sumber dengan skrip). None = tidak ada test."""
+    if test is None:
+        return None
+    ns = {"pd": pd, "np": np, "train": train, "test": test.copy(), "LABEL": label}
+    with contextlib.redirect_stdout(io.StringIO()):
+        exec(ALIGN, ns)
+    return ns["test"]
+
+
+def header(steps: list[dict]) -> str:
+    """Blok pertama: docstring, impor, stdout aman cp1252 (R13), versi library (R14)."""
+    uses_sklearn = any("sklearn" in step_code(step) for step in active(steps) if step["op"] in OPS)
+    versions = 'print("versi: pandas", pd.__version__, "| numpy", np.__version__'
+    versions += ', "| sklearn", sklearn.__version__)' if uses_sklearn else ")"
+    return ('"""Pipeline EDA dari Laya EDA. Jalankan dari atas ke bawah; setiap `# %%` adalah satu langkah.\n\n'
+            "Aturan: split dulu, lalu statistik (median, batas outlier, daftar kategori) dihitung dari train SAJA\n"
+            "dan dipakai ke valid dan test; baris hanya dibuang dari train (valid dan test tidak pernah dibuang).\"\"\"\n"
+            "import sys\n" + imports(steps) + ("\nimport sklearn" if uses_sklearn else "") + "\n"
+            'sys.stdout.reconfigure(errors="replace")   # Windows cp1252: karakter lain jadi "?", skrip tidak berhenti\n'
+            + versions)
+
+
+def script_blocks(project: dict, train_path: str, test_path: str = "") -> list[str]:
+    """Blok skrip sampai langkah terakhir: kepala → baca data + selaraskan test → split → langkah."""
     steps, label, config = project["steps"], project["label"], project.get("split")
     parts = [
-        '"""Pipeline EDA dari Laya EDA. Jalankan dari atas ke bawah; setiap `# %%` adalah satu langkah.\n\n'
-        "Aturan: split dulu, lalu statistik (median, batas outlier, daftar kategori) dihitung dari train SAJA\n"
-        "dan dipakai ke valid dan test; baris hanya dibuang dari train (valid dan test tidak pernah dibuang).\"\"\"\n"
-        + imports(steps),
+        header(steps),
         "# %% baca data\n"
         f"TRAIN_CSV = {train_path!r}\n"
         f"TEST_CSV = {test_path!r}   # kosongkan bila tidak ada file test\n"
         f"LABEL = {label!r}\n"
         "train = pd.read_csv(TRAIN_CSV)\n"
         "test = pd.read_csv(TEST_CSV) if TEST_CSV else train.iloc[:0].drop(columns=[LABEL], errors=\"ignore\")\n"
-        'print("train", train.shape, "test", test.shape)',
+        'print("train", train.shape, "test", test.shape)\n'
+        "# selaraskan test dengan train: kolom hilang -> kosong, urutan & tipe = train (tahan test yang beda bentuk)\n"
+        + ALIGN,
         f"# %% split data\n{split.split_code(config)}",
     ]
     for number, step in enumerate(active(steps), 1):
         parts.append(f"# %% langkah {number}: {summary(step)}\n{step_code(step)}")
+    return parts
+
+
+def build_script(project: dict, train_path: str, test_path: str = "") -> str:
+    """Satu file .py tanpa fungsi. `# %%` = sel (VS Code / Jupyter). Urutan: baca → split → langkah → simpan."""
+    config = project.get("split")
+    parts = script_blocks(project, train_path, test_path)
     parts.append("# %% simpan\n"
                  'print("train", train.shape, "valid", valid.shape, "test", test.shape)\n'
                  'train.to_csv("train_bersih.csv", index=False)\n'
@@ -169,4 +218,5 @@ def changed_examples(before: pd.DataFrame, after: pd.DataFrame, info: dict, limi
     return pd.DataFrame(table, index=rows)
 
 
-__all__ = ["new_project", "add_step", "run", "build_script", "to_notebook", "diff", "changed_examples"]
+__all__ = ["new_project", "add_step", "run", "align", "header", "script_blocks", "build_script", "to_notebook",
+           "diff", "changed_examples", "ALIGN"]
