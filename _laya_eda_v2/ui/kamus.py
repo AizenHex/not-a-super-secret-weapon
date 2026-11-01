@@ -6,6 +6,8 @@ Arti dicari berurutan: `meaning` (khusus tabel itu) → KAMUS (nama kolom umum d
 """
 from __future__ import annotations
 
+import os
+
 import pandas as pd
 import streamlit as st
 
@@ -66,6 +68,55 @@ KAMUS = {
     "masalah": "Hal yang membuat submission ditolak validator.",
     "isi": "Isi format yang terbaca dari sample_submission.csv.",
     "arti": "Penjelasan.",
+    # profil angka (describe)
+    "count": "Jumlah nilai terisi.", "mean": "Rata-rata.", "std": "Simpangan baku.", "min": "Nilai terkecil.",
+    "1%": "Persentil 1.", "25%": "Kuartil bawah (Q1).", "50%": "Median.", "75%": "Kuartil atas (Q3).",
+    "99%": "Persentil 99.", "max": "Nilai terbesar.",
+    # ejaan / isian bebas
+    "asli": "Isi sel sebelum langkah.", "sesudah": "Isi/hasil sesudah langkah atau aturan.",
+    "bahan": "Satu bahan hasil pecah isian bebas.", "% baris": "Persen baris train yang memuat bahan ini.",
+    "ejaan": "Ejaan yang ada di data.", "jadi": "Ejaan baku hasil gabung.", "gabung ke": "Kunci tujuan gabung.",
+    "frasa": "Bahan (satu atau beberapa kata) sesudah peta kata.", "kata asli": "Kata yang ditulis di data.",
+    "catatan": "Peringatan/penjelasan untuk baris ini.", "kode": "Kode angka atau kunci.",
+    "nilai unik": "Jumlah nilai berbeda di train.", "pakai": "Dicentang = kolom ikut langkah.",
+    "sesudah aturan kunci": "Jumlah nilai berbeda sesudah aturan kunci (huruf kecil, singkatan, tanpa tanda baca).",
+    "usulan gabung": "Jumlah usulan GABUNG (kunci berbeda, makna sama).",
+    "samakan 2 → 1": "Dicentang = kata 2 diganti kata 1.", "kata 1": "Kata baku pertama.",
+    "jumlah 1": "Jumlah kemunculan kata 1.", "kata 2": "Kata baku kedua (mirip kata 1).",
+    "jumlah 2": "Jumlah kemunculan kata 2.", "sel berspasi lebih": "Jumlah sel dengan spasi di depan/belakang/ganda.",
+    "penanda kosong": "Jumlah sel berisi penanda kosong palsu ('-', '?', 'null', ...).",
+    "kata dibetulkan": "Jumlah kata yang diganti peta kata.", "usulan baku": "Ejaan baku yang diusulkan.",
+    # outlier
+    "jenis": "Jenis kolom angka (kontinu / diskret).", "median": "Median kolom (train).",
+    "maks": "Nilai terbesar (train).", "sudah ada langkah": "Langkah outlier untuk kolom ini sudah ada.",
+    "perlakuan": "Pilihanmu untuk kolom ini (biarkan / perbaiki dengan langkah).",
+    "metode": "Metode batas: IQR, IQR-log, MAD, MAD-log, manual.", "k": "Pengali sebaran (IQR/MAD) untuk batas.",
+    "batas bawah": "Batas bawah wajar dari train.", "batas atas": "Batas atas wajar dari train.",
+    "aksi": "clip (potong ke batas), nan (jadikan kosong), drop (buang baris train).",
+    "di luar batas": "Jumlah baris di luar batas.", "% data": "Persen baris di luar batas.",
+    "maks wajar (di bawah batas)": "Nilai terbesar yang masih di bawah batas penjaga.",
+    "kelompok": "Nilai kolom pengelompok.", "nol %": "Persen nilai nol.",
+    # temuan
+    "penanda": "Penanda kosong palsu yang ditemukan.", "% isi kolom": "Persen isi kolom yang berupa penanda ini.",
+    "mungkin kategori": "Penanda sering (≥ 5%): mungkin jawaban ('tidak ada'), bukan kosong.",
+    "satu-satunya nilai": "Satu-satunya nilai selain kosong (kolom checkbox).", "hanya format": "Beda hanya format.",
+    "cramer_v": "Kekuatan hubungan dua kolom kategori (0–1, Cramér's V).", "left_column_name": "Kolom pertama.",
+    "right_column_name": "Kolom kedua.", "kolom 1": "Kolom pertama dari pasangan.",
+    "kolom 2": "Kolom kedua dari pasangan.", "Cramér's V": "Kekuatan hubungan dua kolom kategori (0–1).", "sama": "Persen baris yang isinya sama.",
+    "urutan": "Urutan kategori dari terendah.",
+    # split
+    "train %": "Persen baris train per kelas label.", "valid %": "Persen baris valid per kelas label.",
+    "selisih (poin %)": "valid % − train %.", "train": "Ringkasan di bagian train.", "valid": "Ringkasan di bagian valid.",
+    # train vs test / AutoGluon / cleanlab
+    "nilai baru": "Jumlah nilai di test yang tidak ada di train.", "baris test terdampak": "Baris test berisi nilai baru.",
+    "KS": "Statistik Kolmogorov–Smirnov (0 = sebaran sama).", "p": "Nilai p uji KS.",
+    "median train": "Median kolom di train.", "median test": "Median kolom di test.",
+    "mentah": "Skor model di data mentah.", "sesudah langkah": "Skor model sesudah semua langkah.",
+    "score_test": "Skor model di bagian uji (valid).", "score_val": "Skor validasi internal AutoGluon.",
+    "fit_time": "Lama latih model, detik.", "p_value": "Nilai p importance (kecil = kolom benar-benar berpengaruh).",
+    "skor label": "Skor kualitas label cleanlab (rendah = mungkin salah).",
+    "tebakan model": "Kelas yang ditebak model OOF.", "yakin tebakan": "Peluang kelas tebakan menurut model.",
+    "jawaban": "Jawaban Laya.", "konteks": "Konteks yang diberikan ke Laya.", "yakin": "Keyakinan jawaban Laya.",
 }
 
 
@@ -86,11 +137,21 @@ def meaning_of(column, meaning: dict | None = None, data_columns: bool = False) 
 def show_table(data, meaning: dict | None = None, data_columns: bool = False, container=st, **kwargs) -> None:
     """Tampilkan tabel dengan arti di setiap judul kolom. Kolom tanpa arti → ValueError (R18)."""
     frame = data.to_frame() if isinstance(data, pd.Series) else data
-    config = dict(kwargs.pop("column_config", None) or {})
+    config = _config(frame, meaning, data_columns, kwargs.pop("column_config", None), kwargs.get("hide_index"))
+    kwargs.setdefault("width", "stretch")
+    container.dataframe(frame, column_config=config, **kwargs)
+
+
+def _config(frame: pd.DataFrame, meaning, data_columns, config, hide_index) -> dict:
+    config = dict(config or {})
     columns = list(frame.columns)
-    if kwargs.get("hide_index") is not True and frame.index.name:
+    if hide_index is not True and frame.index.name:
         columns.append(frame.index.name)
     missing = [c for c in columns if meaning_of(c, meaning, data_columns) is None]
+    if missing and os.environ.get("LAYA_KAMUS_KUMPUL"):
+        with open(os.environ["LAYA_KAMUS_KUMPUL"], "a", encoding="utf-8") as out:
+            out.write(repr(missing) + "\n")
+        missing = []
     if missing:
         raise ValueError(f"R18: kolom tabel tanpa arti: {missing}. Tambahkan di ui/kamus.py atau argumen meaning.")
     for column in columns:
@@ -100,8 +161,15 @@ def show_table(data, meaning: dict | None = None, data_columns: bool = False, co
             config[column] = {**old, "help": old.get("help") or text}
         elif old is None:
             config[column] = st.column_config.Column(help=text)
+    return config
+
+
+def edit_table(data: pd.DataFrame, meaning: dict | None = None, data_columns: bool = False, container=st, **kwargs):
+    """st.data_editor dengan arti di setiap judul kolom (R18). Kembalikan tabel hasil edit."""
+    kwargs["column_config"] = _config(data, meaning, data_columns, kwargs.pop("column_config", None),
+                                      kwargs.get("hide_index"))
     kwargs.setdefault("width", "stretch")
-    container.dataframe(frame, column_config=config, **kwargs)
+    return container.data_editor(data, **kwargs)
 
 
-__all__ = ["KAMUS", "meaning_of", "show_table"]
+__all__ = ["KAMUS", "meaning_of", "show_table", "edit_table"]

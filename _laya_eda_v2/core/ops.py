@@ -40,8 +40,14 @@ def word_regex(words: dict[str, str]) -> dict[str, str]:
 
 # ---------------------------------------------------------------- kolom
 
+def reason(p, default: str) -> str:
+    """R15: setiap langkah buang menulis alasannya sebagai komentar (isian pengguna, atau alasan bawaan)."""
+    text = " ".join(str(p.get("reason") or default).split())
+    return f"# alasan: {text}\n"
+
+
 def drop_columns(p):
-    return (f"KOLOM_DIBUANG = {lit(p['columns'])}\n"
+    return (reason(p, "kolom dipilih pengguna untuk dibuang") + f"KOLOM_DIBUANG = {lit(p['columns'])}\n"
             "train = train.drop(columns=KOLOM_DIBUANG)\n"
             "valid = valid.drop(columns=KOLOM_DIBUANG)\n"
             'test = test.drop(columns=KOLOM_DIBUANG, errors="ignore")')
@@ -77,6 +83,27 @@ def change_case(p):
             "for df in (train, valid, test):\n"
             "    for kolom in KOLOM_HURUF:\n"
             f"        df[kolom] = df[kolom].str.{p['case']}()")
+
+
+def fuzzy_spelling(p):
+    """Lapisan 3 R6: kosakata baku dari train + rapidfuzz saat runtime; nilai train tidak diubah, tanpa daftar peta."""
+    return (f"# bakukan ejaan {p['columns']!r}: kosakata dari train, berlaku untuk ejaan baru di valid/test\n"
+            "from rapidfuzz import fuzz, process, utils\n"
+            f"KOLOM_EJAAN = {lit(p['columns'])}\n"
+            f"MIN_KALI, AMBANG = {int(p.get('min_count', 5))}, {float(p.get('cutoff', 90))}\n"
+            "for kolom in KOLOM_EJAAN:\n"
+            "    jumlah = train[kolom].value_counts()\n"
+            "    BAKU = list(jumlah[jumlah >= MIN_KALI].index)\n"
+            "    DIKENAL = set(train[kolom].dropna())   # nilai yang ada di train tidak diubah\n"
+            "    for df in (train, valid, test):\n"
+            "        if len(df):\n"
+            "            unik = [nilai for nilai in df[kolom].dropna().astype(str).unique() if nilai not in DIKENAL]\n"
+            "            cocok = {nilai: process.extractOne(nilai, BAKU, scorer=fuzz.token_sort_ratio,\n"
+            "                                               processor=utils.default_process, score_cutoff=AMBANG)\n"
+            "                     for nilai in unik}\n"
+            "            peta = {nilai: hasil[0] for nilai, hasil in cocok.items() if hasil is not None}\n"
+            "            df[kolom] = df[kolom].replace(peta)\n"
+            '    print(kolom, ":", len(BAKU), "ejaan baku dari train")')
 
 
 def map_values(p):
@@ -119,7 +146,7 @@ def spelling(p):
               '    ejaan_baku = ejaan_baku.drop_duplicates("kunci").set_index("kunci")["ejaan"]   # tersering per kunci',
               "    sebelum = train[kolom].nunique()",
               "    for df, kunci in zip((train, valid, test), kunci_tiap):",
-              "        df[kolom] = kunci.replace(ke_baku).map(ejaan_baku).fillna(df[kolom])",
+              "        df[kolom] = kunci.replace(ke_baku).map(ejaan_baku).fillna(df[kolom]).astype(object)",
               '    print(kolom, ":", sebelum, "->", train[kolom].nunique(), "nilai unik di train")']
     return "\n".join(lines)
 
@@ -186,20 +213,21 @@ def impute(p):
 # ---------------------------------------------------------------- baris (train saja)
 
 def drop_duplicates(p):
-    return ("sebelum = len(train)\n"
+    return (reason(p, "baris train yang sama persis di semua kolom") + "sebelum = len(train)\n"
             "train = train.drop_duplicates()\n"
             'print("duplikat dibuang:", sebelum - len(train))')
 
 
 def drop_missing_rows(p):
-    return (f"MAKS_KOSONG_PER_BARIS = {int(p['max_missing'])}\n"
+    return (reason(p, f"baris train dengan lebih dari {int(p['max_missing'])} kolom kosong")
+            + f"MAKS_KOSONG_PER_BARIS = {int(p['max_missing'])}\n"
             "sebelum = len(train)\n"
             "train = train[train.isna().sum(axis=1) <= MAKS_KOSONG_PER_BARIS].copy()\n"
             'print("baris terlalu banyak kosong dibuang:", sebelum - len(train))')
 
 
 def drop_rows_query(p):
-    return (f"ATURAN_BUANG = {p['rule']!r}\n"
+    return (reason(p, f"baris train yang cocok dengan aturan {p['rule']}") + f"ATURAN_BUANG = {p['rule']!r}\n"
             "sebelum = len(train)\n"
             "train = train[~train.eval(ATURAN_BUANG).fillna(False).astype(bool)].copy()\n"
             'print("dibuang oleh aturan:", sebelum - len(train))')
@@ -244,7 +272,8 @@ def outlier(p):
                   f"    df[{column!r}] = df[{column!r}].mask({inside_low}(df[{column!r}] < bawah) | (df[{column!r}] > atas))"]
     else:
         low = f"(train[{column!r}] > 0) & " if log else ""
-        lines += ["sebelum = len(train)",
+        lines += [reason(p, f"nilai {column} di luar batas {method} (train saja)").rstrip(),
+                  "sebelum = len(train)",
                   f"train = train[~({low}(train[{column!r}] < bawah) | (train[{column!r}] > atas))].copy()",
                   f'print("outlier {column} dibuang dari train:", sebelum - len(train))']
     return "\n".join(lines)
@@ -324,7 +353,7 @@ SKRUB = {"string": "StringEncoder", "minhash": "MinHashEncoder", "gap": "GapEnco
 
 def skrub_encoder(p):
     column, kind, n = p["column"], p["kind"], int(p.get("n_components", 10))
-    extra = ", random_state=0" if kind == "gap" else ""
+    extra = ", random_state=0" if kind in ("gap", "string") else ""   # R14: SVD/NMF acak -> seed tetap
     return (f"# skrub {SKRUB[kind]} {column!r}: kolom angka hasil tidak punya makna langsung\n"
             f"encoder = skrub.{SKRUB[kind]}(n_components={n}{extra})\n"
             f"angka_train = encoder.fit_transform(train[{column!r}])\n"
@@ -453,6 +482,8 @@ def transformer_code(p, op: str) -> str:
     spec = SKLEARN_OPS[op](p)
     lines = [*spec["imports"],
              f"KOLOM_UBAH = {lit(spec['columns'])}",
+             "# kolom teks di train tetap teks di valid/test (kolom kosong semua terbaca angka -> object)",
+             "JENIS = {kolom: object for kolom in KOLOM_UBAH if not pd.api.types.is_numeric_dtype(train[kolom])}",
              f"pengubah = {spec['make']}.set_output(transform=\"pandas\")"]
     if spec["target"]:
         lines += ["berlabel = train[LABEL].notna()",
@@ -466,7 +497,7 @@ def transformer_code(p, op: str) -> str:
     if spec["same"] and not spec["target"]:
         lines += ["for df in (train, valid, test):",
                   "    if len(df):                     # frame 0 baris dilewati (transformer menolak 0 sampel)",
-                  "        df[KOLOM_UBAH] = pengubah.transform(df[KOLOM_UBAH])"]
+                  "        df[KOLOM_UBAH] = pengubah.transform(df[KOLOM_UBAH].astype(JENIS))"]
         return "\n".join(lines)
     train_part = "angka_train" if spec["target"] else "pengubah.transform(train[KOLOM_UBAH])"
     lines += ["hasil = []",
@@ -474,7 +505,7 @@ def transformer_code(p, op: str) -> str:
               "    if df is train:",
               f"        angka = {train_part}",
               "    elif len(df):",
-              "        angka = pengubah.transform(df[KOLOM_UBAH])",
+              "        angka = pengubah.transform(df[KOLOM_UBAH].astype(JENIS))",
               "    else:",
               "        angka = pd.DataFrame(columns=pengubah.get_feature_names_out(), dtype=float)",
               "    angka.index = df.index",
@@ -508,6 +539,12 @@ OPS = {
                           "(SMA = MA = SLTA) digabung lewat daftar pendek GABUNG.",
                      fits="Kolom kategori. Usulan dari tab Ejaan. Kode tetap pendek berapa pun variasinya.",
                      danger="GABUNG yang salah (Kota Malang ≠ Kota Magelang, D1 ≠ D3). Periksa alasan tiap gabungan."),
+    "fuzzy_spelling": dict(group="Teks", title="Bakukan ejaan dengan rapidfuzz (tanpa daftar)", code=fuzzy_spelling,
+                           what="Kosakata baku = nilai yang muncul ≥ N kali di train; nilai lain (termasuk ejaan baru "
+                                "di test) dipetakan ke kosakata terdekat (token_sort_ratio ≥ ambang). Nilai yang ada "
+                                "di train tidak diubah.",
+                           fits="Pengganti peta panjang (R6: peta > 300 entri), kolom dengan banyak salah ketik.",
+                           danger="Salah gabung nama mirip (Kota Malang → Kota Magelang). Naikkan ambang bila ragu."),
     "map_values": dict(group="Teks", title="Ganti nilai (peta nilai)", code=map_values,
                        what="Ganti nilai tertentu persis: {'Lainnya ': 'Lainnya'}. Untuk ejaan, pakai Satukan ejaan.",
                        fits="Cari & ganti manual beberapa nilai.",
@@ -607,6 +644,59 @@ OPS = {
                   fits="Model linear/KNN pada angka sangat miring.",
                   danger="Model pohon tidak butuh; nilai hasil sulit dibaca."),
 }
+
+
+# ---------------------------------------------------------------- metadata uji (R6, R7, R8)
+
+MAP_LIMIT = 300            # R6: entri peta hardcoded di seluruh skrip
+# R7: satu library per tugas (pandas = operasi tabel bawaan)
+LIBRARY = {"drop_columns": "pandas", "to_number": "pandas", "tidy_text": "pandas", "change_case": "pandas",
+           "spelling": "pandas", "fuzzy_spelling": "rapidfuzz", "map_values": "pandas", "free_text": "pandas",
+           "sentinel_to_nan": "pandas", "zero_to_nan": "pandas", "fill_constant": "pandas", "impute": "pandas",
+           "drop_duplicates": "pandas", "drop_missing_rows": "pandas", "drop_rows_query": "pandas", "outlier": "pandas",
+           "log_transform": "numpy", "scale": "pandas", "onehot": "pandas", "ordinal": "pandas",
+           "materials_onehot": "pandas", "skrub_encoder": "skrub", "autogluon_features": "autogluon",
+           "target_encode": "sklearn", "onehot_sklearn": "sklearn", "rare_label": "feature_engine",
+           "winsorize": "feature_engine", "power": "sklearn"}
+
+
+def removed_columns(step: dict) -> list[str] | None:
+    """R8: kolom asli yang dibuang/diganti langkah ini (None = AutoGluon generator, mengubah seluruh tabel)."""
+    op, p = step["op"], step["params"]
+    if op == "autogluon_features":
+        return None
+    if op in ("drop_columns", "target_encode", "onehot_sklearn"):
+        return list(p["columns"])
+    if op in ("onehot", "materials_onehot", "skrub_encoder"):
+        return [p["column"]]
+    return []
+
+
+def map_entries(code: str) -> int:
+    """R6: jumlah entri peta hardcoded di satu blok: kunci dict + isi list + alternatif regex `(?:a|b)`."""
+    import ast
+
+    def count(node) -> int:
+        if isinstance(node, ast.Dict):
+            total = 0
+            for key, value in zip(node.keys, node.values):
+                if isinstance(value, ast.Dict):
+                    total += count(value)
+                    continue
+                text = key.value if isinstance(key, ast.Constant) and isinstance(key.value, str) else ""
+                total += text.count("|") + 1 if "(?:" in text else 1
+                if isinstance(value, (ast.List, ast.Tuple)):
+                    total += len(value.elts)
+            return total
+        return 0
+
+    total = 0
+    for node in ast.walk(ast.parse(code)):
+        if isinstance(node, ast.Assign) and any(isinstance(target, ast.Name) and
+                                                (target.id.startswith("PETA_") or target.id == "GABUNG")
+                                                for target in node.targets):
+            total += count(node.value)
+    return total
 
 
 def summary(step: dict) -> str:

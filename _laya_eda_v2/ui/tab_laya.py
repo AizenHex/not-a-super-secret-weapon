@@ -12,6 +12,7 @@ from pathlib import Path
 import pandas as pd
 import streamlit as st
 
+from ui.kamus import show_table
 from ui import common, jobs
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -101,7 +102,7 @@ def show_laya() -> None:
     texts = common.object_columns(common.current())
     column = st.selectbox("Kolom isian bebas", texts, key="laya_same_column")
     pairs = text_tools.similar_vocabulary(data[column])
-    st.dataframe(pairs, width="stretch", hide_index=True)
+    show_table(pairs, hide_index=True)
     if not pairs.empty and st.button("Tanya Laya: pasangan ini sama?", disabled=jobs.running("laya_same")):
         tuples = list(zip(pairs["kata 1"], pairs["kata 2"]))
         jobs.start("laya_same", "Laya: pasangan sama?", same_job, tuples, column, note=column)

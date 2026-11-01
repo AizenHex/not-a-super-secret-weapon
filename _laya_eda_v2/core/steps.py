@@ -15,7 +15,7 @@ import numpy as np
 import pandas as pd
 
 from core import split
-from core.ops import OPS, summary
+from core.ops import MAP_LIMIT, OPS, map_entries, summary
 
 
 def new_project(label: str | None = None) -> dict:
@@ -71,6 +71,7 @@ def run(steps: list[dict], label: str | None, train: pd.DataFrame, test: pd.Data
         if not step.get("on", True):
             continue
         before = ns["train"].shape, list(ns["train"].columns), ns["test"].shape, len(ns["valid"])
+        snapshot = ns["train"].copy()                     # langkah boleh mengubah train di tempat (df[kolom] = ...)
         missing = ns["train"].isna().sum()
         output = io.StringIO()
         entry = {"langkah": number, "operasi": summary(step)}
@@ -91,6 +92,7 @@ def run(steps: list[dict], label: str | None, train: pd.DataFrame, test: pd.Data
             "kolom baru": [c for c in after if c not in before[1]],
             "kolom hilang": [c for c in before[1] if c not in after],
             "kosong baru": {c: int(n) for c, n in gained[gained > 0].sort_values(ascending=False).items()},
+            "sel berubah": int(diff(snapshot, ns["train"])["sel berubah"].sum()),
             "keluaran": output.getvalue().strip(),
             "galat": None,
         })
@@ -112,7 +114,7 @@ ALIGN = (
     '        teks = test[kolom].astype("string").str.strip()\n'
     '        ribuan = teks.str.fullmatch(r"-?\\d{1,3}(?:\\.\\d{3})+(?:,\\d+)?").fillna(False).astype(bool)\n'
     '        teks = teks.where(~ribuan, teks.str.replace(".", "", regex=False).str.replace(",", ".", regex=False))\n'
-    '        test[kolom] = pd.to_numeric(teks, errors="coerce")\n'
+    '        test[kolom] = pd.to_numeric(teks, errors="coerce").astype(float)   # bukan Int64/Float64 nullable\n'
     "    elif not pd.api.types.is_numeric_dtype(train[kolom]):\n"
     "        test[kolom] = test[kolom].astype(object)\n"
     'print("test: kolom hilang", len(hilang), "| kolom tambahan", len(tambahan))'
@@ -161,6 +163,15 @@ def script_blocks(project: dict, train_path: str, test_path: str = "") -> list[s
     for number, step in enumerate(active(steps), 1):
         parts.append(f"# %% langkah {number}: {summary(step)}\n{step_code(step)}")
     return parts
+
+
+def map_budget(steps: list[dict], candidate: dict | None = None, replace: int | None = None) -> dict:
+    """R6: entri peta hardcoded seluruh skrip (langkah aktif + calon). ok=False → aplikasi menolak menambah."""
+    chosen = [step for i, step in enumerate(steps) if step.get("on", True) and i != replace and step["op"] in OPS]
+    per_step = [map_entries(step_code(step)) for step in chosen]
+    extra = map_entries(step_code(candidate)) if candidate else 0
+    total = sum(per_step) + extra
+    return {"total": total, "calon": extra, "batas": MAP_LIMIT, "ok": total <= MAP_LIMIT or extra == 0}
 
 
 def build_script(project: dict, train_path: str, test_path: str = "") -> str:
@@ -219,4 +230,4 @@ def changed_examples(before: pd.DataFrame, after: pd.DataFrame, info: dict, limi
 
 
 __all__ = ["new_project", "add_step", "run", "align", "header", "script_blocks", "build_script", "to_notebook",
-           "diff", "changed_examples", "ALIGN"]
+           "diff", "changed_examples", "ALIGN", "map_budget"]

@@ -36,8 +36,23 @@ A. [x] (selesai 2026-11-02, sesi cloud) Perbaiki VISI.md sesuai temuan ultrarevi
    5. Uji R2/R3 juga untuk valid, dengan valid dan test tidak kosong.
    7. R6 dihitung per entri peta (kunci dict + isi list + alternatif regex), dijumlah seluruh skrip.
    10. R13: `sys.stdout.reconfigure(errors="replace")` di blok pertama skrip + uji dengan data non-cp1252.
-B. Implementasikan fitur extra E1–E12 (VISI.md bagian 0), lalu R1–R18 yang belum punya uji.
-C. Daftar lama di bawah.
+B. [x] (2026-11-02, sesi cloud) Fitur extra E1–E12 diimplementasikan + diuji (`tests/test_extra.py`): tab **Latih**
+   (`ui/tab_train.py`) dan **Submission** (`ui/tab_submit.py`); inti `core/pipeline.py`, `training.py`, `schema.py`,
+   `ensemble.py`, `diagnose.py`, `submission.py`. 14 uji lulus di data sintetis, 2 dilewati (butuh data riil).
+   Belum: uji E5/E10/E6 di data riil + `sample_submission.csv` lomba 2024; opsi `FunctionTransformer` + `def`
+   untuk pipeline berdiri sendiri (E1, opsional) tidak dibuat; template Submission memakai satu pipeline
+   (ensemble belum ikut template); GPU (E10) tidak diuji (cloud tanpa GPU).
+C. [x] (2026-11-02) Uji R1–R18 (`tests/test_requirements.py`, 20 lulus). Kode yang diperbaiki karena uji gagal:
+   skrub StringEncoder tanpa `random_state` (R14/R2/R5), kolom teks kosong semua di test membuat TargetEncoder
+   galat (R12), `pd.to_numeric` menghasilkan Int64 nullable di blok selaraskan test (R12), tab Kode crash bila
+   ada langkah galat (R11/R17). Ditambah: blok selaraskan test (R12), reconfigure stdout (R13), cetak versi
+   (R14), alasan di semua langkah buang + kolom "sel berubah" di log (R15), penghitung entri peta + penolakan
+   > 300 + op rapidfuzz tanpa daftar (R6), `ops.LIBRARY` (R7), `ops.removed_columns` + `rename_column` dihapus
+   (R8), `TAB_FLOWS` (R10), `ui/kamus.py` show_table/edit_table (R18). R17 diukur lewat AppTest di data
+   sintetis 30.380 baris (0,19 / 0,09 / 0,59 s), belum di browser + data riil.
+   Belum: uji terima data riil (`tests/test_terima.py`, 10 dilewati); penanda "satuan campur" dan usulan nol
+   mencurigakan belum ada di Temuan; tab Kosong dan Encoding (VISI bagian 5) belum dibuat (op-nya ada di Operasi).
+D. Daftar lama di bawah.
 
 **Berikutnya (lama):**
 1. Audit semua operasi di `core/ops.py` yang masih menulis daftar per nilai (mis. `map_values` besar,
@@ -47,8 +62,11 @@ C. Daftar lama di bawah.
 4. Usulan untuk sesi pengguna (tanya dulu, jangan ubah otomatis): ganti langkah 11–15 dengan Satukan ejaan +
    3× Isian bebas; keluarkan Riwayat dari langkah 1 dan 4; hapus langkah 7–8 (kembar langkah 6).
 
-**Menjalankan uji** (dari folder `_laya_eda_v2`, set `LAYA_SESI` agar tidak menimpa `hasil/sesi_terakhir.json`):
-`python -m tests.test_steps`, `python -m tests.test_tools`, `python -m tests.test_app`.
+**Menjalankan uji** (dari folder `_laya_eda_v2`): `python -m tests.semua` (ringkasan lulus/gagal/dilewati per
+modul; ±8 menit di cloud), atau satu modul `python -m tests.test_requirements [nama_uji]`. Tanpa data riil semua
+uji memakai data sintetis `tests/sintetis.py`; uji data riil dilewati dengan pesan. `test_app` memakai `LAYA_SESI`
+dan `LAYA_OUTPUT` sementara (tidak menimpa `hasil/sesi_terakhir.json` atau `outputs/`).
+Hasil 2026-11-02 (venv cloud, versi `requirements.txt`): lulus 47, gagal 0, dilewati 12.
 Data riil `../_laya_eda/data/train.csv` (label `Golongan UKT`) **tidak di-commit** (gitignore); di cloud uji
 butuh data itu diunggah terpisah. Saat diubah di Windows: hindari non-ASCII di `print` kode hasil.
 

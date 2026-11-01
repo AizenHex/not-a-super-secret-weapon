@@ -15,6 +15,7 @@ import pandas as pd
 from core import pipeline as pipes
 from core import schema as schemas
 from core import steps as engine
+from core.training import text_types
 
 
 def read_sample(sample: pd.DataFrame) -> dict:
@@ -109,7 +110,8 @@ def template(project: dict, info: dict, spec: dict, paths: dict) -> str:
         "pipe = joblib.load(PIPELINE)\n"
         'info = json.loads(Path(PIPELINE + ".json").read_text(encoding="utf-8"))\n'
         'print("sklearn saat simpan:", info["sklearn"], "| sekarang:", sklearn.__version__)\n'
-        'X_test = test.reindex(columns=info["fitur"])   # kolom hilang -> kosong, urutan = train',
+        'X_test = test.reindex(columns=info["fitur"])   # kolom hilang -> kosong, urutan = train\n'
+        'X_test = X_test.astype({kolom: object for kolom in info["kolom_teks"]})   # kolom teks tetap teks',
         "# %% cek skema test (pandera, mode lapor: prediksi tetap jalan)\n"
         + schemas.check_code(info.get("skema") or {}, "X_test"),
         "# %% prediksi -> submission (kolom ditambah satu per satu mengikuti sample)\n"
@@ -137,6 +139,7 @@ def info_for(result: dict, project_label: str) -> dict:
     setelan = result["setelan"]
     return {"label": project_label, "tugas": setelan["tugas"], "metrik": setelan["metrik"], "model": setelan["model"],
             "kelas": None if classes is None else classes.tolist(), "ambang": result["ambang"],
+            "kolom_teks": list(text_types(result["X"])),
             "bobot_kelas": result["bobot_kelas"], "fitur": result["fitur"], "langkah": setelan["langkah"],
             "split": setelan.get("split"), "skema": schemas.learn(result["X"]),
             "skor_cv": result["cv"]["skor_rata"]}

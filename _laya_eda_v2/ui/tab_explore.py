@@ -11,6 +11,7 @@ import streamlit as st
 from core import audit
 from core import steps as engine
 from core.ops import MISSING_MARKERS, OPS, SENTINEL_FLOOR
+from ui.kamus import show_table
 from ui import common, jobs
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -44,7 +45,7 @@ def insight(series: pd.Series) -> None:
                f"unik {series.nunique():,} · tebakan tipe: {audit.guess_type(series)}")
     if pd.api.types.is_numeric_dtype(series):
         values = series.dropna()
-        st.dataframe(values.describe(percentiles=[0.01, 0.25, 0.5, 0.75, 0.99]).to_frame().T, width="stretch")
+        show_table(values.describe(percentiles=[0.01, 0.25, 0.5, 0.75, 0.99]).to_frame().T)
         if len(values):
             st.bar_chart(pd.cut(values.clip(upper=values.quantile(0.99)), 30).value_counts(sort=False)
                          .rename(index=str))
@@ -109,11 +110,11 @@ def show_data() -> None:
             st.session_state["fokus_baris"] = None
             st.rerun()
         view = view.loc[rows]
-    st.dataframe(view.head(500), width="stretch", height=320)
+    show_table(view.head(500), data_columns=True, height=320)
 
     st.subheader("Wawasan kolom")
     profile = common.analysis("column_profile", common.state_key(at), view)
-    st.dataframe(profile, width="stretch", hide_index=True,
+    show_table(profile, hide_index=True,
                  column_config={"kosong %": st.column_config.ProgressColumn("kosong %", min_value=0, max_value=100,
                                                                            format="%.1f")})
     column = st.selectbox("Detail kolom", list(view.columns), key="insight_column")
@@ -148,7 +149,7 @@ def suggestion(title: str, detail: pd.DataFrame | str, op: str, params: dict, ke
         if isinstance(detail, str):
             st.write(detail)
         else:
-            st.dataframe(detail, width="stretch", hide_index=True)
+            show_table(detail, hide_index=True)
         if st.toggle("Pratinjau sebelum → sesudah", key=f"pv_{key}"):
             common.preview_step(op, params, key)
 
@@ -234,14 +235,14 @@ def show_findings() -> None:
         found += 1
         suggestion(f"Kolom id / kosong total: {', '.join(ids)}", "Kolom id unik per baris tidak membawa informasi; "
                    "bila model menganggapnya penting (tab AutoGluon), itu tanda kebocoran urutan data.",
-                   "drop_columns", {"columns": ids}, "ids")
+                   "drop_columns", {"columns": ids, "reason": "kolom id: nilai unik per baris, tidak membawa pola"}, "ids")
 
     findings = common.analysis("row_findings", common.state_key(), common.state()["train"], label)
     if findings["duplikat persis"]:
         found += 1
         suggestion(f"{findings['duplikat persis']:,} baris duplikat persis di train",
                    f"Grup duplikat dengan label berbeda: {findings['grup duplikat dengan label berbeda']}",
-                   "drop_duplicates", {}, "dups")
+                   "drop_duplicates", {"reason": "baris train kembar persis (temuan)"}, "dups")
     if findings["kosong per baris (maks)"] >= max(10, data.shape[1] // 2):
         found += 1
         suggestion(f"Ada baris dengan {findings['kosong per baris (maks)']} kolom kosong",
@@ -273,10 +274,11 @@ def show_findings() -> None:
     jobs.status("twins")
     twins = jobs.result("twins")
     if twins is not None and len(twins):
-        st.dataframe(twins, width="stretch", hide_index=True)
+        show_table(twins, hide_index=True)
         pick = st.multiselect("Kolom kembar yang dibuang", sorted(set(twins["kolom 2"])), key="twin_pick")
         if pick:
-            suggestion(f"Buang {len(pick)} kolom kembar", "", "drop_columns", {"columns": pick}, "twins")
+            suggestion(f"Buang {len(pick)} kolom kembar", "", "drop_columns",
+                       {"columns": pick, "reason": "kolom kembar: isinya hampir sama dengan kolom lain"}, "twins")
     if not found:
         st.success("Tidak ada temuan otomatis di data sesudah langkah terakhir.")
     st.caption(f"Semua operasi lain ada di tab **Operasi** ({len(OPS)} operasi).")

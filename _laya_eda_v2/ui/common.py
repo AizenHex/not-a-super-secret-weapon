@@ -12,6 +12,7 @@ from core import split as splitter
 from core import steps as engine
 from core.ops import OPS, summary
 from ui.flows import FLOWS
+from ui.kamus import show_table
 
 
 # Simpan otomatis: daftar langkah + label + path data ditulis ke file setiap berubah, dan dibaca lagi saat
@@ -81,7 +82,7 @@ def header(flow: str, what: str, fits: str, danger: str) -> None:
     left.success(f"**Kapan cocok.** {fits}")
     right.warning(f"**Kapan berbahaya.** {danger}")
     with st.expander("Cara kerja (flowchart)"):
-        st.graphviz_chart(FLOWS[flow], width="stretch")
+        st.graphviz_chart(FLOWS[flow])
 
 
 def split_config() -> dict | None:
@@ -201,10 +202,10 @@ def preview_step(op: str, params: dict, key: str, replace: int | None = None) ->
         st.write("Kolom hilang: " + ", ".join(info["kolom hilang"]))
     if len(info["sel berubah"]):
         st.caption("Sel berubah per kolom: " + ", ".join(f"{c} ({n:,})" for c, n in info["sel berubah"].head(8).items()))
-        st.dataframe(engine.changed_examples(before, after, info), width="stretch")
+        show_table(engine.changed_examples(before, after, info))
     if len(info["baris dibuang"]):
         st.caption("Contoh baris yang dibuang")
-        st.dataframe(before.loc[info["baris dibuang"][:20]], width="stretch")
+        show_table(before.loc[info["baris dibuang"][:20]], data_columns=True)
     same = [i + 1 for i, step in enumerate(project()["steps"])
             if step["op"] == op and step["params"] == params and step.get("on", True) and i != replace]
     unchanged = (after.equals(before) and result["valid"].equals(base["valid"])
@@ -213,6 +214,12 @@ def preview_step(op: str, params: dict, key: str, replace: int | None = None) ->
         st.warning(f"Langkah yang sama persis sudah ada (langkah {', '.join(map(str, same))}).")
     elif unchanged:
         st.info("Langkah ini tidak mengubah train, valid, maupun test saat ini.")
+    budget = engine.map_budget(project()["steps"], candidate[0], replace)
+    if not budget["ok"]:                               # R6: peta hardcoded seluruh skrip ≤ 300 entri
+        st.error(f"Ditolak (R6): skrip akan berisi {budget['total']:,} entri peta hardcoded (batas {budget['batas']}). "
+                 "Pakai versi aturan/library: **Bakukan ejaan dengan rapidfuzz** (kosakata dari train, tanpa daftar), "
+                 "**Satukan ejaan** (aturan kunci), atau encoder teks skrub (Operasi → Encoding).")
+        return
     if replace is None:
         if st.button(f"Tambah langkah: {OPS[op]['title']}", type="primary", key=f"add_{key}", disabled=bool(same)):
             engine.add_step(project(), op, params)

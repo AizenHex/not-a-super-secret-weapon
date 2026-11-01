@@ -2,6 +2,19 @@
 
 Terbaru di atas. Format: `- YYYY-MM-DD: <keputusan>. Alasan: <...>.`
 
+- 2026-11-02: uji Laya v2 tanpa pytest: runner sendiri `tests/bantu.py` (lulus/gagal/dilewati, `Lewati` bila data
+  riil/library tidak ada) + `tests/semua.py`. Data uji = `tests/sintetis.py` (sintetis, seed tetap) bila data riil
+  tidak ada. Alasan: pytest tidak ada di requirements.txt dan prompt melarang menambah library.
+- 2026-11-02: R15 alasan buang = parameter `reason` opsional; bila kosong kode menulis alasan bawaan dari
+  parameter langkah (mis. "baris train dengan lebih dari 5 kolom kosong"). Alasan: langkah lama/usulan Temuan tetap
+  sah tanpa memaksa pengguna mengetik, tetapi setiap langkah buang tetap punya komentar `# alasan:`.
+- 2026-11-02: R6 dilampaui → aplikasi menolak menambah langkah dan menawarkan op baru `fuzzy_spelling` (kosakata
+  dari train + rapidfuzz `token_sort_ratio` + `default_process`, nilai train tidak diubah), sesuai VISI bagian 3/4.
+  Alasan: lapisan 3 R6 butuh op nyata, bukan hanya pesan.
+- 2026-11-02: R12 tahan test beda bentuk lewat blok "selaraskan test" (kolom hilang → kosong, urutan & tipe =
+  train, '1.500' → 1500) yang sama di skrip dan aplikasi (`steps.align`). Kolom tambahan tetap ada di belakang.
+  Alasan: langkah lain tidak perlu cabang per kolom; satu sumber kode (R5).
+
 - 2026-11-02: E1 Pipeline = satu `ColumnTransformer` per langkah (remainder passthrough) + tahap `teks_sisa`
   (OrdinalEncoder, nilai baru/kosong = -1) + model; yang masuk pipeline hanya AKHIRAN langkah aktif yang semuanya
   punya transformer (`ops.transformer`), sisanya blok EDA pandas sebelum pipeline. Op pandas lama yang dipetakan
