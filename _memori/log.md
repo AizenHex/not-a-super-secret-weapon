@@ -2,6 +2,15 @@
 
 Terbaru di atas. Format di [`README.md`](README.md).
 
+## 2026-11-02 claude-opus-5-5 (cloud) - Laya v2: bagian B (tab Latih + Submission)
+- Dikerjakan: `ui/tab_train.py` (Latih: rencana blok EDA vs Pipeline, tugas/metrik/mode/model/fold/timpang,
+  perkiraan lama, papan skor di thread, ensemble OOF, confusion + skor per kelas + baris salah terbesar → buka di
+  halaman Data, figur 16:9, simpan pipeline.joblib, skema test, log percobaan + buka ulang), `ui/tab_submit.py`
+  (Submission: baca sample, template kode, validator file unggahan), `ui/kamus.py` (`show_table` wajib arti, R18),
+  flowchart `latih`/`submission` + `TAB_FLOWS`, app 14 halaman. `tests/test_app.py` ikut menguji kedua tab: lulus.
+- Dikoreksi pengguna: -
+- Berikutnya: bagian C (uji R1–R18).
+
 ## 2026-11-02 claude-opus-5-5 (cloud) - Laya v2: bagian B (inti E1–E12) + data sintetis
 - Dikerjakan: `tests/sintetis.py` (data sintetis 28 kolom meniru tabel audit RENCANA bagian 1), `tests/bantu.py`
   (runner lulus/gagal/dilewati, data riil bila ada). Inti: `core/pipeline.py` (E1/E2), `core/training.py`

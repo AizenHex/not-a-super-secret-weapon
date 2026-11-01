@@ -16,6 +16,7 @@ from streamlit.testing.v1 import AppTest
 # file simpan otomatis milik uji, BUKAN hasil/sesi_terakhir.json milik pengguna
 SESSION = Path(tempfile.mkdtemp()) / "sesi_uji.json"
 os.environ["LAYA_SESI"] = str(SESSION)
+os.environ.setdefault("LAYA_OUTPUT", str(SESSION.parent / "output"))   # percobaan.csv, pipeline.joblib milik uji
 
 from tests import bantu
 from tests.test_steps import LABEL, TRAIN, project
@@ -56,7 +57,8 @@ def test_app() -> None:
     app.run()
     check(app, "tanpa langkah")
     pages = app.radio(key="page").options
-    assert len(pages) == 12 and pages[1] == "Split", pages
+    assert len(pages) == 14 and pages[1] == "Split" and pages[-3:] == ["Submission", "Kode & ekspor", "Laya"][-3:] \
+        and pages[-4] == "Latih", pages
     for page in pages:                                 # setiap halaman tampil tanpa galat, tanpa langkah
         go(app, page)
 
@@ -88,6 +90,29 @@ def test_app() -> None:
     script = next(c.value for c in app.code if "LABEL =" in c.value)
     assert script.index("# %% split data") < script.index("# %% langkah 1")
     assert "train_test_split" in script and "valid_bersih.csv" in script
+
+    # tab Latih (extra): papan skor 1 model cepat → simpan pipeline → baris salah terbesar dibuka di Data (E11)
+    go(app, "Latih")
+    app.multiselect(key="train_models").set_value(["histgb"]).run()
+    app.radio(key="train_mode").set_value("cepat").run()
+    button(app, "Latih + papan skor").click().run()
+    wait_for(app, "latih", lambda: any(b.key == "open_worst" for b in app.button), 900)
+    assert any("selesai" in str(v) for frame in app.dataframe for v in frame.value.get("status", [])), "papan skor"
+    button(app, "Simpan pipeline.joblib").click().run()
+    check(app, "simpan pipeline")
+    saved_pipeline = app.session_state["pipeline_path"]
+    assert Path(saved_pipeline).exists() and Path(saved_pipeline + ".json").exists()
+    app.button(key="open_worst").click().run()
+    check(app, "buka baris salah")
+    assert app.radio(key="page").value == "Data" and app.session_state["fokus_baris"]
+    assert any("salah terbesar" in w.value for w in app.warning), "halaman Data menampilkan baris dari Latih"
+    app.button(key="clear_focus").click().run()
+    go(app, "Submission")
+    app.text_input(key="sample_path").set_value(str(bantu.folder_sintetis()["sample"])).run()
+    app.text_input(key="pipeline_path_input").set_value(saved_pipeline).run()
+    check(app, "submission template")
+    template = [c.value for c in app.code if "submission.csv" in c.value]
+    assert template and "def " not in template[0] and "validator" in template[0]
 
     # temuan: pratinjau usulan pertama lalu tambah langkah
     go(app, "Temuan")
