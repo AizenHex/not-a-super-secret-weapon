@@ -7,6 +7,7 @@ import streamlit as st
 import copy
 
 from core import audit
+from ui.kamus import show_table
 from ui import common, jobs
 
 
@@ -78,7 +79,7 @@ def show_label() -> None:
             st.warning("Model terlalu lemah untuk label ini, jadi cleanlab menandai terlalu banyak baris. Ini tanda "
                        "label sulit ditebak dari fitur, BUKAN bukti label salah. Lihat hanya baris dengan skor label "
                        "paling rendah dan 'yakin tebakan' tinggi.")
-        st.dataframe(flagged.head(200), width="stretch")
+        show_table(flagged.head(200), data_columns=True)
         st.download_button("Unduh baris ditandai (.csv)", flagged.to_csv(), "label_meragukan.csv", "text/csv")
 
 
@@ -108,7 +109,7 @@ def show_test() -> None:
                              "baris test terdampak": int(test[column].isin(new).sum()),
                              "contoh": ", ".join(map(repr, sorted(new, key=str)[:5]))})
     st.subheader("Kategori di test yang tidak ada di train")
-    st.dataframe(pd.DataFrame(rows), width="stretch", hide_index=True)
+    show_table(pd.DataFrame(rows), hide_index=True)
 
     from scipy.stats import ks_2samp
     shift = []
@@ -122,7 +123,7 @@ def show_test() -> None:
     st.subheader("Pergeseran distribusi angka (scipy ks_2samp)")
     st.caption("KS mendekati 0 = mirip. p kecil dengan KS kecil biasanya hanya efek jumlah data besar.")
     if shift:
-        st.dataframe(pd.DataFrame(shift).sort_values("KS", ascending=False), width="stretch", hide_index=True)
+        show_table(pd.DataFrame(shift).sort_values("KS", ascending=False), hide_index=True)
 
 
 # ---------------------------------------------------------------- autogluon
@@ -176,9 +177,9 @@ def show_autogluon() -> None:
     if not result.get("split"):
         st.info("Belum ada split proyek: bagian uji 80/20 ini hanya sementara dan tidak ada di kode. Pakai halaman "
                 "**Split** agar valid yang dinilai di sini sama dengan valid yang diekspor.")
-    st.dataframe(pd.DataFrame({"mentah": raw["skor"], "sesudah langkah": clean["skor"]}), width="stretch")
+    show_table(pd.DataFrame({"mentah": raw["skor"], "sesudah langkah": clean["skor"]}))
     with st.expander("Papan model (leaderboard)"):
-        st.dataframe(clean["papan"], width="stretch", hide_index=True)
+        show_table(clean["papan"], hide_index=True)
 
     st.subheader("Kolom penting (permutation importance)")
     which = st.radio("Model", ["sesudah langkah", "mentah"], horizontal=True, key="ag_which")
@@ -194,7 +195,7 @@ def show_autogluon() -> None:
         which, table = stored
         st.caption(f"Model {which}. importance = turunnya {metric} bila isi kolom diacak; ≤ 0 = tidak dipakai.")
         st.bar_chart(table.set_index("kolom")["importance"].head(30), horizontal=True)
-        st.dataframe(table, width="stretch", hide_index=True)
+        show_table(table, hide_index=True)
         suspicious = [k for k in table["kolom"].head(10) if str(k).lower() in ("id", "index", "no", "nomor")]
         if suspicious:
             st.warning(f"Kolom {suspicious} termasuk 10 terpenting. Kolom nomor urut seharusnya tidak membawa "

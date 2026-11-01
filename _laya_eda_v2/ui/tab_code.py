@@ -9,6 +9,7 @@ import streamlit as st
 
 from core import split as splitter
 from core import steps as engine
+from ui.kamus import show_table
 from ui import common
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -47,8 +48,10 @@ def show_code() -> None:
     if result["log"]:
         log = pd.DataFrame(result["log"])
         if "kosong baru" in log:
-            log["kosong baru"] = [", ".join(f"{c} +{n:,}" for c, n in (gained or {}).items()) for gained in log["kosong baru"]]
-        st.dataframe(log.drop(columns=["kolom baru", "kolom hilang"], errors="ignore"), width="stretch", hide_index=True)
+            # langkah yang galat tidak punya 'kosong baru' (NaN di tabel): tampil kosong, bukan crash
+            log["kosong baru"] = [", ".join(f"{c} +{n:,}" for c, n in gained.items()) if isinstance(gained, dict) else ""
+                                  for gained in log["kosong baru"]]
+        show_table(log.drop(columns=["kolom baru", "kolom hilang"], errors="ignore"), hide_index=True)
     for number, step in enumerate(p["steps"], 1):
         lines = len(engine.step_code(step).splitlines())
         if step.get("on", True) and lines > 40 and step["op"] not in ("free_text", "spelling"):   # dua itu = penggantinya

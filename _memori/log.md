@@ -2,6 +2,16 @@
 
 Terbaru di atas. Format di [`README.md`](README.md).
 
+## 2026-11-02 claude-opus-5-5 (cloud) - Laya v2: bagian C (uji R1–R18) + perbaikan
+- Dikerjakan: `tests/test_requirements.py` (R1–R18, 20 lulus), `tests/test_terima.py` (uji terima data riil, 10
+  dilewati), `tests/semua.py` (runner). Bug yang ditemukan uji lalu diperbaiki: skrub StringEncoder tanpa
+  random_state, TargetEncoder galat pada kolom teks kosong semua di test, Int64 nullable dari blok selaraskan,
+  tab Kode crash bila langkah galat. Tambahan: R6 penghitung entri + penolakan + op `fuzzy_spelling`, R15 alasan,
+  R18 semua tabel lewat `ui/kamus.py`. Total semua uji: lulus 47, gagal 0, dilewati 12 (semua butuh data riil).
+- Dikoreksi pengguna: -
+- Berikutnya: jalankan `python -m tests.semua` di laptop dengan data riil + sample_submission lomba 2024; ukur R17
+  di browser; penanda satuan campur + nol mencurigakan di Temuan.
+
 ## 2026-11-02 claude-opus-5-5 (cloud) - Laya v2: bagian B (tab Latih + Submission)
 - Dikerjakan: `ui/tab_train.py` (Latih: rencana blok EDA vs Pipeline, tugas/metrik/mode/model/fold/timpang,
   perkiraan lama, papan skor di thread, ensemble OOF, confusion + skor per kelas + baris salah terbesar → buka di

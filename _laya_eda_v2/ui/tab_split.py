@@ -9,6 +9,7 @@ import pandas as pd
 import streamlit as st
 
 from core import split as splitter
+from ui.kamus import show_table
 from ui import common
 
 METHODS = {
@@ -127,7 +128,7 @@ def show_checks(config: dict, data: pd.DataFrame, train: pd.DataFrame, valid: pd
                                   "valid %": valid[label].value_counts(normalize=True, dropna=False) * 100}).fillna(0)
             table["selisih (poin %)"] = table["valid %"] - table["train %"]
             table["baris valid"] = valid[label].value_counts(dropna=False).reindex(table.index).fillna(0).astype(int)
-            st.dataframe(table.round(2).rename(index=str), width="stretch")
+            show_table(table.round(2).rename(index=str), {label: "Nilai label (kelas)."})
             gap = table["selisih (poin %)"].abs().max()
             if gap > 2:
                 st.warning(f"Proporsi kelas berbeda sampai {gap:.1f} poin %. Untuk split acak, nyalakan **Stratified**.")
@@ -136,7 +137,7 @@ def show_checks(config: dict, data: pd.DataFrame, train: pd.DataFrame, valid: pd
                 st.caption(f"Kelas dengan < 5 baris di valid: {', '.join(map(str, small.index))} — skor untuk kelas "
                            "itu tidak stabil.")
         else:
-            st.dataframe(pd.DataFrame({"train": train[label].describe(), "valid": valid[label].describe()}).T,
+            show_table(pd.DataFrame({"train": train[label].describe(), "valid": valid[label].describe()}).T,
                          width="stretch")
 
     st.subheader("Bocoran: baris valid yang kembar dengan baris train")

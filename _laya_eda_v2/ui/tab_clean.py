@@ -10,6 +10,7 @@ import streamlit as st
 from core import outlier_tools, text_tools
 from core import steps as engine
 from core.ops import MISSING_MARKERS, OPS, SENTINEL_FLOOR, summary
+from ui.kamus import edit_table, show_table
 from ui import common, jobs
 
 METHODS = {"iqr": "IQR (Tukey)", "iqr_log": "IQR skala log", "mad": "MAD", "mad_log": "MAD skala log",
@@ -59,9 +60,31 @@ def form(op: str, data: pd.DataFrame, old: dict, key: str) -> dict | None:
         index = options.index(old["column"]) if old.get("column") in options else 0
         return st.selectbox(title, options, index, key=f"{key}_col")
 
+    params = None
     if op in ("drop_columns",):
         picked = many("Kolom", columns)
-        return {"columns": picked} if picked else None
+        params = {"columns": picked} if picked else None
+    if op == "drop_duplicates":
+        params = {}
+    if op == "drop_missing_rows":
+        limit = st.slider("Kosong per baris maksimal", 1, data.shape[1], int(old.get("max_missing", 10)), key=f"{key}_max")
+        params = {"max_missing": limit}
+    if op == "drop_rows_query":
+        st.caption("Nama kolom berspasi diapit backtick: `` `Luas Bangunan Rumah (m2)` > 100000 ``")
+        rule = st.text_input("Baris yang COCOK dibuang", old.get("rule", ""), key=f"{key}_rule")
+        params = {"rule": rule} if rule else None
+    if op in ("drop_columns", "drop_duplicates", "drop_missing_rows", "drop_rows_query"):
+        text = st.text_input("Alasan membuang (ditulis sebagai komentar di kode, R15)", old.get("reason", ""),
+                             key=f"{key}_reason", help="Kosong = alasan bawaan dari parameter langkah.")
+        if params is not None and text.strip():
+            params["reason"] = text.strip()
+        return params
+    if op == "fuzzy_spelling":
+        picked = many("Kolom kategori", texts)
+        minimum = st.number_input("Kosakata baku: muncul minimal (kali) di train", 1, 1000, int(old.get("min_count", 5)),
+                                  key=f"{key}_min")
+        cutoff = st.slider("Ambang kemiripan (token_sort_ratio)", 70, 100, int(old.get("cutoff", 90)), key=f"{key}_cut")
+        return {"columns": picked, "min_count": int(minimum), "cutoff": float(cutoff)} if picked else None
     if op == "to_number":
         picked = many("Kolom teks berisi angka", texts)
         indonesian = st.checkbox("Format Indonesia (titik = ribuan, koma = desimal)", old.get("indonesian", True),
@@ -126,15 +149,6 @@ def form(op: str, data: pd.DataFrame, old: dict, key: str) -> dict | None:
         options = [c for c in (numbers if strategy != "mode" else columns) if data[c].isna().any() and data[c].notna().any()]
         picked = many("Kolom yang masih kosong", options)
         return {"columns": picked, "strategy": strategy} if picked else None
-    if op == "drop_duplicates":
-        return {}
-    if op == "drop_missing_rows":
-        limit = st.slider("Kosong per baris maksimal", 1, data.shape[1], int(old.get("max_missing", 10)), key=f"{key}_max")
-        return {"max_missing": limit}
-    if op == "drop_rows_query":
-        st.caption("Nama kolom berspasi diapit backtick: `` `Luas Bangunan Rumah (m2)` > 100000 ``")
-        rule = st.text_input("Baris yang COCOK dibuang", old.get("rule", ""), key=f"{key}_rule")
-        return {"rule": rule} if rule else None
     if op == "outlier":
         column = one("Kolom angka", numbers)
         if column is None:
@@ -259,7 +273,7 @@ def merge_editor(proposals: pd.DataFrame, key: str) -> pd.DataFrame:
     """Tabel usulan GABUNG: hanya kolom 'setuju' yang bisa diubah."""
     first = [c for c in ["setuju", "kolom", "ejaan", "jadi", "jumlah", "alasan"] if c in proposals]   # 'MA' → 'SLTA' terbaca dulu
     table = proposals[first + [c for c in proposals.columns if c not in first]]
-    return st.data_editor(table, width="stretch", hide_index=True, key=key,
+    return edit_table(table, hide_index=True, key=key,
                           disabled=[c for c in table.columns if c != "setuju"],
                           column_config={"alasan": st.column_config.TextColumn("alasan", width="large")})
 
@@ -337,7 +351,7 @@ def show_spelling_all(data: pd.DataFrame, texts: list[str]) -> None:
     st.subheader("1. Kolom")
     st.caption("'sesudah aturan kunci' = nilai unik bila beda huruf besar/spasi/tanda baca/singkatan dianggap sama. "
                "Kolom tanpa centang tidak disentuh.")
-    summary = st.data_editor(summary, width="stretch", hide_index=True, key="spell_all_columns",
+    summary = edit_table(summary, hide_index=True, key="spell_all_columns",
                              disabled=[c for c in summary.columns if c != "pakai"])
     columns = list(summary.loc[summary["pakai"], "kolom"])
     st.subheader("2. Gabung kunci berbeda yang bermakna sama")
@@ -367,7 +381,7 @@ def show_spelling_column(data: pd.DataFrame, texts: list[str]) -> None:
                "tanpa daftar).")
     if len(same):
         with st.expander(f"Ejaan yang disatukan aturan kunci ({len(same):,})"):
-            st.dataframe(same.head(300), width="stretch", hide_index=True)
+            show_table(same.head(300), hide_index=True)
     method = st.radio("Metode", SPELL_METHODS, horizontal=True, key="spell_method")
     typos, cutoff, ratio, extra = method == SPELL_METHODS[1], 88, 3.0, None
     if typos:
@@ -447,7 +461,7 @@ def show_free_text() -> None:
 
     words = text_tools.word_map(data[column], min_count, cutoff, [data[c] for c in related])
     st.subheader(f"Usulan salah ketik ({len(words)})")
-    edited = st.data_editor(words, width="stretch", hide_index=True, key=f"words_{column}",
+    edited = edit_table(words, hide_index=True, key=f"words_{column}",
                             disabled=["kata asli", "skor", "jumlah", "catatan"])
     st.subheader("Kata baku yang mirip (kandidat sinonim)")
     st.caption("Tidak pernah otomatis. Centang bila 'kata 2' sama maknanya dengan 'kata 1' (genteng = genting).")
@@ -456,7 +470,7 @@ def show_free_text() -> None:
     laya = st.session_state.get("laya_same", {})
     if laya:
         similar["Laya: sama?"] = [laya.get((a, b)) for a, b in zip(similar["kata 1"], similar["kata 2"])]
-    synonyms = st.data_editor(similar, width="stretch", hide_index=True, key=f"syn_{column}",
+    synonyms = edit_table(similar, hide_index=True, key=f"syn_{column}",
                               disabled=[c for c in similar.columns if c != "samakan 2 → 1"])
     mapping = dict(zip(edited.loc[edited["setuju"], "kata asli"], edited.loc[edited["setuju"], "usulan"]))
     for first, second in synonyms.loc[synonyms["samakan 2 → 1"], ["kata 1", "kata 2"]].to_numpy():
@@ -477,7 +491,7 @@ def show_free_text() -> None:
     phrases = text_tools.phrase_map(data[column], mapping, fillers, phrase_min, phrase_ratio)
     st.caption(f"{len(phrases)} usulan. Dicentang awal: kamus (KBBI) dan urutan kata. 'Memuat bahan lain' tidak "
                "dicentang: kata tambahannya bisa rincian penting ('genteng beton' ≠ 'genteng').")
-    chosen = st.data_editor(phrases, width="stretch", hide_index=True, key=f"phrases_{column}",
+    chosen = edit_table(phrases, hide_index=True, key=f"phrases_{column}",
                             disabled=[c for c in phrases.columns if c != "setuju"])
     phrase_mapping = dict(zip(chosen.loc[chosen["setuju"].astype(bool), "frasa"],
                               chosen.loc[chosen["setuju"].astype(bool), "usulan"]))
@@ -492,14 +506,14 @@ def show_free_text() -> None:
     cols[2].metric("sel yang hanya berubah format", f"{effect['hanya format']:,}",
                    help="huruf kecil, urutan bahan, pemisah ', ' — tidak mengubah isi")
     if len(effect["contoh"]):
-        st.dataframe(effect["contoh"], width="stretch")
+        show_table(effect["contoh"])
     else:
         st.info("Belum ada kata yang dibetulkan: centang usulan di tabel atas.")
     left, right = st.columns(2)
     left.caption("Bahan terbanyak TANPA peta kata (hanya format)")
-    left.dataframe(effect["bahan tanpa peta"], width="stretch", hide_index=True)
+    show_table(effect["bahan tanpa peta"], container=left, hide_index=True)
     right.caption("Bahan terbanyak DENGAN peta kata, kata pengisi, frasa")
-    right.dataframe(effect["bahan dengan peta"], width="stretch", hide_index=True)
+    show_table(effect["bahan dengan peta"], container=right, hide_index=True)
     st.subheader("Pratinjau langkah")
     common.preview_step("free_text", params, f"free_{column}")
 
@@ -547,7 +561,7 @@ def show_outliers() -> None:
         flagged = jobs.result("iforest")
         if flagged is not None:
             st.write(f"{len(flagged)} baris ditandai (tidak jadi langkah).")
-            st.dataframe(flagged.head(50), width="stretch")
+            show_table(flagged.head(50), data_columns=True)
 
 
 def isolation_job(data: pd.DataFrame, share: float) -> pd.DataFrame:
@@ -568,8 +582,8 @@ def show_outlier_table(data: pd.DataFrame, numbers: list[str]) -> None:
     st.caption("Semua kolom mulai **biarkan** (data tidak berubah). Ubah jadi **perbaiki** hanya di kolom yang mau "
                "diperbaiki. Kolom **diskret** (mis. jumlah tanggungan) diawali metode **manual**: isi batas atas hanya "
                "untuk nilai yang mustahil, karena keluarga besar 12 orang itu wajar.")
-    edited = st.data_editor(
-        pd.DataFrame(rows), hide_index=True, width="stretch", key="out_table",
+    edited = edit_table(
+        pd.DataFrame(rows), hide_index=True, key="out_table",
         disabled=["kolom", "jenis", "median", "maks", "sudah ada langkah"],
         column_config={
             "perlakuan": st.column_config.SelectboxColumn(options=["biarkan", "perbaiki"], required=True),
@@ -601,7 +615,7 @@ def show_outlier_table(data: pd.DataFrame, numbers: list[str]) -> None:
             plan.append({"column": row["kolom"], "method": method, "factor": factor, "low": low, "high": high,
                          "action": row["aksi"]})
     st.caption("Hasil dengan pilihan di atas (dihitung dari train sesudah semua langkah):")
-    st.dataframe(pd.DataFrame(result_rows), width="stretch", hide_index=True)
+    show_table(pd.DataFrame(result_rows), hide_index=True)
 
     if not plan:
         st.info("Belum ada kolom bertanda **perbaiki**: tidak ada langkah yang ditambahkan, data tidak berubah.")
@@ -615,7 +629,7 @@ def show_outlier_column(data: pd.DataFrame, numbers: list[str]) -> None:
     values = data[column]
     st.caption(f"median {values.median():,.2f} · p99 {values.quantile(0.99):,.2f} · maks {values.max():,.2f} · "
                f"nol {int((values == 0).sum())} · kosong {int(values.isna().sum())}")
-    st.dataframe(outlier_tools.compare_methods(values), width="stretch", hide_index=True)
+    show_table(outlier_tools.compare_methods(values), hide_index=True)
     if is_discrete(values):
         st.warning(f"**{column}** berisi bilangan bulat dengan {values.nunique()} nilai berbeda (diskret). IQR/MAD "
                    "menandai nilai jarang yang wajar (mis. keluarga besar 12 orang) sebagai outlier. Pilihan aman: "
@@ -627,7 +641,7 @@ def show_outlier_column(data: pd.DataFrame, numbers: list[str]) -> None:
     low, high = outlier_tools.outlier_bounds(values, method, factor, params["low"], params["high"])
     outside = outlier_tools.outside_rows(data, column, method, factor, params["low"], params["high"])
     st.write(f"Batas: **{low:,.2f} … {high:,.2f}** → {len(outside)} baris di luar batas")
-    st.dataframe(outside.sort_values(column).iloc[np.r_[0:5, -5:0]] if len(outside) > 10 else outside,
+    show_table(outside.sort_values(column).iloc[np.r_[0:5, -5:0]] if len(outside) > 10 else outside, data_columns=True,
                  width="stretch")
 
     label = common.label()
@@ -637,7 +651,7 @@ def show_outlier_column(data: pd.DataFrame, numbers: list[str]) -> None:
         if group:
             source = (data.assign(**{group: common.state()["train"][group]}) if group == label
                       else data.assign(**{group: st.session_state["laya_answers"][group]}))
-            st.dataframe(outlier_tools.by_group(source, column, group, method, factor, params["low"], params["high"]),
+            show_table(outlier_tools.by_group(source, column, group, method, factor, params["low"], params["high"]),
                          width="stretch", hide_index=True)
             st.caption("Nilai wajar di satu kelompok bisa aneh di kelompok lain. Jawaban Laya hanya untuk melihat.")
     if choice.startswith("biarkan"):

@@ -11,6 +11,7 @@ Pengguna berangkat 2026-11-09. Prioritas dan pohon pekerjaan: [`../RENCANA_LOMBA
 ## Keadaan sekarang
 
 - Branch kerja: `rapikan-struktur` (remote `origin` = github.com/AizenHex/not-a-super-secret-weapon).
+  Sesi cloud 2026-11-02 (Laya v2) bekerja di `new-gen` atas perintah pengguna.
   Default remote: `new-gen`, disamakan dengan `rapikan-struktur` 2026-10-31 (pengguna mulai
   memakai repo dengan serius). Branch `origin/kode-run` ("Add files via upload") bukan dari agen.
 - `.claude/` (2026-10-30): hook memori (`settings.json`, `hooks/memori.sh`). Aktif kalau Claude Code
@@ -34,13 +35,14 @@ Pengguna berangkat 2026-11-09. Prioritas dan pohon pekerjaan: [`../RENCANA_LOMBA
   `data/train.csv`. Kamus kolom (tooltip judul kolom + sidebar) dan encoding kategori (one-hot,
   kode, target, kedekatan makna MiniLM) di Kode EDA. `_uji/test_app.py` dan
   `_uji/test_codegen.py` belum dijalankan ulang penuh.
-- `_laya_eda_v2/` (2026-11-02): `VISI.md` = satu-satunya sumber target (extra E1–E12 di atas R1–R18 +
-  uji terima; final menurut pengguna; E1–E12 belum diimplementasikan; daftar kerja ultracode di
-  STATUS `RENCANA.md`);
-  `RENCANA.md` = status + bukti uji. **Belum selesai**: belum ada requirement yang terbukti lulus, uji
-  butuh `../_laya_eda/data/train.csv` (tidak ada di clone ini), skrub/pandera/feature-engine/autogluon
-  di `requirements.txt` tetapi belum dipasang di venv. 9 temuan ultrareview commit 9cf8474 masih terbuka
-  (poin 8/R8 sudah diperbaiki); pengguna akan memperbaikinya lewat ultracode.
+- `_laya_eda_v2/` (2026-11-02, sesi cloud, branch `new-gen`): `VISI.md` = satu-satunya sumber target (extra
+  E1–E12 di atas R1–R18; 8 temuan review sudah masuk). E1–E12 diimplementasikan (tab **Latih** dan **Submission**,
+  14 halaman) dan R1–R18 punya uji. `python -m tests.semua` di venv cloud (versi persis requirements.txt, torch
+  2.11.0 dari PyPI): lulus 47, gagal 0, dilewati 12. Semua uji memakai data **sintetis** (`tests/sintetis.py`);
+  yang dilewati = uji yang butuh data riil `../_laya_eda/data/train.csv` (tidak ada di clone) + sample_submission
+  lomba 2024. **Belum**: uji di data riil dan di venv Windows `Z:/GEMASTIK/Vignate-GEMASTIK/.venv` (paket
+  pandera/feature-engine/skrub/autogluon belum dipasang di sana per 2026-11-02); R17 belum diukur di browser;
+  penanda satuan campur + nol mencurigakan; tab Kosong/Encoding. Rincian di STATUS `RENCANA.md`.
 - `viginte-train.ipynb` dipindah dari root ke `_.Testing/` (diabaikan git).
 - PPT vignette (penyisihan) selesai 2026-10-30. Figur + skripnya di `Z:/GEMASTIK/Vignate-2/outputs/figures/`
   (di luar repo, bukan git); catatan lengkap `Z:/GEMASTIK/Vignate-2/HANDOFF.md`.

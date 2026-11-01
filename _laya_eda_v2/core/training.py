@@ -327,11 +327,16 @@ def final_model(result: dict) -> dict:
 
 def raw_output(result: dict, pipe, data: pd.DataFrame) -> np.ndarray:
     X = data.reindex(columns=result["fitur"])            # kolom hilang di test → kosong, urutan = train (R12)
+    X = X.astype(text_types(result["X"]))                # kolom teks kosong semua di test tetap teks
     if result["setelan"]["tugas"] == "kelas":
         proba = np.zeros((len(X), result["setelan"]["n_kelas"]))
         proba[:, pipe.classes_.astype(int)] = pipe.predict_proba(X)
         return proba
     return pipe.predict(X)
+
+
+def text_types(X: pd.DataFrame) -> dict:
+    return {column: object for column in X.columns if not pd.api.types.is_numeric_dtype(X[column])}
 
 
 def predict(result: dict, pipe, data: pd.DataFrame) -> np.ndarray:
