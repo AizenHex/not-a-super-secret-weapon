@@ -8,6 +8,8 @@ Terbaru di atas. Format di [`README.md`](README.md).
   random_state, TargetEncoder galat pada kolom teks kosong semua di test, Int64 nullable dari blok selaraskan,
   tab Kode crash bila langkah galat. Tambahan: R6 penghitung entri + penolakan + op `fuzzy_spelling`, R15 alasan,
   R18 semua tabel lewat `ui/kamus.py`. Total semua uji: lulus 47, gagal 0, dilewati 12 (semua butuh data riil).
+  AutoGluon (E5) sempat menulis `AutogluonModels/` (±929 MB) ke folder kerja dan ikut commit lokal: dibuang dari
+  commit lokal sebelum push, `TabularPredictor` kini memakai folder temp, `AutogluonModels/` di `.gitignore`.
 - Dikoreksi pengguna: -
 - Berikutnya: jalankan `python -m tests.semua` di laptop dengan data riil + sample_submission lomba 2024; ukur R17
   di browser; penanda satuan campur + nol mencurigakan di Temuan.

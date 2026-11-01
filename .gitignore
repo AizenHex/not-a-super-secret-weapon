@@ -2,6 +2,7 @@ _alat/log/
 __pycache__/
 .ipynb_checkpoints/
 catboost_info/
+AutogluonModels/
 .venv/
 
 # contoh/ dan arsenal/: simpan notebook-nya saja, bukan hasil Run All
