@@ -2,6 +2,14 @@
 
 Terbaru di atas. Format di [`README.md`](README.md).
 
+## 2026-11-02 claude-opus-5-5 (cloud) - Laya v2: bagian A, VISI.md sesuai review
+- Dikerjakan: VISI.md poin review 1 (TargetEncoder fit_transform di train), 2 (setelan toleran OrdinalEncoder/
+  Winsorizer/RareLabelEncoder, pandera mode lapor), 3 (`if len(df):`), 4 (rapidfuzz default_process +
+  token_sort_ratio, nilai train tidak diubah), 5 (R2/R3 valid + test tidak kosong), 7 (R6 per entri),
+  9 (memori ikut diperbarui), 10 (R13 reconfigure + uji cp1252). STATUS RENCANA.md: A dicentang.
+- Dikoreksi pengguna: -
+- Berikutnya: bagian B (E1–E12) dan C (uji R1–R18).
+
 ## 2026-11-02 claude-opus-5-5 - Laya v2: extra E6–E12, VISI final
 - Dikerjakan: VISI.md bagian 0 + E6 tab Submission (template kode dari `sample_submission.csv` + validator),
   E7 metrik + label berurutan (ambang dari OOF), E8 log percobaan, E9 ensemble OOF, E10 anggaran waktu +

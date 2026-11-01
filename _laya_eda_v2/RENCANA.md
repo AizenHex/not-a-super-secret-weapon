@@ -26,7 +26,7 @@ menyatukan Genteng/Genting dan tidak berlaku untuk ejaan baru di test.
 
 **Untuk ultracode (2026-11-02), urut:**
 
-A. Perbaiki VISI.md sesuai temuan ultrareview commit 9cf8474 (poin 6 requirements dan 8 R8 sudah selesai):
+A. [x] (selesai 2026-11-02, sesi cloud) Perbaiki VISI.md sesuai temuan ultrareview commit 9cf8474 (poin 6 requirements dan 8 R8 sudah selesai sebelumnya; poin 1–5, 7, 9, 10 masuk ke VISI.md bagian 1 dan 3):
    1. TargetEncoder: train pakai `fit_transform(train, y)`, valid/test pakai `transform` (cross-fitting).
    2. Setelan toleran di katalog bagian 3: `OrdinalEncoder(handle_unknown="use_encoded_value", unknown_value=-1)`,
       `Winsorizer`/`RareLabelEncoder(missing_values="ignore")`; pandera tidak menghentikan skrip EDA (mode lapor, E4).
