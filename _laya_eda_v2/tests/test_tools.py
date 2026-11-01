@@ -7,13 +7,14 @@ from __future__ import annotations
 import pandas as pd
 
 from core import audit, outlier_tools, steps, text_tools
+from tests import bantu
 from tests.test_steps import LABEL, TRAIN as DATA
 
 SENTINEL_COLUMNS = ["Pengeluaran Bulanan Keluarga", "Jumlah (Perkiraan Harga Pasar) Kendaraan yang Dimiliki",
                     "Luas Tanah Rumah (m2)", "NJOP per Meter", "Total Hutang", "Cicilan Hutang per Bulan"]
 
 
-def main() -> None:
+def test_tools() -> None:
     data = pd.read_csv(DATA)
 
     profile = audit.column_profile(data).set_index("kolom")["tipe tebakan"]
@@ -120,4 +121,4 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    bantu.main(globals())

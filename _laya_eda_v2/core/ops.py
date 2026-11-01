@@ -47,13 +47,6 @@ def drop_columns(p):
             'test = test.drop(columns=KOLOM_DIBUANG, errors="ignore")')
 
 
-def rename_column(p):
-    return (f"NAMA_BARU = {lit({p['column']: p['new']})}\n"
-            "train = train.rename(columns=NAMA_BARU)\n"
-            "valid = valid.rename(columns=NAMA_BARU)\n"
-            "test = test.rename(columns=NAMA_BARU)")
-
-
 def to_number(p):
     lines = [f"KOLOM_ANGKA_TEKS = {lit(p['columns'])}",
              "for df in (train, valid, test):",
@@ -266,7 +259,7 @@ def log_transform(p):
 def scale(p):
     if p["method"] == "standard":
         stats = ("pusat = train[KOLOM_SKALA].mean()\n"
-                 "lebar = train[KOLOM_SKALA].std().replace(0, 1)")
+                 "lebar = train[KOLOM_SKALA].std(ddof=0).replace(0, 1)   # ddof=0 = StandardScaler")
     else:
         stats = ("pusat = train[KOLOM_SKALA].min()\n"
                  "lebar = (train[KOLOM_SKALA].max() - pusat).replace(0, 1)")
@@ -371,6 +364,125 @@ def autogluon_features(p):
             "    test = fitur.iloc[:0]")
 
 
+# ---------------------------------------------------------------- transformer sklearn / feature_engine (E1)
+# Satu konstruktor dipakai DUA tempat: blok EDA (fit di train, transform valid & test) dan Pipeline sklearn
+# (core/pipeline.py). Untuk op pandas lama (impute, scale, ...) konstruktornya dibuktikan memberi angka yang
+# sama (tests/test_extra.py); op baru di bawah memakai transformer itu langsung di blok EDA.
+
+TRANSFORMER_IMPORTS = {
+    "SimpleImputer": "from sklearn.impute import SimpleImputer",
+    "StandardScaler": "from sklearn.preprocessing import StandardScaler",
+    "MinMaxScaler": "from sklearn.preprocessing import MinMaxScaler",
+    "PowerTransformer": "from sklearn.preprocessing import PowerTransformer",
+    "OrdinalEncoder": "from sklearn.preprocessing import OrdinalEncoder",
+    "OneHotEncoder": "from sklearn.preprocessing import OneHotEncoder",
+    "TargetEncoder": "from sklearn.preprocessing import TargetEncoder",
+    "FunctionTransformer": "from sklearn.preprocessing import FunctionTransformer",
+    "make_pipeline": "from sklearn.pipeline import make_pipeline",
+    "StratifiedKFold": "from sklearn.model_selection import StratifiedKFold",
+    "KFold": "from sklearn.model_selection import KFold",
+    "Winsorizer": "from feature_engine.outliers import Winsorizer",
+    "ArbitraryOutlierCapper": "from feature_engine.outliers import ArbitraryOutlierCapper",
+    "RareLabelEncoder": "from feature_engine.encoding import RareLabelEncoder",
+}
+
+
+def _spec(make: str, columns: list[str], same: bool = True, target: bool = False) -> dict:
+    """make = teks konstruktor; same = nama kolom keluaran = kolom masuk; target = fit butuh label."""
+    names = [name for name in TRANSFORMER_IMPORTS if re.search(rf"\b{name}\(", make)]
+    return {"make": make, "columns": list(columns), "same": same, "target": target,
+            "imports": [TRANSFORMER_IMPORTS[name] for name in names]}
+
+
+def transformer(step: dict) -> dict | None:
+    """Spesifikasi transformer sklearn/feature_engine untuk satu langkah, None bila langkah itu hanya pandas."""
+    op, p = step["op"], step["params"]
+    if op == "impute":
+        strategy = {"median": "median", "mean": "mean", "mode": "most_frequent"}[p["strategy"]]
+        return _spec(f"SimpleImputer(strategy={strategy!r}, keep_empty_features=True)", p["columns"])
+    if op == "fill_constant":
+        return _spec(f"SimpleImputer(strategy=\"constant\", fill_value={p['value']!r}, keep_empty_features=True)",
+                     p["columns"])
+    if op == "scale":
+        return _spec("StandardScaler()" if p["method"] == "standard" else "MinMaxScaler()", p["columns"])
+    if op == "log_transform":
+        return _spec("make_pipeline(FunctionTransformer(pd.DataFrame.clip, kw_args={\"lower\": 0}, "
+                     "feature_names_out=\"one-to-one\"), FunctionTransformer(np.log1p, feature_names_out=\"one-to-one\"))",
+                     p["columns"])
+    if op == "ordinal":
+        categories = f"[{lit(list(p['order']))}]" if p.get("order") else '"auto"'
+        return _spec(f"OrdinalEncoder(categories={categories}, handle_unknown=\"use_encoded_value\", unknown_value=-1, "
+                     "encoded_missing_value=-1)", [p["column"]])
+    if op == "outlier" and p["method"] == "manual" and p["action"] == "clip":
+        caps = []
+        if p.get("high") is not None:
+            caps.append(f"max_capping_dict={ {p['column']: p['high']} !r}")
+        if p.get("low") is not None:
+            caps.append(f"min_capping_dict={ {p['column']: p['low']} !r}")
+        return _spec(f"ArbitraryOutlierCapper({', '.join(caps)}, missing_values=\"ignore\")", [p["column"]]) if caps else None
+    if op in SKLEARN_OPS:
+        return SKLEARN_OPS[op](p)
+    return None
+
+
+def _target_spec(p):
+    if p.get("kind", "kelas") == "angka":
+        make = "TargetEncoder(target_type=\"continuous\", cv=KFold(5, shuffle=True, random_state=0))"
+    else:
+        make = "TargetEncoder(target_type=\"auto\", cv=StratifiedKFold(5, shuffle=True, random_state=0))"
+    return _spec(make, p["columns"], same=False, target=True)
+
+
+SKLEARN_OPS = {
+    "target_encode": _target_spec,
+    "onehot_sklearn": lambda p: _spec(  # noqa: E731 (kode Laya, bukan kode hasil)
+        f"OneHotEncoder(handle_unknown=\"infrequent_if_exist\", min_frequency={float(p.get('min_share', 0.01))}, "
+        "sparse_output=False)", p["columns"], same=False),
+    "rare_label": lambda p: _spec(
+        f"RareLabelEncoder(tol={float(p.get('tol', 0.01))}, n_categories=1, replace_with=\"Lainnya\", "
+        "missing_values=\"ignore\")", p["columns"]),
+    "winsorize": lambda p: _spec(
+        f"Winsorizer(capping_method={p.get('method', 'iqr')!r}, tail=\"both\", fold={float(p.get('fold', 1.5))}, "
+        "missing_values=\"ignore\")", p["columns"]),
+    "power": lambda p: _spec("PowerTransformer(method=\"yeo-johnson\")", p["columns"]),
+}
+
+
+def transformer_code(p, op: str) -> str:
+    """Blok EDA lurus untuk op sklearn/feature_engine: fit di train (label-nya bila perlu), transform semua."""
+    spec = SKLEARN_OPS[op](p)
+    lines = [*spec["imports"],
+             f"KOLOM_UBAH = {lit(spec['columns'])}",
+             f"pengubah = {spec['make']}.set_output(transform=\"pandas\")"]
+    if spec["target"]:
+        lines += ["berlabel = train[LABEL].notna()",
+                  "# fit_transform = cross-fitting: baris train tidak melihat labelnya sendiri (fit lalu transform = bocor)",
+                  "angka_train = pengubah.fit_transform(train.loc[berlabel, KOLOM_UBAH], train.loc[berlabel, LABEL])",
+                  "angka_train = angka_train.reindex(train.index)",
+                  "if not berlabel.all():",
+                  "    angka_train.loc[~berlabel] = pengubah.transform(train.loc[~berlabel, KOLOM_UBAH]).to_numpy()"]
+    else:
+        lines.append("pengubah.fit(train[KOLOM_UBAH])   # dipelajari dari train saja")
+    if spec["same"] and not spec["target"]:
+        lines += ["for df in (train, valid, test):",
+                  "    if len(df):                     # frame 0 baris dilewati (transformer menolak 0 sampel)",
+                  "        df[KOLOM_UBAH] = pengubah.transform(df[KOLOM_UBAH])"]
+        return "\n".join(lines)
+    train_part = "angka_train" if spec["target"] else "pengubah.transform(train[KOLOM_UBAH])"
+    lines += ["hasil = []",
+              "for df in (train, valid, test):",
+              "    if df is train:",
+              f"        angka = {train_part}",
+              "    elif len(df):",
+              "        angka = pengubah.transform(df[KOLOM_UBAH])",
+              "    else:",
+              "        angka = pd.DataFrame(columns=pengubah.get_feature_names_out(), dtype=float)",
+              "    angka.index = df.index",
+              "    hasil.append(pd.concat([df.drop(columns=KOLOM_UBAH), angka], axis=1))",
+              "train, valid, test = hasil"]
+    return "\n".join(lines)
+
+
 # ---------------------------------------------------------------- katalog
 
 OPS = {
@@ -378,10 +490,6 @@ OPS = {
                          what="Hapus kolom dari train, valid, dan test.",
                          fits="Kolom id, kolom kembar (isi sama dengan kolom lain), kolom bocoran label.",
                          danger="Membuang kolom yang ternyata berguna. Lihat tab AutoGluon → kolom penting."),
-    "rename_column": dict(group="Kolom", title="Ganti nama kolom", code=rename_column,
-                          what="Ganti nama satu kolom (train, valid, dan test).",
-                          fits="Nama terlalu panjang/berspasi untuk dipakai di kode.",
-                          danger="Nama baru harus dipakai juga di langkah sesudahnya."),
     "to_number": dict(group="Kolom", title="Teks → angka", code=to_number,
                       what="Baca angka yang tersimpan sebagai teks: 'Rp 1.500.000,5' → 1500000.5.",
                       fits="Kolom harga/luas yang terbaca sebagai teks.",
@@ -469,11 +577,42 @@ OPS = {
                                fits="Langkah terakhir bila model yang dipakai bukan AutoGluon.",
                                danger="Kolom bisa dibuang/diubah otomatis; lihat sebelum → sesudah. "
                                       "TabularPredictor sudah melakukan ini sendiri."),
+    "target_encode": dict(group="Encoding", title="Target encoding (sklearn TargetEncoder)",
+                          code=lambda p: transformer_code(p, "target_encode"),
+                          what="Kategori → rata-rata label per kategori (per kelas bila label kelas), dihaluskan. "
+                               "Train memakai fit_transform (cross-fitting 5 fold), valid/test memakai transform.",
+                          fits="Kategori dengan banyak nilai (kota, prodi) untuk model pohon.",
+                          danger="Fit lalu transform di train = bocor (skor terlalu bagus). Kategori sangat jarang "
+                                 "tetap berisik walau dihaluskan."),
+    "onehot_sklearn": dict(group="Encoding", title="One-hot (sklearn OneHotEncoder)",
+                           code=lambda p: transformer_code(p, "onehot_sklearn"),
+                           what="Satu kolom 0/1 per nilai; nilai dengan porsi < min_frequency dan nilai baru di "
+                                "test → kolom <kolom>_infrequent_sklearn. Kosong = kategori sendiri (<kolom>_nan).",
+                           fits="Kategori sedikit tanpa urutan, bila ingin langkah ini ikut Pipeline sklearn.",
+                           danger="Ratusan nilai → ratusan kolom. Satukan ejaan dulu."),
+    "rare_label": dict(group="Encoding", title="Kategori langka → Lainnya (feature_engine)",
+                       code=lambda p: transformer_code(p, "rare_label"),
+                       what="Kategori dengan porsi < tol di train (dan kategori baru di test) diganti 'Lainnya'.",
+                       fits="Sebelum one-hot/target encoding pada kolom berekor panjang.",
+                       danger="Kategori langka yang penting (kelas minoritas) ikut tergabung."),
+    "winsorize": dict(group="Angka", title="Winsorize (feature_engine Winsorizer)",
+                      code=lambda p: transformer_code(p, "winsorize"),
+                      what="Potong nilai di luar batas IQR/MAD/gaussian/quantile dari train ke batasnya.",
+                      fits="Angka kontinu dengan ekor panjang; masuk Pipeline sklearn.",
+                      danger="Sebaran 0 (mayoritas nilai sama) → batas = nilai itu, semua nilai lain terpotong. "
+                             "Tanpa skala log; untuk IQR-log pakai Tangani outlier."),
+    "power": dict(group="Angka", title="PowerTransformer (Yeo-Johnson)",
+                  code=lambda p: transformer_code(p, "power"),
+                  what="Ubah angka miring jadi mendekati normal lalu distandarkan (parameter dari train).",
+                  fits="Model linear/KNN pada angka sangat miring.",
+                  danger="Model pohon tidak butuh; nilai hasil sulit dibaca."),
 }
 
 
 def summary(step: dict) -> str:
     """Teks pendek untuk daftar langkah."""
+    if step["op"] not in OPS:   # mis. 'rename_column' (dihapus 2026-11-02, R8): langkah lama tetap terlihat
+        return f"(operasi tidak dikenal: {step['op']})"
     p, op = step["params"], OPS[step["op"]]["title"]
     columns = p.get("columns") or list(p.get("groups", {}))
     target = p.get("column") or ", ".join(columns[:3]) + ("…" if len(columns) > 3 else "")

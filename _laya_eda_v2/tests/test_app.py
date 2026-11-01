@@ -17,7 +17,11 @@ from streamlit.testing.v1 import AppTest
 SESSION = Path(tempfile.mkdtemp()) / "sesi_uji.json"
 os.environ["LAYA_SESI"] = str(SESSION)
 
-from tests.test_steps import LABEL, project
+from tests import bantu
+from tests.test_steps import LABEL, TRAIN, project
+
+os.environ.setdefault("LAYA_TRAIN", str(TRAIN))
+ROWS = sum(1 for _ in open(TRAIN, encoding="utf-8")) - 1
 
 
 def check(app: AppTest, title: str) -> None:
@@ -47,7 +51,7 @@ def go(app: AppTest, page: str) -> None:
     check(app, f"halaman {page}")
 
 
-def main() -> None:
+def test_app() -> None:
     app = AppTest.from_file("../app.py", default_timeout=300)
     app.run()
     check(app, "tanpa langkah")
@@ -62,7 +66,7 @@ def main() -> None:
     go(app, "Kode & ekspor")
     metrics = {m.label: m.value for m in app.metric}
     print("metrik:", metrics)
-    assert int(metrics["baris train"].replace(",", "")) < 30380
+    assert int(metrics["baris train"].replace(",", "")) < ROWS
     scripts = [c.value for c in app.code if "LABEL =" in c.value]
     assert scripts and LABEL in scripts[0] and "def " not in scripts[0]
 
@@ -80,7 +84,7 @@ def main() -> None:
     go(app, "Kode & ekspor")
     metrics = {m.label: m.value for m in app.metric}
     print("metrik dengan split:", metrics)
-    assert 6000 < int(metrics["baris valid"].replace(",", "")) < 6200, metrics
+    assert 0.19 * ROWS < int(metrics["baris valid"].replace(",", "")) < 0.21 * ROWS, metrics
     script = next(c.value for c in app.code if "LABEL =" in c.value)
     assert script.index("# %% split data") < script.index("# %% langkah 1")
     assert "train_test_split" in script and "valid_bersih.csv" in script
@@ -172,4 +176,4 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    bantu.main(globals())

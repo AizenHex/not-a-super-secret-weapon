@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 
 import pandas as pd
@@ -13,7 +14,9 @@ from core.ops import MISSING_MARKERS, OPS, SENTINEL_FLOOR
 from ui import common, jobs
 
 ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_TRAIN = ROOT.parent / "_laya_eda" / "data" / "train.csv"
+# LAYA_TRAIN / LAYA_TEST: path awal (uji memakai data sintetis); kalau tidak di-set, data riil di _laya_eda/data
+DEFAULT_TRAIN = os.environ.get("LAYA_TRAIN", str(ROOT.parent / "_laya_eda" / "data" / "train.csv"))
+DEFAULT_TEST = os.environ.get("LAYA_TEST", "")
 
 
 @st.cache_data(show_spinner="Membaca CSV…")
@@ -52,8 +55,8 @@ def insight(series: pd.Series) -> None:
 def sidebar_data() -> None:
     """Muat data di sidebar: selalu tampil, jadi pindah halaman tidak menghapus file yang diunggah."""
     with st.sidebar.expander("Data", expanded=common.raw_train() is None):
-        data, train_key = load_frame("train", str(DEFAULT_TRAIN), "train")
-        test, test_key = load_frame("test", "", "test")
+        data, train_key = load_frame("train", DEFAULT_TRAIN, "train")
+        test, test_key = load_frame("test", DEFAULT_TEST, "test")
         if data is None:
             return
         st.session_state["data_id"] = f"{train_key}|{test_key}"

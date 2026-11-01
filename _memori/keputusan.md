@@ -2,6 +2,19 @@
 
 Terbaru di atas. Format: `- YYYY-MM-DD: <keputusan>. Alasan: <...>.`
 
+- 2026-11-02: E1 Pipeline = satu `ColumnTransformer` per langkah (remainder passthrough) + tahap `teks_sisa`
+  (OrdinalEncoder, nilai baru/kosong = -1) + model; yang masuk pipeline hanya AKHIRAN langkah aktif yang semuanya
+  punya transformer (`ops.transformer`), sisanya blok EDA pandas sebelum pipeline. Op pandas lama yang dipetakan
+  (impute, fill_constant, scale, log_transform, ordinal, outlier manual clip) dibuktikan sama angkanya di uji E1;
+  `scale` diubah ke std ddof=0 agar = StandardScaler. Pipeline dilatih di baris berlabel saja (statistik pipeline
+  dari baris berlabel; blok EDA dari seluruh train). Alasan: urutan langkah tidak pernah diubah, kode tetap lurus,
+  dan kesetaraan bisa diuji persis (prediksi identik 100% di data sintetis).
+- 2026-11-02: op `rename_column` dihapus dari katalog. Alasan: R8 (nama kolom asli tidak pernah diganti) adalah
+  aturan yang tidak boleh dilanggar menurut prompt pengguna; langkah lama di sesi tersimpan tampil sebagai
+  "operasi tidak dikenal" dan berhenti dengan galat (R11), tidak diam-diam diabaikan.
+- 2026-11-02: venv uji cloud memakai `torch==2.11.0` dari PyPI karena index PyTorch (cu128/cpu) diblokir proxy
+  (403). Versi sama dengan requirements.txt, varian build berbeda; hanya dipakai AutoGluon di uji E5.
+
 - 2026-11-02: VISI.md R6 dihitung per entri peta (kunci dict + isi list + alternatif regex), bukan per baris; contoh rapidfuzz memakai `token_sort_ratio` + `utils.default_process` dan tidak mengubah nilai yang sudah ada di train. Alasan: temuan review 7 dan 4 (baris bisa dipadatkan, WRatio menyamakan potongan `Bandung` ~ `Kota Bandung`).
 
 - 2026-11-02: fitur extra Laya v2 (VISI.md bagian 0): langkah pandas (ejaan, isian bebas, penanda kosong)
