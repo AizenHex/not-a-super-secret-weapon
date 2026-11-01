@@ -8,6 +8,8 @@ Terbaru di atas. Format di [`README.md`](README.md).
   mode aman laptop, E11 analisis kesalahan + figur, E12 kelas timpang; baris EDA "satuan campur" (Kendaraan
   < 100: 4.867, NJOP < 1.000: 4.826; dicek di `Downloads/dataset_gemastik_2024/train.csv`, data sama dengan
   data uji Laya). STATUS `RENCANA.md` berisi daftar kerja ultracode (A review, B E1–E12).
+  Commit 597558d di-push ke new-gen; sesudahnya poin 9 review (memori) dihapus dari daftar A karena
+  sudah selesai di commit itu, sisa 7 poin: 1, 2, 3, 4, 5, 7, 10.
 - Dikoreksi pengguna: E6 harus berupa tab yang membuat template kode submission; kelas timpang masuk extra;
   VISI.md dinyatakan final.
 - Berikutnya: pengguna menjalankan ultracode. Nama "SuperTrainer" masih pertimbangan, belum diputuskan.
