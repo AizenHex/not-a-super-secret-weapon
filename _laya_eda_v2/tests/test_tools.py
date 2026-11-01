@@ -1,4 +1,4 @@
-"""Uji modul analisis di data riil terhadap kasus penerimaan RENCANA.md bagian D.
+"""Uji modul analisis di data riil terhadap uji terima VISI.md bagian 6.
 
 Jalankan dari folder _laya_eda_v2:  python -m tests.test_tools
 """

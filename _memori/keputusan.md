@@ -2,6 +2,28 @@
 
 Terbaru di atas. Format: `- YYYY-MM-DD: <keputusan>. Alasan: <...>.`
 
+- 2026-11-02: fitur extra Laya v2 (VISI.md bagian 0): langkah pandas (ejaan, isian bebas, penanda kosong)
+  tetap blok EDA lurus sebelum Pipeline; hanya langkah yang punya transformer sklearn/feature_engine masuk
+  `Pipeline`. `FunctionTransformer` + `def` hanya opsi. pandera default mode lapor, mode ketat opsi.
+  Alasan: R4 tetap terjaga tanpa membatasi joblib; `def` di file joblib wajib didefinisikan ulang
+  sebelum `load`; mode lapor tidak mematikan prediksi saat lomba.
+
+- 2026-11-02: rencana Laya v2 lama di `RENCANA.md` (P1–P7, flowchart per tab, checklist, keputusan terbuka)
+  dinilai lalu dilebur ke `VISI.md`. Masuk: R8 diperketat (nama kolom asli tidak pernah diganti, tidak
+  hilang diam-diam), R12 + daftar uji bentuk test, R15 sebelum→sesudah + alasan, R16 jalan tanpa
+  Laya/MiniLM (offline), R17 rerun < 2 s, R18 arti kolom tabel, baris penanda kosong per kolom dan logika
+  antar kolom, pemisah hanya di isian bebas, one-hot per bahan, ambang peta kata default, ekspor
+  `laporan_temuan.md`, uji terima data riil. Tidak masuk: (sklearn `Pipeline` + joblib, pandera, split k-fold:
+  usang 2026-11-02, pengguna menjadikannya fitur extra E1–E5 di atas R1–R18),
+  persetujuan flowchart sebelum kode (cara kerja, bukan fitur), usulan Laya ubin~tegel sebagai syarat
+  selesai (Laya opsional). Alasan: pengguna minta VISI.md jadi satu-satunya sumber.
+
+- 2026-11-02: `evidently` dan `ydata-profiling` dihapus dari rencana Laya v2 (VISI.md) dan tidak
+  masuk `requirements.txt`. Alasan: dry-run menunjukkan evidently 0.7.23 menurunkan plotly 7.1.0 ->
+  5.24.1 dan ydata-profiling 4.18.4 menurunkan numpy 2.5.3 -> 2.3.5, scipy 1.18.1 -> 1.16.3,
+  matplotlib 3.11.2 -> 3.10.0; fungsinya sudah tertutup `skrub.TableReport` (profil) dan
+  `ks_2samp` + adversarial validation (drift). Enam library EDA lain dikunci ke versi terbaru PyPI.
+
 - 2026-10-31: encoding kedekatan makna = vektor MiniLM nilai kategori → PCA (numpy SVD) dari nilai
   train, `MEANING_SIZE` = 8 angka per kolom. Alasan: isian bebas yang berantakan ("genting",
   "Genteng") dapat angka mirip dan nilai baru di test tetap terbaca; model yang sama sudah dipakai

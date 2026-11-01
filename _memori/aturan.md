@@ -27,6 +27,13 @@ Koreksi terbaru pengguna di chat menang atas isi file ini; setelah itu perbarui 
 
 ## Laya EDA (`_laya_eda/`)
 
+- Laya v2 (`_laya_eda_v2/`): `VISI.md` = satu-satunya sumber tujuan, requirement (R1–R18), prinsip, library,
+  dan uji terima. `RENCANA.md` hanya status, arsitektur yang jalan, dan bukti uji; jangan menulis prinsip
+  atau pilihan library di sana. (2026-11-02)
+- Laya v2 punya fitur **extra** di luar EDA: sklearn Pipeline + joblib, split/k-fold, pandera, latih cepat,
+  tab Submission, metrik, log, ensemble, mode aman, figur, kelas timpang (VISI.md bagian 0, E1–E12). Kata pengguna: kedudukannya **lebih tinggi dari R1–R18**;
+  bila bertentangan, extra menang. (2026-11-02)
+
 - Jangan pernah mengganti nama kolom asli di file hasil (tidak ada `_angka` / `__angka`): kolom angka
   diisi angka hasil baca di kolom yang sama. Kolom baru (fitur) boleh, kolom asli tetap. Pengguna:
   "niatnya untuk mempermudah EDA, ini malah dipersulit". (2026-10-31)

@@ -46,6 +46,15 @@ PySastrawi==1.2.1
 laya==0.4.8                  # Laya (alat bantu peta kategori), bobot di pretrained/laya
 streamlit==1.66.0            # web lokal _laya_eda (jalankan.bat)
 
+# EDA Laya v2 (_laya_eda_v2/VISI.md). BELUM dipasang/diuji di venv: hanya lolos
+# pip install --dry-run (2026-11-02) tanpa menurunkan versi lain di file ini.
+pandera==0.35.0              # validasi skema (tipe, rentang, nilai sah)
+feature-engine==1.9.4        # Winsorizer, RareLabelEncoder, DropDuplicateFeatures
+skrub==0.11.0                # Cleaner, deduplicate, StringEncoder
+autogluon.tabular==1.6.3     # skor mentah vs bersih, AutoMLPipelineFeatureGenerator
+openfe==0.0.12               # fitur otomatis (opsional)
+missingno==0.5.2             # pola kosong
+
 # Gambar dan audio
 torch==2.11.0+cu128
 torchvision==0.26.0+cu128

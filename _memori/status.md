@@ -1,6 +1,6 @@
 # Status repo
 
-Terakhir diperbarui: 2026-10-31.
+Terakhir diperbarui: 2026-11-02.
 
 ## Tujuan
 
@@ -34,6 +34,13 @@ Pengguna berangkat 2026-11-09. Prioritas dan pohon pekerjaan: [`../RENCANA_LOMBA
   `data/train.csv`. Kamus kolom (tooltip judul kolom + sidebar) dan encoding kategori (one-hot,
   kode, target, kedekatan makna MiniLM) di Kode EDA. `_uji/test_app.py` dan
   `_uji/test_codegen.py` belum dijalankan ulang penuh.
+- `_laya_eda_v2/` (2026-11-02): `VISI.md` = satu-satunya sumber target (extra E1–E12 di atas R1–R18 +
+  uji terima; final menurut pengguna; E1–E12 belum diimplementasikan; daftar kerja ultracode di
+  STATUS `RENCANA.md`);
+  `RENCANA.md` = status + bukti uji. **Belum selesai**: belum ada requirement yang terbukti lulus, uji
+  butuh `../_laya_eda/data/train.csv` (tidak ada di clone ini), skrub/pandera/feature-engine/autogluon
+  di `requirements.txt` tetapi belum dipasang di venv. 9 temuan ultrareview commit 9cf8474 masih terbuka
+  (poin 8/R8 sudah diperbaiki); pengguna akan memperbaikinya lewat ultracode.
 - `viginte-train.ipynb` dipindah dari root ke `_.Testing/` (diabaikan git).
 - PPT vignette (penyisihan) selesai 2026-10-30. Figur + skripnya di `Z:/GEMASTIK/Vignate-2/outputs/figures/`
   (di luar repo, bukan git); catatan lengkap `Z:/GEMASTIK/Vignate-2/HANDOFF.md`.

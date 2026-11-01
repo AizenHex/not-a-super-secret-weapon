@@ -2,6 +2,44 @@
 
 Terbaru di atas. Format di [`README.md`](README.md).
 
+## 2026-11-02 claude-opus-5-5 - Laya v2: extra E6–E12, VISI final
+- Dikerjakan: VISI.md bagian 0 + E6 tab Submission (template kode dari `sample_submission.csv` + validator),
+  E7 metrik + label berurutan (ambang dari OOF), E8 log percobaan, E9 ensemble OOF, E10 anggaran waktu +
+  mode aman laptop, E11 analisis kesalahan + figur, E12 kelas timpang; baris EDA "satuan campur" (Kendaraan
+  < 100: 4.867, NJOP < 1.000: 4.826; dicek di `Downloads/dataset_gemastik_2024/train.csv`, data sama dengan
+  data uji Laya). STATUS `RENCANA.md` berisi daftar kerja ultracode (A review, B E1–E12).
+- Dikoreksi pengguna: E6 harus berupa tab yang membuat template kode submission; kelas timpang masuk extra;
+  VISI.md dinyatakan final.
+- Berikutnya: pengguna menjalankan ultracode. Nama "SuperTrainer" masih pertimbangan, belum diputuskan.
+
+## 2026-11-02 claude-opus-5-5 - Laya v2: fitur extra E1–E5
+- Dikerjakan: VISI.md bagian 0 baru: Pipeline sklearn, joblib, split/CV, pandera (lapor/ketat), latih
+  cepat + submission; kedudukan di atas R1–R18. R4 diberi pengecualian; alur, tab, definisi selesai
+  ikut disesuaikan.
+- Dikoreksi pengguna: Pipeline + joblib, pandera, split sebelumnya dinilai "tidak masuk"; pengguna:
+  itu fitur "extra" dan "lebih tinggi kedudukannya dari R1-R18" -> aturan.md, keputusan.md.
+- Berikutnya: ultracode untuk 9 temuan review; implementasi E1–E5.
+
+## 2026-11-02 claude-opus-5-5 - Laya v2: VISI.md satu-satunya sumber
+- Dikerjakan: `_laya_eda_v2/VISI.md` menyerap rencana v2 lama (R15–R18, R8/R12 diperluas, baris
+  library baru, ambang typo, uji terima data riil); `RENCANA.md` dipangkas 546 → ±150 baris (status,
+  arsitektur bagian 0, audit data, bukti uji). Docstring `tests/test_tools.py` menunjuk VISI bagian 6.
+  Penilaian apa yang masuk/tidak di keputusan.md.
+- Dikoreksi pengguna: "VISI.md sekarang satu-satunya" -> aturan.md.
+- Berikutnya: pengguna menjalankan ultracode untuk 10 temuan review (poin 8 R8 sudah ikut diperbaiki).
+
+## 2026-11-02 claude-opus-5-5 - requirements: library EDA Laya v2
+- Dikerjakan: ultrareview commit 9cf8474 (VISI.md) -> 10 temuan nit, belum diperbaiki (pengguna akan
+  menyelesaikan lewat ultracode). Poin 6 dikerjakan: `requirements.txt` + pandera 0.35.0,
+  feature-engine 1.9.4, skrub 0.11.0, autogluon.tabular 1.6.3, openfe 0.0.12, missingno 0.5.2
+  (versi terbaru PyPI, lolos `pip install --dry-run` tanpa menurunkan versi lain; BELUM dipasang).
+  evidently dan ydata-profiling dihapus dari requirements dan VISI.md (profil -> `skrub.TableReport`,
+  drift tanpa evidently; alasan di keputusan.md).
+- Dikoreksi pengguna: -
+- Berikutnya: pasang paket baru (izin pengguna) dan uji import. RENCANA.md bagian 2 dan 3b tumpang
+  tindih dengan VISI.md bagian 1 dan 3, dan RENCANA 3b menulis skrub/pandera "terpasang di .venv",
+  padahal di `Z:/GEMASTIK/Vignate-GEMASTIK/.venv` keduanya tidak ada (dicek 2026-11-02).
+
 ## 2026-10-31 claude-opus-5-5 - Laya EDA: kamus kolom + encoding kategori
 - Dikerjakan: `kamus.py` (arti nama kolom: persis, awalan `teks__`/`kosong_`/`log_`/`oh_`/`makna_`/...,
   akhiran lensa `__yakin`/`__nilai`/...). Semua `st.dataframe` di tab_*.py lewat `kamus.show_table`
