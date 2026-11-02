@@ -46,10 +46,10 @@ def pipe_steps() -> list[dict]:
     add("ordinal", column="Pendapatan Keluarga", order=sintetis.INCOME)
     add("ordinal", column="Jalur Masuk", order=[])
     add("fill_constant", columns=["Status Kepesertaan Program Bantuan Pemerintah"], value="Tidak")
-    add("outlier", column="Daya Listrik", method="manual", action="clip", low=None, high=10000, factor=0)
+    add("outlier", column="Daya Listrik (Watt)", method="manual", action="clip", low=None, high=10000, factor=0)
     add("rare_label", columns=["Pekerjaan Orang Tua/Wali"], tol=0.05)
     add("target_encode", columns=["Kota"], kind="kelas")
-    add("onehot_sklearn", columns=["Jenis Kelamin", "Fakultas"], min_share=0.01)
+    add("onehot_sklearn", columns=["Ayah Hidup?", "Ibu Hidup?"], min_share=0.01)
     add("winsorize", columns=["Pengeluaran Bulanan Keluarga"], method="iqr", fold=3.0)
     add("power", columns=["Total Hutang"])
     return p["steps"]
@@ -151,13 +151,13 @@ def test_e4_skema_pandera():
     messy["NJOP per Meter"] = messy["NJOP per Meter"].astype(object)
     messy.loc[messy.index[:4], "NJOP per Meter"] = "abc"                        # bukan angka
     messy.loc[messy.index[10:13], "Luas Tanah Rumah (m2)"] = 1e13              # di luar rentang train
-    messy = messy.drop(columns=["Fakultas"])                                    # kolom hilang
+    messy = messy.drop(columns=["Ayah Hidup?"])                                    # kolom hilang
     report = schema.validate(messy, spec, "lapor")
     print(report.to_string())
     by_column = report.groupby("kolom")["baris"].sum()
     assert by_column["Pendapatan Keluarga"] == 7 and "Rp 999 juta" in report["contoh nilai"].str.cat()
     assert by_column["NJOP per Meter"] >= 4 and by_column["Luas Tanah Rumah (m2)"] >= 3
-    assert report["contoh nilai"].str.contains("Fakultas").any(), "kolom hilang dilaporkan"
+    assert report["contoh nilai"].str.contains("Ayah Hidup?").any(), "kolom hilang dilaporkan"
     import pandera.pandas as pa
     try:
         schema.validate(messy, spec, "ketat")
@@ -259,9 +259,32 @@ def test_e6_validator_menolak_submission_rusak():
     assert submission.validate(good, sample, [0, 1, 2, 3], "id,Golongan UKT\n1,3.0\n"), "tulisan 3.0 di file"
 
 
-def test_e6_data_riil():
+def test_e6_data_riil(tmp_path):
+    """Format lomba 2024: train riil + sample_submission.csv riil. test.csv riil tidak ada (id sample tidak ada di
+    train), jadi test = baris train riil acak dengan id sample: yang diuji FORMAT + validator, bukan skor."""
     bantu.perlu_data_riil()
-    raise bantu.Lewati("butuh test.csv + sample_submission.csv lomba 2024 (id,Golongan UKT) di samping data riil")
+    sample_path = bantu.TRAIN_RIIL.parent / "sample_submission.csv"
+    if not sample_path.exists():
+        raise bantu.Lewati(f"butuh {sample_path}")
+    train, sample = pd.read_csv(bantu.TRAIN_RIIL), pd.read_csv(sample_path)
+    test = train.drop(columns=[LABEL]).sample(len(sample), random_state=0).reset_index(drop=True)
+    test["id"] = sample["id"].sample(frac=1, random_state=1).to_numpy()          # urutan beda dengan sample
+    test.to_csv(tmp_path / "test.csv", index=False)
+    project = {"label": LABEL, "steps": pipe_steps(), "split": SPLIT}
+    result = training.experiment(setelan(), train, test)
+    pipes.save(result["pipe"], tmp_path / "pipeline.joblib", submission.info_for(result, LABEL))
+    spec = submission.read_sample(sample)
+    assert spec["id"] == "id" and spec["target"] == LABEL and spec["bulat"]
+    code = submission.template(project, json.loads((tmp_path / "pipeline.joblib.json").read_text()), spec,
+                               {"train": str(bantu.TRAIN_RIIL), "test": str(tmp_path / "test.csv"),
+                                "sample": str(sample_path), "pipeline": str(tmp_path / "pipeline.joblib")})
+    (tmp_path / "buat_submission.py").write_text(code, encoding="utf-8")
+    run = subprocess.run([sys.executable, "buat_submission.py"], cwd=tmp_path, capture_output=True, text=True,
+                         env={**os.environ, "PYTHONIOENCODING": "cp1252"})
+    assert run.returncode == 0, run.stderr[-3000:]
+    made = pd.read_csv(tmp_path / "submission.csv")
+    assert submission.validate(made, sample, result["kelas"], (tmp_path / "submission.csv").read_text()) == []
+    print(made[LABEL].value_counts().sort_index().to_dict())
 
 
 # ---------------------------------------------------------------- E7

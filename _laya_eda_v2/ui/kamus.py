@@ -1,5 +1,5 @@
 """R18: setiap kolom tabel yang tampil punya ARTI (nilai apa, dihitung dari apa). Satu-satunya pintu tampil tabel
-di ui/ adalah `show_table`; arti tampil sebagai tooltip judul kolom. Kolom tanpa arti = galat (bukan diam-diam).
+di ui/ adalah `show_table`; arti tampil sebagai tooltip judul kolom. Kolom tanpa arti = peringatan di atas tabel (galat keras bila LAYA_KAMUS_KETAT, dipakai uji).
 
 Arti dicari berurutan: `meaning` (khusus tabel itu) → KAMUS (nama kolom umum di aplikasi) → `data_columns=True`
 (tabel berisi kolom data pengguna: arti = "isi kolom data ini") → akhiran pratinjau `(sebelum)`/`(sesudah)`.
@@ -116,6 +116,9 @@ KAMUS = {
     "fit_time": "Lama latih model, detik.", "p_value": "Nilai p importance (kecil = kolom benar-benar berpengaruh).",
     "skor label": "Skor kualitas label cleanlab (rendah = mungkin salah).",
     "tebakan model": "Kelas yang ditebak model OOF.", "yakin tebakan": "Peluang kelas tebakan menurut model.",
+    "kosong per baris": "Banyak kolom kosong dalam satu baris train.",
+    "bobot": "Bobot rata-rata berbobot (≥ 0, jumlah 1) yang dicari di prediksi OOF.",
+    "jumlah baris": "Banyak baris train dengan jumlah kolom kosong itu.",
     "jawaban": "Jawaban Laya.", "konteks": "Konteks yang diberikan ke Laya.", "yakin": "Keyakinan jawaban Laya.",
 }
 
@@ -153,7 +156,10 @@ def _config(frame: pd.DataFrame, meaning, data_columns, config, hide_index) -> d
             out.write(repr(missing) + "\n")
         missing = []
     if missing:
-        raise ValueError(f"R18: kolom tabel tanpa arti: {missing}. Tambahkan di ui/kamus.py atau argumen meaning.")
+        message = f"R18: kolom tabel tanpa arti: {missing}. Tambahkan di ui/kamus.py atau argumen meaning."
+        if os.environ.get("LAYA_KAMUS_KETAT"):           # uji: galat keras
+            raise ValueError(message)
+        st.warning(message)                              # aplikasi: tabel tetap tampil, kekurangan terlihat
     for column in columns:
         text = meaning_of(column, meaning, data_columns)
         old = config.get(column)

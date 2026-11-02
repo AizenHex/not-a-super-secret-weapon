@@ -2,6 +2,18 @@
 
 Terbaru di atas. Format di [`README.md`](README.md).
 
+## 2026-11-02 claude-opus-5-5 (cloud) - Laya v2: crash R18 di Temuan (data riil) + data riil dipakai uji
+- Dikerjakan: pengguna melapor `ValueError: R18: kolom tabel tanpa arti: ['kosong per baris', 'jumlah baris']`
+  di halaman Temuan (data riil). Arti dua kolom + 'bobot' ditambah di `ui/kamus.py`; kolom tanpa arti di aplikasi
+  kini peringatan di atas tabel (galat keras hanya bila `LAYA_KAMUS_KETAT`, diset `tests/bantu.py`); uji R18
+  baru memeriksa statis semua kunci `pd.DataFrame({...})` di `ui/`. Pengguna mengunggah train.csv riil
+  (30.380 × 28) + sample_submission.csv (7.595 baris, id tidak ada di train) → disalin ke `_laya_eda/data/`
+  (ditambah ke `.gitignore` root; sebelumnya TIDAK diabaikan). `tests/sintetis.py` disamakan dengan skema riil
+  (Ayah Hidup?, Ibu Hidup?, Daya Listrik (Watt); Fakultas/Jenis Kelamin karangan dihapus). `test_e6_data_riil`
+  kini memakai sample riil (format saja, test = baris train riil dengan id sample).
+- Dikoreksi pengguna: laporan crash (uji sintetis lolos padahal crash di data riil).
+- Berikutnya: hasil `python -m tests.semua` di data riil (sedang jalan saat entri ini ditulis).
+
 ## 2026-11-02 claude-opus-5-5 (cloud) - Laya v2: bagian C (uji R1–R18) + perbaikan
 - Dikerjakan: `tests/test_requirements.py` (R1–R18, 20 lulus), `tests/test_terima.py` (uji terima data riil, 10
   dilewati), `tests/semua.py` (runner). Bug yang ditemukan uji lalu diperbaiki: skrub StringEncoder tanpa

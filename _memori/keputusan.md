@@ -2,6 +2,10 @@
 
 Terbaru di atas. Format: `- YYYY-MM-DD: <keputusan>. Alasan: <...>.`
 
+- 2026-11-02: R18 di aplikasi = peringatan (tabel tetap tampil), galat keras hanya di uji (`LAYA_KAMUS_KETAT`).
+  Alasan: satu tooltip yang kurang tidak boleh mematikan seluruh halaman Temuan (laporan pengguna); kekurangan tetap
+  terlihat dan uji tetap gagal, ditambah cek statis kunci `pd.DataFrame({...})`.
+
 - 2026-11-02: uji Laya v2 tanpa pytest: runner sendiri `tests/bantu.py` (lulus/gagal/dilewati, `Lewati` bila data
   riil/library tidak ada) + `tests/semua.py`. Data uji = `tests/sintetis.py` (sintetis, seed tetap) bila data riil
   tidak ada. Alasan: pytest tidak ada di requirements.txt dan prompt melarang menambah library.

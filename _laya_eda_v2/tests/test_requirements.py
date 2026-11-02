@@ -40,14 +40,14 @@ def all_ops() -> list[dict]:
     add = lambda op, **k: steps.add_step(p, op, k)  # noqa: E731 (uji)
     texts = ["Kota", "Pendidikan Orang Tua/Wali", "Riwayat Beasiswa atau Bantuan Pendidikan", "Bahan Atap Rumah"]
     add("tidy_text", columns=texts)
-    add("change_case", columns=["Jenis Kelamin"], case="lower")
+    add("change_case", columns=["Ibu Hidup?"], case="lower")
     add("to_number", columns=["Biaya (teks)"], indonesian=True)
     add("spelling", groups={"Pendidikan Orang Tua/Wali": {"sltasederajat": ["ma", "sma"]}, "Kota": {}})
     add("fuzzy_spelling", columns=["Kota"], min_count=5, cutoff=90)
     add("map_values", column="Pekerjaan Orang Tua/Wali", mapping={"Petani": "Tani"})
     add("free_text", column="Bahan Atap Rumah", words={"gentng": "genteng", "asbas": "asbes"})
     add("sentinel_to_nan", columns=sintetis.SENTINEL_COLUMNS)
-    add("zero_to_nan", columns=["Daya Listrik"])
+    add("zero_to_nan", columns=["Daya Listrik (Watt)"])
     add("fill_constant", columns=["Status Kepesertaan Program Bantuan Pemerintah"], value="Tidak")
     add("impute", columns=["Luas Tanah Rumah (m2)"], strategy="median")
     add("drop_duplicates", reason="uji: baris kembar")
@@ -65,7 +65,7 @@ def all_ops() -> list[dict]:
     add("onehot", column="Jalur Masuk", min_share=0.01)
     add("materials_onehot", column="Bahan Atap Rumah", min_share=0.01)
     add("target_encode", columns=["Kota"], kind="kelas")
-    add("onehot_sklearn", columns=["Fakultas"], min_share=0.01)
+    add("onehot_sklearn", columns=["Ayah Hidup?"], min_share=0.01)
     add("skrub_encoder", column="Program Studi", kind="string", n_components=4)
     add("drop_columns", columns=["Lokasi Tempat Tinggal"], reason="uji: kembar dengan Kota")
     used = {step["op"] for step in p["steps"]}
@@ -244,7 +244,7 @@ def messy_variants(test: pd.DataFrame) -> dict:
     empty["Kota"], empty["Luas Tanah Rumah (m2)"], empty["Bahan Atap Rumah"] = np.nan, np.nan, np.nan
     return {
         "kategori/ejaan baru": spelled,
-        "kolom hilang": base.drop(columns=["Fakultas", "Kota", "NJOP per Meter"]),
+        "kolom hilang": base.drop(columns=["Ayah Hidup?", "Kota", "NJOP per Meter"]),
         "kolom tambahan": base.assign(kolom_asing=1, **{"kolom asing 2": "x"}),
         "urutan kolom beda": base[list(base.columns[::-1])],
         "tipe beda ('1.500' teks)": typed,
@@ -399,6 +399,17 @@ def test_r18_semua_tabel_lewat_show_table():
                 offenders.append(f"{path.name}:{node.lineno} .{node.func.attr}")
     assert not offenders, offenders
     from ui import kamus
+    # kolom tabel yang ditulis langsung di kode: kunci pd.DataFrame({...}) di ui/ harus punya arti (statis, tanpa
+    # perlu memicu temuannya; dulu 'kosong per baris' lolos uji dan crash di data riil)
+    missing = []
+    for path in (ROOT / "ui").glob("*.py"):
+        for node in ast.walk(ast.parse(path.read_text(encoding="utf-8"))):
+            if isinstance(node, ast.Call) and getattr(node.func, "attr", "") == "DataFrame" and node.args \
+                    and isinstance(node.args[0], ast.Dict):
+                for key in node.args[0].keys:
+                    if isinstance(key, ast.Constant) and kamus.meaning_of(key.value) is None:
+                        missing.append(f"{path.name}:{node.lineno} {key.value!r}")
+    assert not missing, missing
     try:
         kamus.show_table(pd.DataFrame({"kolom tanpa arti xyz": [1]}))
         raise AssertionError("kolom tanpa arti harus ditolak")

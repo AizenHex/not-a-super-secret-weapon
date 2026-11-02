@@ -2,7 +2,7 @@
 
 Data riil (`../_laya_eda/data/train.csv`, 30.380 × 28) tidak ada di repo. Tabel ini dibuat dari aturan di bawah
 dengan seed tetap, jadi uji bisa jalan di mana pun. Angka/porsi meniru audit, BUKAN salinan data riil:
-nama kolom yang tidak tercatat di repo (mis. `Jalur Masuk`, `Fakultas`) adalah karangan untuk melengkapi 28 kolom.
+nama dan urutan 28 kolom sama dengan data riil (dicek 2026-11-02 di train.csv unggahan pengguna).
 
 Kekacauan yang ditiru: spasi di belakang, singkatan (Kab.), huruf besar/kecil, tanda baca di kode jenjang,
 sinonim jenjang, penanda kosong palsu (`-`, `0`), kolom 1 nilai + kosong, isian bebas multi-bahan + salah ketik,
@@ -21,8 +21,8 @@ SENTINEL_COLUMNS = ["Pengeluaran Bulanan Keluarga", "Jumlah (Perkiraan Harga Pas
                     "Rerata Pengeluaran Listrik & Air per Bulan"]
 # porsi kelas 0..7: kelas 1 ±0,4% (riil 125 dari 30.380), kelas 4 terbesar (riil 6.617)
 CLASS_SHARE = [0.08, 0.004, 0.10, 0.14, 0.218, 0.17, 0.15, 0.138]
-INCOME = ["Kurang dari Rp 1.000.000", "Rp 1.000.000 - Rp 2.500.000", "Rp 2.500.001 - Rp 5.000.000",
-          "Rp 5.000.001 - Rp 10.000.000", "Lebih dari Rp 10.000.000"]
+INCOME = ["kurang dari Rp 1.000.000,-", "Rp 1.000.000 s.d. Rp 2.000.000", "Rp 2.000.000 s.d. Rp 3.000.000",
+          "Rp 3.000.000 s.d. Rp 4.000.000", "Rp 4.000.000 s.d. Rp 5.000.000", "lebih dari Rp 5.000.000"]
 CITY = ["Kota Semarang ", "Kota Semarang", "Kab. Semarang", "Kabupaten Semarang ", "Kab. Pati", "Kabupaten Pati",
         "Kota Salatiga", "Kab. Demak", "Kabupaten Kendal", "Kota Surakarta", "Kab. Grobogan", "Kota Magelang"]
 EDUCATION = ["SLTA", "SMA", "MA", "SLTA Sederajat", "SD/MI Sederajat", "SMP", "S1", "S-1", "D-1", "D.1", " D1",
@@ -49,7 +49,7 @@ STUDY = ["Pendidikan Jasmani, Kesehatan, dan Rekreasi", "Teknik Informatika", "A
          "Pendidikan Guru Sekolah Dasar", "Pendidikan Matematika", "Sejarah", "Geografi", "Agribisnis",
          "Agroteknologi", "Peternakan", "Ilmu Gizi", "Sosiologi", "Ilmu Pemerintahan", "Hubungan Internasional"]
 JOB = ["Petani", "Wiraswasta", "PNS", "Buruh", "Karyawan Swasta", "TNI/Polri", "Pedagang", "Tidak Bekerja"]
-HOUSE = ["Milik Sendiri", "Sewa", "Menumpang", "Milik Keluarga", "Dinas"]
+HOUSE = ["Milik Sendiri", "Menumpang", "Kontrak"]
 
 
 def _pick(rng, options, share, n):
@@ -100,13 +100,13 @@ def buat(n: int = 3000, seed: int = 0) -> pd.DataFrame:
     city = _pick(rng, CITY, np.ones(len(CITY)), n)
     typo = rng.random(n) < 0.01                                          # salah ketik kota (jarang)
     city[typo] = rng.choice(["Kota Semarng", "Kabupaten Kendl", "Kota Malang", "Kota Salatga"], typo.sum())
-    owner = _pick(rng, HOUSE, [0.6, 0.15, 0.1, 0.12, 0.03], n)
+    owner = _pick(rng, HOUSE, [0.76, 0.19, 0.05], n)
     data = {
         "id": np.arange(1, n + 1),
         "Program Studi": _pick(rng, STUDY, np.ones(len(STUDY)), n),
-        "Fakultas": _pick(rng, ["FT", "FE", "FK", "FH", "FIB", "FKIP"], np.ones(6), n),
-        "Jalur Masuk": _pick(rng, ["SNBP", "SNBT", "Mandiri"], [0.3, 0.4, 0.3], n),
-        "Jenis Kelamin": _pick(rng, ["L", "P"], [0.45, 0.55], n),
+        "Ayah Hidup?": _pick(rng, ["Hidup", "Meninggal"], [0.93, 0.07], n),
+        "Jalur Masuk": _pick(rng, ["SNBT", "SNBP"], [0.59, 0.41], n),
+        "Ibu Hidup?": _pick(rng, ["Hidup", "Meninggal"], [0.96, 0.04], n),
         "Kota": city,
         "Lokasi Tempat Tinggal": np.where(rng.random(n) < 0.992, city, _pick(rng, CITY, np.ones(len(CITY)), n)),
         "Pendidikan Orang Tua/Wali": _pick(rng, EDUCATION, EDUCATION_P, n),
@@ -115,13 +115,13 @@ def buat(n: int = 3000, seed: int = 0) -> pd.DataFrame:
         "Pengeluaran Bulanan Keluarga": _money(rng, 3e6, n) * np.exp(0.3 * wealth),
         "Jumlah Tanggungan dalam Keluarga": rng.integers(0, 8, n).astype(float),
         "Status Kepemilikan Tempat Tinggal": owner,
-        "Kepemilikan Aset": np.where(rng.random(n) < 0.993, owner, _pick(rng, HOUSE, np.ones(5), n)),
+        "Kepemilikan Aset": np.where(rng.random(n) < 0.993, owner, _pick(rng, HOUSE, np.ones(3), n)),
         "Luas Tanah Rumah (m2)": np.round(np.exp(rng.normal(4.8 + 0.3 * wealth, 0.6))),
         "NJOP per Meter": _money(rng, 1.5e6, n) * np.exp(0.4 * wealth),
         "Bahan Atap Rumah": _materials(rng, ROOF, ROOF_TYPO, "atap", n),
         "Bahan Tembok Rumah": _materials(rng, WALL, WALL_TYPO, "tembok", n),
         "Bahan Lantai Rumah": _materials(rng, FLOOR, FLOOR_TYPO, "lantai", n),
-        "Daya Listrik": _pick(rng, [450, 900, 1300, 2200, 3500, 5500], [0.15, 0.3, 0.25, 0.15, 0.1, 0.05], n).astype(float),
+        "Daya Listrik (Watt)": _pick(rng, [450, 900, 1300, 2200, 3500, 5500], [0.15, 0.3, 0.25, 0.15, 0.1, 0.05], n).astype(float),
         "Rerata Pengeluaran Listrik & Air per Bulan": _money(rng, 3e5, n, 0.6),
         "Jumlah (Perkiraan Harga Pasar) Kendaraan yang Dimiliki": _money(rng, 4e7, n) * np.exp(0.5 * wealth),
         "Total Hutang": np.where(rng.random(n) < 0.515, 0, _money(rng, 2e7, n)),
@@ -135,14 +135,14 @@ def buat(n: int = 3000, seed: int = 0) -> pd.DataFrame:
     latent = wealth + 0.25 * rng.normal(0, 1, n)
     cuts = np.quantile(latent, np.cumsum(CLASS_SHARE)[:-1])
     df[LABEL] = np.searchsorted(cuts, latent)
-    order = ["id", "Program Studi", "Fakultas", "Jalur Masuk", "Jenis Kelamin", "Kota", "Lokasi Tempat Tinggal",
-             "Pendidikan Orang Tua/Wali", "Pekerjaan Orang Tua/Wali", "Pendapatan Keluarga",
-             "Pengeluaran Bulanan Keluarga", "Jumlah Tanggungan dalam Keluarga", "Status Kepemilikan Tempat Tinggal",
-             "Kepemilikan Aset", "Luas Tanah Rumah (m2)", "Luas Bangunan Rumah (m2)", "NJOP per Meter",
-             "Bahan Atap Rumah", "Bahan Tembok Rumah", "Bahan Lantai Rumah", "Daya Listrik",
-             "Rerata Pengeluaran Listrik & Air per Bulan", "Jumlah (Perkiraan Harga Pasar) Kendaraan yang Dimiliki",
-             "Total Hutang", "Cicilan Hutang per Bulan", "Riwayat Beasiswa atau Bantuan Pendidikan",
-             "Status Kepesertaan Program Bantuan Pemerintah", LABEL]
+    order = ["id", "Pendapatan Keluarga", "Jumlah Tanggungan dalam Keluarga", "Pekerjaan Orang Tua/Wali",
+             "Pendidikan Orang Tua/Wali", "Kepemilikan Aset", "Lokasi Tempat Tinggal", "Pengeluaran Bulanan Keluarga",
+             "Status Kepesertaan Program Bantuan Pemerintah", "Riwayat Beasiswa atau Bantuan Pendidikan",
+             "Ayah Hidup?", "Ibu Hidup?", "Status Kepemilikan Tempat Tinggal",
+             "Jumlah (Perkiraan Harga Pasar) Kendaraan yang Dimiliki", "Daya Listrik (Watt)", "Luas Tanah Rumah (m2)",
+             "Luas Bangunan Rumah (m2)", "NJOP per Meter", "Bahan Atap Rumah", "Bahan Tembok Rumah",
+             "Bahan Lantai Rumah", "Rerata Pengeluaran Listrik & Air per Bulan", "Total Hutang",
+             "Cicilan Hutang per Bulan", "Program Studi", "Kota", "Jalur Masuk", LABEL]
     return df[order]
 
 
@@ -156,8 +156,8 @@ def _mess(df: pd.DataFrame, rng, n: int) -> None:
     small = rng.random(n) < 0.16
     df.loc[small, "NJOP per Meter"] = rng.integers(100, 1000, small.sum())
     df.loc[rng.random(n) < 0.1, "NJOP per Meter"] = 0                    # nol mencurigakan (riil 3.023)
-    df.loc[rng.random(n) < 0.009, "Daya Listrik"] = 0                   # riil 281 baris
-    df.loc[rng.choice(n, 2, replace=False), "Daya Listrik"] = 2_200_000
+    df.loc[rng.random(n) < 0.009, "Daya Listrik (Watt)"] = 0                   # riil 281 baris
+    df.loc[rng.choice(n, 2, replace=False), "Daya Listrik (Watt)"] = 2_200_000
     df.loc[rng.choice(n, 2, replace=False), "Jumlah Tanggungan dalam Keluarga"] = 10000
     bigger = (rng.random(n) < 0.029) & (df["Luas Tanah Rumah (m2)"] < 1e9)   # bangunan > tanah (riil 875)
     df.loc[bigger, "Luas Bangunan Rumah (m2)"] = df.loc[bigger, "Luas Tanah Rumah (m2)"] * 1.5

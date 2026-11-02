@@ -45,6 +45,7 @@ Koreksi terbaru pengguna di chat menang atas isi file ini; setelah itu perbarui 
 - Kecepatan penting: klik widget tidak boleh menghitung ulang hal berat (pakai `st.cache_data` dengan
   kunci `ctx["data_key"]`, unduhan CSV lewat callable). Ukur rerun mode baris pada `data/train.csv`
   (30k baris) sesudah mengubah tab. (2026-10-31)
+- Laya v2: uji yang lulus di data sintetis belum bukti; jalankan juga di data riil (`_laya_eda/data/train.csv`, tidak di-commit) sebelum menyebut selesai. (2026-11-02)
 - Setiap kolom yang tampil di tabel harus punya arti di `kamus.py` (nilai apa, dari apa); tabel
   baru pakai `kamus.show_table`, bukan `st.dataframe`. Pengguna bingung arti "nilai". (2026-10-31)
 

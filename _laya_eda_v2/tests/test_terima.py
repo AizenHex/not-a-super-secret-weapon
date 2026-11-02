@@ -66,13 +66,14 @@ def test_logika_antar_kolom():
 def test_satuan_campur():
     data = real()
     assert (data["Jumlah (Perkiraan Harga Pasar) Kendaraan yang Dimiliki"] < 100).sum() == 4867
+    assert (data["NJOP per Meter"] < 1000).sum() == 4826
     raise bantu.Lewati("belum diotomasi: aplikasi belum punya penanda 'satuan campur' (VISI bagian 3), "
                        "hanya angka patokan yang dicek")
 
 
 def test_nol_mencurigakan():
     real()
-    raise bantu.Lewati("belum diotomasi: usulan nol mencurigakan (Daya Listrik 0 di 281 baris) vs nol wajar")
+    raise bantu.Lewati("belum diotomasi: usulan nol mencurigakan (Daya Listrik (Watt) 0 di 281 baris) vs nol wajar")
 
 
 def test_label_timpang_kelas_1():

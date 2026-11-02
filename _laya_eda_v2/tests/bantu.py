@@ -7,6 +7,7 @@ itu DILEWATI dengan pesan, tidak dihapus.
 from __future__ import annotations
 
 import inspect
+import os
 import sys
 import tempfile
 import time
@@ -18,6 +19,8 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from tests import sintetis  # noqa: E402
+
+os.environ.setdefault("LAYA_KAMUS_KETAT", "1")   # R18: kolom tabel tanpa arti = galat di semua uji
 
 LABEL = sintetis.LABEL
 TRAIN_RIIL = ROOT.parent / "_laya_eda" / "data" / "train.csv"
