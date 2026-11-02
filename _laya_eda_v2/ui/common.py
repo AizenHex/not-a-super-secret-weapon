@@ -1,6 +1,7 @@
 """Bantuan bersama: proyek (daftar langkah) di session_state, data per langkah (ter-cache), pratinjau, flowchart."""
 from __future__ import annotations
 
+import copy
 import json
 import os
 from pathlib import Path
@@ -9,6 +10,8 @@ import pandas as pd
 import streamlit as st
 
 from core import split as splitter
+from core import vocab
+from core.ops import with_vocab
 from core import steps as engine
 from core.ops import OPS, summary
 from ui.flows import FLOWS
@@ -30,8 +33,11 @@ def restore_session() -> None:
             saved = json.loads(SESSION_FILE.read_text(encoding="utf-8"))
         except (OSError, ValueError):
             saved = {}
+    # sesi lama (sebelum kamus proyek) yang sudah punya langkah = proyek UKT → preset UKT; proyek baru = umum
+    kamus = saved.get("kosakata") or (vocab.PRESET_UKT if saved.get("steps") else vocab.UMUM)
     st.session_state["project"] = {"label": saved.get("label"), "steps": saved.get("steps", []),
-                                   "split": saved.get("split")}
+                                   "split": saved.get("split"), "kosakata": copy.deepcopy(kamus),
+                                   "baca": saved.get("baca")}
     for key in ("train_path", "test_path"):
         if saved.get(key):
             st.session_state[key] = saved[key]
@@ -41,7 +47,8 @@ def restore_session() -> None:
 def save_session() -> None:
     """Dipanggil di akhir app.py: tulis file hanya bila ada yang berubah."""
     p = project()
-    data = {"label": p["label"], "steps": p["steps"], "split": p.get("split"),
+    data = {"label": p["label"], "steps": p["steps"], "split": p.get("split"), "kosakata": p.get("kosakata"),
+            "baca": p.get("baca"),
             "train_path": st.session_state.get("train_path", ""), "test_path": st.session_state.get("test_path", "")}
     text = json.dumps(data, sort_keys=True, ensure_ascii=False, default=str)
     if text != st.session_state.get("saved_session"):
@@ -52,7 +59,7 @@ def save_session() -> None:
 
 def project() -> dict:
     if "project" not in st.session_state:
-        st.session_state["project"] = engine.new_project()
+        st.session_state["project"] = {**engine.new_project(), "kosakata": copy.deepcopy(vocab.UMUM), "baca": None}
     return st.session_state["project"]
 
 
@@ -178,6 +185,7 @@ def preview_step(op: str, params: dict, key: str, replace: int | None = None) ->
 
     replace = None: tombol 'tambah langkah' (di akhir). replace = i: tombol 'simpan ubahan' untuk langkah i.
     """
+    params = with_vocab(op, params)
     base = state(replace)
     candidate = [{"op": op, "params": params, "on": True}]
     result = _preview_run(state_key(replace), _key(candidate, label()), base)
@@ -237,6 +245,7 @@ def preview_steps(op: str, plan: list[dict], key: str) -> None:
     key = key data_editor asal usulan: dihapus sesudah menambah agar centang tidak terbawa (dan tidak dobel).
     """
     st.subheader(f"Pratinjau {len(plan)} langkah sekaligus")
+    plan = [with_vocab(op, params) for params in plan]
     base = state()
     candidate = [{"op": op, "params": params, "on": True} for params in plan]
     result = engine.run(candidate, label(), base["train"], base["test"], valid=base["valid"])
@@ -303,7 +312,9 @@ def sidebar_steps() -> None:
                      and p["steps"][k]["op"] == step["op"] and p["steps"][k]["params"] == step["params"]), None)
         if twin:
             box.caption(f"⚠ sama persis dengan langkah {twin}: biasanya tidak perlu diulang (cek log: baris tidak berubah?)")
-        cols = box.columns(4)
+        cols = box.columns(5)
+        cols[4].button("✎", key=f"edit_{i}", help="ubah langkah ini (form, pratinjau, atau kode)", on_click=open_step,
+                       args=(i,))
         if cols[0].button("⏸" if on else "▶", key=f"on_{i}", help="matikan / nyalakan"):
             step["on"] = not on
             st.rerun()
@@ -316,3 +327,9 @@ def sidebar_steps() -> None:
         if cols[3].button("✕", key=f"del_{i}", help="hapus langkah"):
             p["steps"].pop(i)
             st.rerun()
+
+
+def open_step(index: int) -> None:
+    """Callback ✎ (sebelum rerun): buka halaman Operasi pada langkah ini (G3)."""
+    st.session_state["page"] = "Operasi"
+    st.session_state["edit_index"] = index

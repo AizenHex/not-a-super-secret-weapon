@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import pandas as pd
 
-from core import audit, outlier_tools, steps, text_tools
+from core import audit, outlier_tools, steps, text_tools, vocab
 from tests import bantu
 from tests.test_steps import LABEL, TRAIN as DATA
 
@@ -15,6 +15,7 @@ SENTINEL_COLUMNS = ["Pengeluaran Bulanan Keluarga", "Jumlah (Perkiraan Harga Pas
 
 
 def test_tools() -> None:
+    vocab.use(vocab.PRESET_UKT)          # uji ini memeriksa kamus Indonesia/UKT (preset), bukan default umum
     data = pd.read_csv(DATA)
 
     profile = audit.column_profile(data).set_index("kolom")["tipe tebakan"]
@@ -47,7 +48,7 @@ def test_tools() -> None:
         for word, target in pairs.items():
             assert table.get(word) == target, (column, word, table.get(word))
         assert "batu" not in table.index, "batu kata sah (Bahan Tembok), bukan salah ketik bata"
-        for word in text_tools.STOPWORDS:
+        for word in text_tools.stopwords():
             assert word not in table.index and word not in set(table), (column, word)
         print(f"{column}: {len(table)} kata dipetakan, contoh {dict(list(table.items())[:6])}")
     print(text_tools.similar_vocabulary(data["Bahan Atap Rumah"]).head(8).to_string())

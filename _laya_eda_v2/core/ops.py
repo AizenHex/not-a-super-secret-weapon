@@ -17,6 +17,8 @@ import pprint
 import re
 
 MISSING_MARKERS = ["", "-", "--", "?", "nan", "null", "none", "n/a", "na", "tidak tahu"]
+# pemisah isian bebas & singkatan: dari kamus proyek (core/vocab.py), disalin ke parameter langkah saat dibuat.
+# Nilai di bawah = bawaan LAMA (data UKT), hanya untuk langkah tersimpan yang belum punya parameter itu.
 SEPARATORS = r"\s*(?:,|&|/|\+|;|\bdan\b|\batau\b|\(|\))\s*"
 SENTINEL_FLOOR = 2_000_000_000
 # kunci ejaan: huruf kecil, singkatan dipanjangkan, tanda baca & spasi dibuang ('S-1/D4' = 's1 / d-4' = 's1d4');
@@ -119,7 +121,8 @@ def spelling(p):
     examples = p.get("examples", {})
     lines = ["# satukan ejaan: nilai berkunci sama = nilai yang sama ('Kab. Pati' = 'Kabupaten Pati', 'S- 2' = 'S2');",
              "# ejaan baku tiap kunci = ejaan tersering di train; GABUNG menyatukan kunci berbeda yang bermakna sama",
-             "SINGKATAN = {" + ", ".join(f'r"{k}": "{v}"' for k, v in ABBREVIATIONS.items()) + "}",
+             "SINGKATAN = {" + ", ".join(f'r"{k}": "{v}"' for k, v in p.get("singkatan", ABBREVIATIONS).items()) + "}"
+             + "   # singkatan dari kamus proyek",
              "GABUNG = {"]
     for column, groups in p["groups"].items():
         if not groups:
@@ -156,7 +159,7 @@ def free_text(p):
     column, fillers, phrases = p["column"], p.get("fillers") or [], p.get("phrases") or {}
     words = "".join(f'\n    r"{pattern}": "{right}",' for pattern, right in word_regex(p["words"]).items())
     lines = [f"# isian bebas {column!r}: pecah per bahan, betulkan salah ketik per kata, urutkan",
-             f'PEMISAH = r"{SEPARATORS}"',
+             f'PEMISAH = r"{p.get("pemisah") or SEPARATORS}"   # pemisah dari kamus proyek',
              f"PETA_KATA = {{{words}\n}}   # regex kata salah: kata baku"]
     if fillers:
         pattern = "|".join(re.escape(word) for word in fillers)
@@ -393,6 +396,63 @@ def autogluon_features(p):
             "    test = fitur.iloc[:0]")
 
 
+# ---------------------------------------------------------------- umum (G6): tanggal, teks, kategori, kosong, kode bebas
+
+DATE_PARTS = {"year": "tahun", "month": "bulan", "day": "hari", "dayofweek": "hari_minggu", "hour": "jam"}
+
+
+def datetime_features(p):
+    parts = {key: DATE_PARTS[key] for key in p.get("parts", list(DATE_PARTS)) if key in DATE_PARTS}
+    return (f"# fitur tanggal: kolom asli tetap, kolom baru <kolom>_<bagian>; teks yang bukan tanggal -> kosong\n"
+            f"KOLOM_TANGGAL = {lit(p['columns'])}\n"
+            f"BAGIAN_TANGGAL = {lit(parts)}\n"
+            "for df in (train, valid, test):\n"
+            "    for kolom in KOLOM_TANGGAL:\n"
+            '        waktu = pd.to_datetime(df[kolom], errors="coerce", format="mixed")\n'
+            "        for bagian, nama in BAGIAN_TANGGAL.items():\n"
+            '            df[kolom + "_" + nama] = getattr(waktu.dt, bagian).astype(float)')
+
+
+def text_stats(p):
+    return (f"# statistik teks: panjang (karakter) dan jumlah kata; kolom asli tetap\n"
+            f"KOLOM_TEKS_PANJANG = {lit(p['columns'])}\n"
+            "for df in (train, valid, test):\n"
+            "    for kolom in KOLOM_TEKS_PANJANG:\n"
+            '        teks = df[kolom].astype("string")\n'
+            '        df[kolom + "_panjang"] = teks.str.len().astype(float)\n'
+            '        df[kolom + "_kata"] = teks.str.split().str.len().astype(float)')
+
+
+def to_category(p):
+    return (f"# angka kode -> kategori teks (3.0 -> '3'), kosong tetap kosong; nama kolom tetap\n"
+            f"KOLOM_KATEGORI = {lit(p['columns'])}\n"
+            "for df in (train, valid, test):\n"
+            "    for kolom in KOLOM_KATEGORI:\n"
+            '        nilai = df[kolom].astype("string").str.removesuffix(".0")\n'
+            "        df[kolom] = nilai.astype(object).where(nilai.notna())")
+
+
+def values_to_nan(p):
+    return (f"# nilai penjaga persis ini -> kosong (kode 'tidak diisi', bukan ukuran)\n"
+            f"KOLOM_PENJAGA_NILAI = {lit(p['columns'])}\n"
+            f"NILAI_PENJAGA = {lit(list(p['values']))}\n"
+            "for df in (train, valid, test):\n"
+            "    df[KOLOM_PENJAGA_NILAI] = df[KOLOM_PENJAGA_NILAI].replace(NILAI_PENJAGA, np.nan)")
+
+
+def missing_indicator(p):
+    return (f"# penanda kosong: <kolom>_kosong = 1 bila kosong (dibuat SEBELUM kosong diisi); kolom asli tetap\n"
+            f"KOLOM_PENANDA = {lit(p['columns'])}\n"
+            "for df in (train, valid, test):\n"
+            "    for kolom in KOLOM_PENANDA:\n"
+            '        df[kolom + "_kosong"] = df[kolom].isna().astype(int)')
+
+
+def custom_code(p):
+    """Kode bebas pengguna (G3): dijalankan apa adanya; def/lambda/class ditolak di steps.run (R4)."""
+    return f"# kode bebas: {p.get('title') or 'tanpa judul'}\n{p['code'].rstrip()}"
+
+
 # ---------------------------------------------------------------- transformer sklearn / feature_engine (E1)
 # Satu konstruktor dipakai DUA tempat: blok EDA (fit di train, transform valid & test) dan Pipeline sklearn
 # (core/pipeline.py). Untuk op pandas lama (impute, scale, ...) konstruktornya dibuktikan memberi angka yang
@@ -545,6 +605,31 @@ OPS = {
                                 "di train tidak diubah.",
                            fits="Pengganti peta panjang (R6: peta > 300 entri), kolom dengan banyak salah ketik.",
                            danger="Salah gabung nama mirip (Kota Malang → Kota Magelang). Naikkan ambang bila ragu."),
+    "datetime_features": dict(group="Kolom", title="Fitur tanggal (tahun, bulan, hari, jam)", code=datetime_features,
+                              what="Teks/tanggal → kolom baru <kolom>_tahun, _bulan, _hari, _hari_minggu, _jam. Kolom asli tetap.",
+                              fits="Kolom tanggal/waktu yang hampir unik per baris (pickup, tanggal transaksi).",
+                              danger="Format tanggal campur bisa salah baca (01/02 = 1 Feb atau 2 Jan?). Cek pratinjau."),
+    "text_stats": dict(group="Teks", title="Statistik teks panjang", code=text_stats,
+                       what="Kolom baru <kolom>_panjang (karakter) dan <kolom>_kata (jumlah kata). Kolom asli tetap.",
+                       fits="Teks bebas (ulasan, deskripsi) sebagai fitur sederhana.",
+                       danger="Panjang teks bisa jadi bocoran (mis. catatan petugas lebih panjang untuk kasus tertentu)."),
+    "to_category": dict(group="Kolom", title="Jadikan kategori (angka kode → teks)", code=to_category,
+                        what="Angka yang sebenarnya kode (jenis 0–3) jadi teks '0'..'3'. Nama kolom tetap.",
+                        fits="Kolom bilangan bulat dengan sedikit nilai yang artinya kategori, untuk one-hot.",
+                        danger="Bila angkanya besaran (jumlah anak), urutan/jarak hilang."),
+    "values_to_nan": dict(group="Kosong", title="Nilai tertentu → kosong", code=values_to_nan,
+                          what="Nilai persis tertentu (9999, -1, 2147483647) jadi kosong.",
+                          fits="Kode 'tidak diisi' dari sistem yang berulang di ujung sebaran.",
+                          danger="Nilai yang sama tapi sah (umur 99) ikut hilang."),
+    "missing_indicator": dict(group="Kosong", title="Penanda kosong (kolom 0/1)", code=missing_indicator,
+                              what="Kolom baru <kolom>_kosong = 1 bila sel kosong. Pasang SEBELUM mengisi kosong.",
+                              fits="Kolom yang kosongnya bermakna (tidak punya kolam, tidak mengisi pendapatan).",
+                              danger="Bila kosongnya acak, kolom baru hanya derau."),
+    "custom_code": dict(group="Kode", title="Kode bebas (pandas)", code=custom_code,
+                        what="Tulis kode pandas sendiri; `train`, `valid`, `test`, `LABEL`, `pd`, `np` tersedia. "
+                             "Dijalankan apa adanya, sama di aplikasi dan file .py.",
+                        fits="Apa pun yang tidak ada di katalog; atau ubah kode langkah lain.",
+                        danger="Tanpa def/lambda/class (R4). Statistik harus dari train saja; jangan buang baris valid/test."),
     "map_values": dict(group="Teks", title="Ganti nilai (peta nilai)", code=map_values,
                        what="Ganti nilai tertentu persis: {'Lainnya ': 'Lainnya'}. Untuk ejaan, pakai Satukan ejaan.",
                        fits="Cari & ganti manual beberapa nilai.",
@@ -657,13 +742,14 @@ LIBRARY = {"drop_columns": "pandas", "to_number": "pandas", "tidy_text": "pandas
            "log_transform": "numpy", "scale": "pandas", "onehot": "pandas", "ordinal": "pandas",
            "materials_onehot": "pandas", "skrub_encoder": "skrub", "autogluon_features": "autogluon",
            "target_encode": "sklearn", "onehot_sklearn": "sklearn", "rare_label": "feature_engine",
-           "winsorize": "feature_engine", "power": "sklearn"}
+           "winsorize": "feature_engine", "power": "sklearn", "datetime_features": "pandas", "text_stats": "pandas",
+           "to_category": "pandas", "values_to_nan": "pandas", "missing_indicator": "pandas", "custom_code": "pandas"}
 
 
 def removed_columns(step: dict) -> list[str] | None:
     """R8: kolom asli yang dibuang/diganti langkah ini (None = AutoGluon generator, mengubah seluruh tabel)."""
     op, p = step["op"], step["params"]
-    if op == "autogluon_features":
+    if op in ("autogluon_features", "custom_code"):
         return None
     if op in ("drop_columns", "target_encode", "onehot_sklearn"):
         return list(p["columns"])
@@ -699,6 +785,19 @@ def map_entries(code: str) -> int:
     return total
 
 
+def with_vocab(op: str, params: dict) -> dict:
+    """Salin nilai kamus proyek (core/vocab.py) ke parameter langkah saat dibuat: kode langkah tidak berubah
+    walau kamus diedit sesudahnya, dan langkah tanpa kamus memakai bawaan lama (data UKT)."""
+    from core import vocab
+
+    params = dict(params)
+    if op == "spelling" and "singkatan" not in params:
+        params["singkatan"] = dict(vocab.get("singkatan"))
+    if op == "free_text" and "pemisah" not in params:
+        params["pemisah"] = vocab.separator_regex()
+    return params
+
+
 def summary(step: dict) -> str:
     """Teks pendek untuk daftar langkah."""
     if step["op"] not in OPS:   # mis. 'rename_column' (dihapus 2026-11-02, R8): langkah lama tetap terlihat
@@ -707,6 +806,7 @@ def summary(step: dict) -> str:
     columns = p.get("columns") or list(p.get("groups", {}))
     target = p.get("column") or ", ".join(columns[:3]) + ("…" if len(columns) > 3 else "")
     extra = {"outlier": f" ({p.get('method')}, {p.get('action')})", "impute": f" ({p.get('strategy')})",
+             "custom_code": f": {p.get('title')}",
              "spelling": f" ({sum(len(o) for g in p.get('groups', {}).values() for o in g.values())} gabung)",
              "map_values": f" ({len(p.get('mapping', {}))} nilai)", "free_text": f" ({len(p.get('words', {}))} kata, {len(p.get('phrases') or {})} frasa)",
              "drop_rows_query": f": {p.get('rule')}", "skrub_encoder": f" ({p.get('kind')})"}.get(step["op"], "")

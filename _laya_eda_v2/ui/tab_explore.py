@@ -8,9 +8,9 @@ from pathlib import Path
 import pandas as pd
 import streamlit as st
 
-from core import audit
+from core import audit, findings, reader, vocab
 from core import steps as engine
-from core.ops import MISSING_MARKERS, OPS, SENTINEL_FLOOR
+from core.ops import OPS
 from ui.kamus import show_table
 from ui import common, jobs
 
@@ -20,23 +20,61 @@ DEFAULT_TRAIN = os.environ.get("LAYA_TRAIN", str(ROOT.parent / "_laya_eda" / "da
 DEFAULT_TEST = os.environ.get("LAYA_TEST", "")
 
 
-@st.cache_data(show_spinner="Membaca CSV…")
-def read_csv(source) -> pd.DataFrame:
-    return pd.read_csv(source)
+@st.cache_data(show_spinner="Membaca CSV…", max_entries=8)
+def read_csv(source, options_json: str) -> pd.DataFrame:
+    """Baca dengan opsi baca proyek (core/reader.py): kode yang sama dengan blok baca di skrip (G5)."""
+    return reader.read(source, json.loads(options_json))
+
+
+@st.cache_data(show_spinner=False, max_entries=8)
+def sniff(source) -> tuple[dict, list[dict]]:
+    return reader.sniff(source)
 
 
 def load_frame(title: str, default: str, key: str) -> tuple[pd.DataFrame | None, str]:
-    """Kembalikan (data, kunci sumber). Kunci dipakai cache langkah (bukan id objek)."""
+    """Kembalikan (data, kunci sumber). Kunci dipakai cache langkah (bukan id objek). Opsi baca = milik proyek."""
     st.session_state.setdefault(f"{key}_path", default)  # path tersimpan (common.restore_session) menang
     path = st.text_input(f"{title}: path CSV", key=f"{key}_path")
     upload = st.file_uploader(f"… atau unggah {title}", type="csv", key=f"{key}_upload")
+    source, name = None, ""
     if upload is not None:
-        return read_csv(upload), f"upload:{upload.name}:{upload.size}"
-    if path and Path(path).exists():
-        return read_csv(path), f"path:{path}:{Path(path).stat().st_mtime}"
-    if path:
+        source, name = upload.getvalue(), f"upload:{upload.name}:{upload.size}"
+    elif path and Path(path).exists():
+        source, name = path, f"path:{path}:{Path(path).stat().st_mtime}"
+    elif path:
         st.error(f"File tidak ditemukan: {path}")
-    return None, ""
+    if source is None:
+        return None, ""
+    p = common.project()
+    if key == "train" and (p.get("baca") is None or st.session_state.get("baca_sumber") != name):
+        options, notes = sniff(source)
+        if p.get("baca") is None or st.session_state.get("baca_sumber") is not None:
+            p["baca"] = options                         # file baru: tebak ulang opsi baca
+        st.session_state["baca_sumber"], st.session_state["baca_temuan"] = name, notes
+    options = p.get("baca") or reader.DEFAULT
+    return read_csv(source, json.dumps(options, sort_keys=True)), f"{name}|{json.dumps(options, sort_keys=True)}"
+
+
+def read_options(columns: list[str]) -> None:
+    """Opsi baca yang bisa diedit (G5); berlaku untuk train dan test, ikut tertulis di skrip."""
+    p = common.project()
+    options = dict(p.get("baca") or reader.DEFAULT)
+    with st.expander("Opsi baca file"):
+        seps = [",", ";", "\t", "|"]
+        sep = st.selectbox("Pemisah kolom", seps, seps.index(options["sep"]) if options["sep"] in seps else 0,
+                           key="baca_sep", format_func=lambda s: {"\t": "tab"}.get(s, s))
+        decimal = st.radio("Desimal", [".", ","], [".", ","].index(options.get("desimal", ".")), horizontal=True,
+                           key="baca_desimal")
+        encodings = ["utf-8-sig", "cp1252", "latin-1"]
+        encoding = st.selectbox("Encoding", encodings, encodings.index(options["encoding"])
+                                if options["encoding"] in encodings else 0, key="baca_encoding")
+        header = st.checkbox("Baris pertama = nama kolom", options["judul"], key="baca_judul")
+        na_text = st.multiselect("Kolom yang 'NA'/'None'-nya berarti 'tidak punya' (tetap teks)", columns,
+                                 [c for c in options.get("na_teks", []) if c in columns], key="baca_na")
+        new = {**options, "sep": sep, "desimal": decimal, "encoding": encoding, "judul": header, "na_teks": na_text}
+        if new != options:
+            p["baca"] = new
+            st.rerun()
 
 
 def insight(series: pd.Series) -> None:
@@ -48,9 +86,10 @@ def insight(series: pd.Series) -> None:
         show_table(values.describe(percentiles=[0.01, 0.25, 0.5, 0.75, 0.99]).to_frame().T)
         if len(values):
             st.bar_chart(pd.cut(values.clip(upper=values.quantile(0.99)), 30).value_counts(sort=False)
-                         .rename(index=str))
+                         .rename(index=str).rename("jumlah").rename_axis("rentang"))
     else:
-        st.bar_chart(series.value_counts(dropna=False).head(25).rename(index=str), horizontal=True)
+        st.bar_chart(series.value_counts(dropna=False).head(25).rename(index=str).rename("jumlah")
+                     .rename_axis("nilai"), horizontal=True)      # nama kolom ber-':' merusak grafik Vega
 
 
 def sidebar_data() -> None:
@@ -69,6 +108,7 @@ def sidebar_data() -> None:
         if chosen != p["label"]:
             p["label"] = chosen
             st.rerun()
+        read_options(list(data.columns))
         st.caption(f"train {data.shape[0]:,} × {data.shape[1]}"
                    + (f" · test {test.shape[0]:,} × {test.shape[1]}" if test is not None else " · tanpa test"))
 
@@ -128,6 +168,8 @@ def show_data() -> None:
     if report is not None:
         st.components.v1.html(report, height=900, scrolling=True)
 
+    vocabulary_editor()
+
     st.subheader("Simpan / muat daftar langkah")
     left, right = st.columns(2)
     left.download_button("Unduh langkah (.json)", json.dumps(p, ensure_ascii=False, indent=2), "langkah_eda.json",
@@ -135,23 +177,92 @@ def show_data() -> None:
     upload = right.file_uploader("Muat langkah", type="json", key="project_upload")
     if upload is not None and right.button("Pakai langkah ini"):
         loaded = json.load(upload)
+        current = common.project()
         st.session_state["project"] = {"label": loaded.get("label"), "steps": loaded.get("steps", []),
-                                       "split": loaded.get("split")}
+                                       "split": loaded.get("split"),
+                                       "kosakata": loaded.get("kosakata") or current.get("kosakata"),
+                                       "baca": loaded.get("baca") or current.get("baca")}
         st.rerun()
+
+
+LISTS = {"penanda_kosong": "Penanda kosong palsu (isi sel yang berarti kosong)",
+         "kata_tidak": "Jawaban 'tidak' (kunci tanpa spasi/tanda baca) yang digabung di tab Ejaan",
+         "pemisah": "Pemisah isian bebas multi-nilai (simbol atau kata)",
+         "kata_umum": "Kata yang tidak pernah dianggap salah ketik",
+         "kata_pengisi": "Kata pengisi yang dibuang dari satu bagian isian bebas"}
+MAPS = {"singkatan": "Singkatan (regex kata → kata panjang), dipakai kunci ejaan",
+        "kata_baku": "Kata varian → kata baku (isian bebas)", "frasa_baku": "Frasa → frasa baku (isian bebas)"}
+
+
+def vocabulary_editor() -> None:
+    """G4: kata domain = data proyek yang bisa diedit (bukan kode). Langkah yang sudah ada tidak berubah."""
+    p = common.project()
+    with st.expander("Kamus proyek (kata domain, bisa diedit)"):
+        st.caption("Dipakai Temuan, Ejaan, dan Isian bebas. Proyek baru = umum (tanpa kata domain). Langkah yang sudah "
+                   "dibuat menyimpan salinan kamusnya sendiri, jadi kodenya tidak berubah saat kamus diedit.")
+        left, right = st.columns([3, 1])
+        preset = left.selectbox("Preset", list(vocab.PRESETS), key="kamus_preset")
+        if right.button("Muat preset", key="kamus_muat"):
+            p["kosakata"] = json.loads(json.dumps(vocab.PRESETS[preset]))
+            st.rerun()
+        current = {**vocab.UMUM, **(p.get("kosakata") or {})}
+        new = dict(current)
+        for name, title in LISTS.items():
+            text = st.text_area(title + " — satu per baris", "\n".join(current[name]), key=f"kamus_{name}", height=110)
+            new[name] = [line.strip() if name != "penanda_kosong" else line.strip().lower()
+                         for line in text.splitlines() if line.strip() or name == "penanda_kosong"]
+        for name, title in MAPS.items():
+            text = st.text_area(title + " — satu per baris: `asli => baku`",
+                                "\n".join(f"{a} => {b}" for a, b in current[name].items()), key=f"kamus_{name}", height=110)
+            new[name] = {a.strip(): b.strip() for a, b in (line.split("=>", 1) for line in text.splitlines() if "=>" in line)}
+        levels = current["jenjang"]
+        st.caption(f"Kelompok berurutan (jenjang): {len(levels['urutan'])} tingkat, {len(levels['kunci'])} kunci "
+                   "(isi lewat preset; ubah di file langkah .json bila perlu).")
+        if new != current and st.button("Simpan kamus", type="primary", key="kamus_simpan"):
+            p["kosakata"] = new
+            st.rerun()
 
 
 # ---------------------------------------------------------------- temuan
 
 def suggestion(title: str, detail: pd.DataFrame | str, op: str, params: dict, key: str) -> None:
-    """Satu temuan: penjelasan operasi, rincian, pratinjau, tombol tambah langkah."""
-    with st.expander(title):
-        common.op_help(op)
-        if isinstance(detail, str):
-            st.write(detail)
-        else:
-            show_table(detail, hide_index=True)
-        if st.toggle("Pratinjau sebelum → sesudah", key=f"pv_{key}"):
-            common.preview_step(op, params, key)
+    """Satu usulan (ordinal, kolom kembar): penjelasan, rincian, parameter yang bisa diedit, pratinjau, tambah."""
+    finding_box({"judul": title, "alasan": detail if isinstance(detail, str) else "",
+                 "detail": None if isinstance(detail, str) else detail, "penting": 3,
+                 "pilihan": [{"judul": OPS[op]["title"], "op": op, "params": params}]}, key)
+
+
+@st.cache_data(max_entries=16, show_spinner="Memindai temuan…")
+def scan(key: str, _data: pd.DataFrame, label: str | None, markers: tuple) -> list[dict]:
+    return findings.scan(_data, label, list(markers))
+
+
+def finding_box(item: dict, key: str) -> None:
+    """Satu temuan (G1) + pilihan aksi + parameter yang bisa diedit (G2) + pratinjau sebelum → sesudah."""
+    icon = {1: "🔴", 2: "🟡", 3: "⚪"}.get(item["penting"], "⚪")
+    with st.expander(f"{icon} {item['judul']}"):
+        if item["alasan"]:
+            st.markdown(item["alasan"])
+        if item.get("detail") is not None and len(item["detail"]):
+            show_table(item["detail"], hide_index=True)
+        choices = item["pilihan"]
+        pick = 0
+        if len(choices) > 1:
+            pick = st.radio("Pilihan", list(range(len(choices))), key=f"{key}_pick",
+                            format_func=lambda i: choices[i]["judul"])
+        choice = choices[pick]
+        if choice["op"] is None:
+            st.caption(f"Tanpa langkah: {choice['judul']}.")
+            return
+        common.op_help(choice["op"])
+        if st.toggle("Ubah parameter + pratinjau sebelum → sesudah", key=f"pv_{key}"):
+            from ui.tab_clean import form
+
+            params = form(choice["op"], common.current(), choice["params"], f"{key}_{pick}_form")
+            if params is None:
+                st.info("Parameter belum lengkap.")
+                return
+            common.preview_step(choice["op"], params, f"{key}_{pick}")
 
 
 def show_findings() -> None:
@@ -164,11 +275,7 @@ def show_findings() -> None:
         return
     data, label, key = common.current(), common.label(), common.state_key() + "|fitur"
     found = 0
-    profile = common.analysis("column_profile", key, data).set_index("kolom")
-    kinds = profile["tipe tebakan"]
-
     fake = common.analysis("fake_missing", key, data)
-    messy = common.analysis("messy_text", key, data)
     answers = fake[fake["mungkin kategori"].astype(bool)]
     for row in answers.itertuples(index=False):
         found += 1
@@ -182,73 +289,21 @@ def show_findings() -> None:
         for column, count in (entry.get("kosong baru") or {}).items():
             made.setdefault(column, []).append((entry["langkah"], count, entry["operasi"]))
     for column in share[(share >= 0.05) & (share >= 5 * usual)].index:
-        found += 1
         causes = [f"langkah {number} ({name.split(' · ')[0]}) membuat {count:,}"
                   for number, count, name in made.get(column, []) if count >= 0.01 * len(data)]
-        st.warning(f"**'{column}' kosong {share[column]:.0%}, kolom lain umumnya {usual:.1%}.** "
-                   + (f"Dibuat oleh langkahmu: {'; '.join(causes)}. Kosong sebanyak ini yang muncul karena langkah "
-                      "biasanya jawaban yang terhapus (mis. '-' = 'tidak ada'), bukan data hilang: keluarkan kolom ini "
-                      "dari langkah tersebut, lalu satukan '-' di tab **Ejaan**."
-                      if causes else
-                      "Sudah kosong sejak data mentah. Jangan buang barisnya; pertimbangkan kategori sendiri "
-                      "('tidak diisi') atau penanda kosong, karena kosong di sini bisa membawa informasi."))
-    plain = fake[~fake["mungkin kategori"].astype(bool)]
-    columns = sorted((set(plain["kolom"]) | set(messy["kolom"])) - set(answers["kolom"]))
-    if columns:
+        if causes:
+            found += 1
+            st.warning(f"**'{column}' kosong {share[column]:.0%}.** Dibuat oleh langkahmu: {'; '.join(causes)}. Kosong "
+                       "yang muncul karena langkah biasanya jawaban yang terhapus (mis. '-' = 'tidak ada'), bukan data "
+                       "hilang: keluarkan kolom ini dari langkah tersebut.")
+    full = common.state()["train"]
+    items = list(st.session_state.get("baca_temuan") or []) if not common.project()["steps"] else []
+    items += scan(common.state_key() + f"|temuan|{label}", full, label, tuple(vocab.get("penanda_kosong")))
+    st.caption(f"{len(items)} temuan · 🔴 penting · 🟡 sebaiknya · ⚪ info. Pilih aksi, ubah parameternya bila perlu, "
+               "lihat pratinjau, lalu tambah langkah. Kamus kata domain: halaman **Data** → Kamus proyek.")
+    for number, item in enumerate(items):
         found += 1
-        detail = messy.merge(plain.groupby("kolom")["jumlah"].sum().rename("penanda kosong").reset_index(),
-                             on="kolom", how="outer").fillna(0)
-        suggestion(f"Rapikan teks di {len(columns)} kolom: {int(detail['sel berspasi lebih'].sum()):,} sel berspasi lebih, "
-                   f"{int(detail['penanda kosong'].sum()):,} penanda kosong",
-                   detail[detail["kolom"].isin(columns)], "tidy_text", {"columns": columns, "markers": MISSING_MARKERS},
-                   "tidy")
-
-    spelling = common.analysis("spelling_findings", key, data)
-    if len(spelling):
-        found += 1
-        suggestion(f"Ejaan berbeda untuk nilai yang sama di {len(spelling)} kolom kategori",
-                   spelling[["kolom", "nilai unik", "sesudah", "contoh"]], "spelling",
-                   {"groups": dict(zip(spelling["kolom"], spelling["groups"])),
-                    "examples": dict(zip(spelling["kolom"], spelling["examples"]))}, "spelling")
-
-    sentinel = common.analysis("sentinels", key, data)
-    if len(sentinel):
-        found += 1
-        suggestion(f"Nilai penjaga ≥ 2.000.000.000 di {len(sentinel)} kolom", sentinel, "sentinel_to_nan",
-                   {"columns": list(sentinel["kolom"]), "floor": SENTINEL_FLOOR}, "sentinel")
-
-    numeric_text = list(kinds[kinds == "angka-teks"].index)
-    if numeric_text:
-        found += 1
-        suggestion(f"Angka tersimpan sebagai teks: {len(numeric_text)} kolom", profile.loc[numeric_text].reset_index(),
-                   "to_number", {"columns": numeric_text, "indonesian": True}, "number")
-
-    single = common.analysis("single_value_columns", key, data)
-    for row in single.itertuples(index=False):
-        found += 1
-        suggestion(f"Kolom checkbox '{row.kolom}': hanya '{row[1]}' + {row.kosong:,} kosong",
-                   "Biasanya kosong = 'tidak'. Ubah nilai pengisi di tab Operasi bila artinya lain.",
-                   "fill_constant", {"columns": [row.kolom], "value": "Tidak"}, f"single_{row.kolom}")
-
-    ids = list(kinds[kinds.isin(["id", "kosong"])].index)
-    if ids:
-        found += 1
-        suggestion(f"Kolom id / kosong total: {', '.join(ids)}", "Kolom id unik per baris tidak membawa informasi; "
-                   "bila model menganggapnya penting (tab AutoGluon), itu tanda kebocoran urutan data.",
-                   "drop_columns", {"columns": ids, "reason": "kolom id: nilai unik per baris, tidak membawa pola"}, "ids")
-
-    findings = common.analysis("row_findings", common.state_key(), common.state()["train"], label)
-    if findings["duplikat persis"]:
-        found += 1
-        suggestion(f"{findings['duplikat persis']:,} baris duplikat persis di train",
-                   f"Grup duplikat dengan label berbeda: {findings['grup duplikat dengan label berbeda']}",
-                   "drop_duplicates", {"reason": "baris train kembar persis (temuan)"}, "dups")
-    if findings["kosong per baris (maks)"] >= max(10, data.shape[1] // 2):
-        found += 1
-        suggestion(f"Ada baris dengan {findings['kosong per baris (maks)']} kolom kosong",
-                   pd.DataFrame({"kosong per baris": list(findings["distribusi kosong per baris"]),
-                                 "jumlah baris": list(findings["distribusi kosong per baris"].values())}),
-                   "drop_missing_rows", {"max_missing": max(10, data.shape[1] // 2)}, "rowsmissing")
+        finding_box(item, f"f{number}_{item['jenis']}")
 
     ordinal = common.analysis("ordinal_findings", key, data)
     if len(ordinal):

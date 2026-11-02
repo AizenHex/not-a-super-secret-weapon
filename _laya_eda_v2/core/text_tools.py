@@ -20,53 +20,30 @@ import re
 import pandas as pd
 from rapidfuzz import fuzz, process
 
-from core.ops import ABBREVIATIONS, KEY_DIGITS, KEY_DROP
-from core.ops import SEPARATORS as MATERIAL_SEPARATORS
+from core import vocab
+from core.ops import KEY_DIGITS, KEY_DROP
 
-# kata pendek/umum yang mirip ejaan dengan kata lain tapi beda makna: jangan pernah dipetakan
-STOPWORDS = {"tanpa", "tanah", "tidak", "dak", "bagian", "sebagian", "dan", "atau", "dengan", "yang",
-             "ada", "belum", "sudah", "lain", "lainnya", "sengon", "seng", "dari", "di", "ke", "pakai"}
+# Kata domain (singkatan, jenjang, kata 'tidak', bahan, pengisi, kata umum, pemisah) = kamus proyek (core/vocab.py,
+# bisa diedit di aplikasi). Default proyek baru: UMUM (tanpa kata domain); preset 'Indonesia / UKT' = kamus lama.
 # kata mirip yang 20× lebih jarang dianggap salah ketik, walau sering muncul (gendeng 52 vs genteng 10.953)
 TYPO_RATIO = 20
-# kamus kecil bahan bangunan (KBBI dan kategori bahan atap/dinding/lantai BPS): varian → kata baku
-MATERIAL_WORDS = {"genting": "genteng", "gendeng": "genteng", "kramik": "keramik", "plaster": "plester",
-                  "plesteran": "plester", "tegel": "ubin", "tekel": "ubin", "tehel": "ubin", "jubin": "ubin",
-                  "herbel": "hebel", "batubata": "batu bata", "esbes": "asbes"}
-# frasa bahan yang sama makna menurut KBBI, berlaku per bahan sesudah peta kata:
-# bata = batu bata (bata merah); genting = "atap dari tanah liat yang dibakar" (genteng tanah liat = genteng)
-MATERIAL_PHRASES = {"bata": "batu bata", "bata merah": "batu bata", "batu bata merah": "batu bata",
-                    "genteng tanah liat": "genteng", "genteng tanah": "genteng"}
-# kata pengisi di dalam satu bahan ('genteng dari tanah liat', 'keramik biasa'); kata nama kolom ditambahkan
-FILLER_WORDS = {"dari", "biasa", "bahan", "rumah"}
 
-# jenjang pendidikan, urut naik. Kunci → nomor jenjang. Label gabungan ('S1/D-4', 'D-3/D2') dibaca per bagian.
-EDUCATION_LEVELS = ["tidak sekolah", "tidak lulus SD", "SD sederajat", "SMP sederajat", "SMA sederajat",
-                    "D1", "D2", "D3", "D4/S1", "S2", "S3"]
-EDUCATION = {
-    "tidaksekolah": 0, "belumsekolah": 0, "tidaklulussd": 1, "tidaktamatsd": 1, "belumtamatsd": 1,
-    "sd": 2, "mi": 2, "sdmi": 2, "sdsederajat": 2, "sdmisederajat": 2, "paketa": 2,
-    "smp": 3, "mts": 3, "sltp": 3, "smpmts": 3, "smpsederajat": 3, "sltpsederajat": 3, "paketb": 3,
-    "sma": 4, "ma": 4, "smk": 4, "slta": 4, "smama": 4, "smasmk": 4, "smasederajat": 4, "sltasederajat": 4,
-    "paketc": 4, "stm": 4, "smea": 4,
-    "d1": 5, "d2": 6, "d3": 7, "d4": 8, "s1": 8, "s2": 9, "s3": 10,
-}
-# jawaban 'tidak' (kunci). Kunci '' = isi hanya tanda baca ('-'): digabung hanya bila jumlahnya setara.
-NEGATIVE = {"tidak", "tidakada", "tidakdapat", "tidakpunya", "tidakpernah", "tidakmenerima", "belum", "belumada",
-            "belumpernah", "tak", "takada", "no", "none", "nihil"}
-MULTI_PART = r",|&|\+|;|\bdan\b"
+
+def stopwords() -> set[str]:
+    return set(vocab.get("kata_umum"))
 
 
 # ---------------------------------------------------------------- kunci
 
 def keys(series: pd.Series) -> pd.Series:
     """Kunci ejaan tiap sel, dengan ekspresi pandas yang sama persis dengan kode langkah 'Satukan ejaan'."""
-    key = series.astype("string").str.lower().replace(ABBREVIATIONS, regex=True)   # astype: kolom test kosong semua
+    key = series.astype("string").str.lower().replace(vocab.get("singkatan"), regex=True)   # astype: kolom test kosong semua
     return key.str.replace(KEY_DIGITS, "_", regex=True).str.replace(KEY_DROP, "", regex=True)
 
 
 def key_of(value) -> str:
     text = str(value).lower()
-    for pattern, full in ABBREVIATIONS.items():
+    for pattern, full in vocab.get("singkatan").items():
         text = re.sub(pattern, full, text)
     return re.sub(KEY_DROP, "", re.sub(KEY_DIGITS, "_", text))
 
@@ -74,7 +51,7 @@ def key_of(value) -> str:
 def fingerprint(value) -> str:
     """OpenRefine fingerprint: huruf kecil, singkatan dipanjangkan, tanda baca DIBUANG, kata unik terurut."""
     text = str(value).lower()
-    for pattern, full in ABBREVIATIONS.items():
+    for pattern, full in vocab.get("singkatan").items():
         text = re.sub(pattern, full, text)
     return " ".join(sorted(set(re.sub(r"[^\w\s]", "", text).split())))
 
@@ -94,7 +71,7 @@ def key_table(series: pd.Series) -> pd.DataFrame:
 def is_free_text(series: pd.Series) -> bool:
     """Isian bebas: > 100 kunci berbeda dan ≥ 3% sel berisi beberapa bagian (',', '&', 'dan')."""
     text = series.dropna().astype(str)
-    return keys(text).nunique() > 100 and text.str.contains(MULTI_PART, regex=True).mean() >= 0.03
+    return keys(text).nunique() > 100 and text.str.contains(vocab.separator_regex(multi=True), regex=True).mean() >= 0.03
 
 
 # ---------------------------------------------------------------- gabung kunci
@@ -102,11 +79,11 @@ def is_free_text(series: pd.Series) -> bool:
 def education_levels(value) -> set[int]:
     """Jenjang yang disebut satu nilai: 'S1/D-4' → {8}, 'D-3/D2' → {6, 7}, tidak dikenal → set()."""
     key = key_of(value)
-    if key in EDUCATION:
-        return {EDUCATION[key]}
+    if key in vocab.get("jenjang")["kunci"]:
+        return {vocab.get("jenjang")["kunci"][key]}
     parts = [key_of(part).removesuffix("sederajat") for part in re.split(r"/|,|\batau\b", str(value))]
-    if len(parts) > 1 and all(part in EDUCATION for part in parts):
-        return {EDUCATION[part] for part in parts}
+    if len(parts) > 1 and all(part in vocab.get("jenjang")["kunci"] for part in parts):
+        return {vocab.get("jenjang")["kunci"][part] for part in parts}
     return set()
 
 
@@ -115,7 +92,7 @@ def _education_edges(total: pd.Series, spelled: pd.Series) -> list[tuple]:
     known = [key for key in total.index if levels[key]]
     if len(known) < 3 or total[known].sum() < 0.8 * total.sum():
         return []
-    root = list(range(len(EDUCATION_LEVELS)))          # jenjang yang muncul di satu label gabungan = satu kelompok
+    root = list(range(len(vocab.get("jenjang")["urutan"])))          # jenjang yang muncul di satu label gabungan = satu kelompok
     for key in known:
         first = root[min(levels[key])]
         for level in levels[key]:
@@ -126,7 +103,7 @@ def _education_edges(total: pd.Series, spelled: pd.Series) -> list[tuple]:
         groups.setdefault(root[min(levels[key])], []).append(key)
     edges = []
     for members in groups.values():
-        names = sorted({EDUCATION_LEVELS[level] for key in members for level in levels[key]}, key=EDUCATION_LEVELS.index)
+        names = sorted({vocab.get("jenjang")["urutan"][level] for key in members for level in levels[key]}, key=vocab.get("jenjang")["urutan"].index)
         for key in members[1:]:
             edges.append((key, members[0], f"kamus jenjang: {' = '.join(names)} ('{spelled[key]}' = "
                                            f"'{spelled[members[0]]}')", True))
@@ -134,7 +111,7 @@ def _education_edges(total: pd.Series, spelled: pd.Series) -> list[tuple]:
 
 
 def _negative_edges(total: pd.Series, spelled: pd.Series, table: pd.DataFrame) -> list[tuple]:
-    negative = [key for key in total.index if key in NEGATIVE]
+    negative = [key for key in total.index if key in set(vocab.get("kata_tidak"))]
     if not negative:
         return []
     target = negative[0]
@@ -276,24 +253,24 @@ def ordinal_order(series: pd.Series) -> dict | None:
 
 def words_of(series: pd.Series) -> pd.Series:
     parts = series.dropna().astype(str).str.lower().str.replace(r"[.\-]", " ", regex=True)
-    parts = parts.str.split(MATERIAL_SEPARATORS, regex=True).explode().str.strip()
+    parts = parts.str.split(vocab.separator_regex(), regex=True).explode().str.strip()
     return parts[parts != ""].str.split().explode()
 
 
 def word_map(series: pd.Series, min_count: int = 30, cutoff: float = 75,
              related: list[pd.Series] | None = None) -> pd.DataFrame:
-    """Kata jarang -> kata baku terdekat (rapidfuzz fuzz.ratio), ditambah kamus bahan (MATERIAL_WORDS).
+    """Kata jarang -> kata baku terdekat (rapidfuzz fuzz.ratio), ditambah kamus bahan (vocab.get("kata_baku")).
 
     Kosakata baku = kata yang muncul >= min_count kali di kolom ini DAN kolom terkait (related),
     supaya kata sah di kolom lain ('batu' di Bahan Tembok) tidak dianggap salah ketik ('bata').
-    Kata pendek (< 4 huruf) butuh skor >= 80. Kata di STOPWORDS tidak pernah dipetakan.
+    Kata pendek (< 4 huruf) butuh skor >= 80. Kata di stopwords() tidak pernah dipetakan.
     """
     counts = words_of(series).value_counts()
     total = pd.concat([words_of(s) for s in [series, *(related or [])]]).value_counts()
-    vocabulary = [w for w in total[total >= min_count].index if w not in STOPWORDS and re.fullmatch(r"[a-z]+", w)]
+    vocabulary = [w for w in total[total >= min_count].index if w not in stopwords() and re.fullmatch(r"[a-z]+", w)]
     rows = {}
     for word, count in counts.items():
-        if word in STOPWORDS or not re.fullmatch(r"[a-z]{3,}", word):    # huruf saja: "kayu''" / '2x3' bukan kata
+        if word in stopwords() or not re.fullmatch(r"[a-z]{3,}", word):    # huruf saja: "kayu''" / '2x3' bukan kata
             continue
         limit = cutoff if len(word) >= 4 else max(cutoff, 80)
         note = ""
@@ -311,7 +288,7 @@ def word_map(series: pd.Series, min_count: int = 30, cutoff: float = 75,
             rows[word] = {"kata asli": word, "usulan": best[0], "skor": round(best[1]), "jumlah": int(count),
                           "setuju": best[1] >= 85 and len(word) >= 4,     # 3 huruf: beda 1 huruf = kata lain (ubi)
                           "catatan": note}
-    for word, right in MATERIAL_WORDS.items():
+    for word, right in vocab.get("kata_baku").items():
         if word in counts and all(part in counts for part in right.split()):
             rows[word] = {"kata asli": word, "usulan": right, "skor": None, "jumlah": int(counts[word]),
                           "setuju": True, "catatan": "kamus bahan (KBBI / kategori BPS): sinonim, bukan salah ketik"
@@ -339,11 +316,11 @@ def resolve_chains(words: dict[str, str]) -> dict[str, str]:
 def similar_vocabulary(series: pd.Series, min_count: int = 30, cutoff: float = 80) -> pd.DataFrame:
     """Pasangan kata baku yang mirip: kandidat sinonim, tidak pernah otomatis (yang ada di kamus dilewati)."""
     counts = words_of(series).value_counts()
-    vocabulary = [w for w in counts[counts >= min_count].index if w not in STOPWORDS]
+    vocabulary = [w for w in counts[counts >= min_count].index if w not in stopwords()]
     rows = []
     for i, first in enumerate(vocabulary):
         for second in vocabulary[i + 1:]:
-            if MATERIAL_WORDS.get(first) == second or MATERIAL_WORDS.get(second) == first:
+            if vocab.get("kata_baku").get(first) == second or vocab.get("kata_baku").get(second) == first:
                 continue
             score = fuzz.ratio(first, second)
             if score >= cutoff and counts[first] < TYPO_RATIO * counts[second]:   # yang timpang = salah ketik (word_map)
@@ -353,14 +330,14 @@ def similar_vocabulary(series: pd.Series, min_count: int = 30, cutoff: float = 8
 
 
 def fillers_for(column: str) -> list[str]:
-    """Kata pengisi kolom ini: FILLER_WORDS + kata nama kolom ('Bahan Lantai Rumah': 'lantai keramik' = 'keramik')."""
-    return sorted(FILLER_WORDS | set(re.findall(r"[a-z]{3,}", column.lower())))
+    """Kata pengisi kolom ini: set(vocab.get("kata_pengisi")) + kata nama kolom ('Bahan Lantai Rumah': 'lantai keramik' = 'keramik')."""
+    return sorted(set(vocab.get("kata_pengisi")) | set(re.findall(r"[a-z]{3,}", column.lower())))
 
 
 def phrases_of(series: pd.Series, words: dict[str, str], fillers=()) -> pd.Series:
     """Bahan per bagian sel sesudah peta kata dan buang kata pengisi (sama dengan kode langkah); indeks = baris."""
     items = series.dropna().astype(str).str.lower().str.replace(r"[.\-]", " ", regex=True)
-    items = items.str.split(MATERIAL_SEPARATORS, regex=True).explode().str.strip()
+    items = items.str.split(vocab.separator_regex(), regex=True).explode().str.strip()
     items = items[items != ""]
     drop, fixed = set(fillers), []
     for item in items:
@@ -375,7 +352,7 @@ def phrase_map(series: pd.Series, words: dict[str, str], fillers=(), min_count: 
     """Usulan PETA_FRASA {bahan: bahan baku}, hanya untuk bahan yang muncul di ≥ min_count baris (ekor panjang
     tidak mengubah model, dan peta tetap pendek).
 
-    - kamus MATERIAL_PHRASES ('bata merah' = 'batu bata'): dicentang;
+    - kamus vocab.get("frasa_baku") ('bata merah' = 'batu bata'): dicentang;
     - urutan kata beda ('plester semen' = 'semen plester'): ke urutan tersering, dicentang;
     - memuat tepat satu bahan yang ≥ min_ratio× lebih sering ('genteng beton' memuat 'genteng'): TIDAK dicentang,
       karena kata tambahannya bisa rincian yang penting (beton ≠ tanah liat).
@@ -391,8 +368,8 @@ def phrase_map(series: pd.Series, words: dict[str, str], fillers=(), min_count: 
     for phrase, count in frequent.items():
         tokens = set(phrase.split())
         same = order[" ".join(sorted(tokens))] if len(tokens) == len(phrase.split()) else phrase
-        if phrase in MATERIAL_PHRASES:
-            rows.append([True, phrase, count, MATERIAL_PHRASES[phrase], "kamus KBBI: sama makna"])
+        if phrase in vocab.get("frasa_baku"):
+            rows.append([True, phrase, count, vocab.get("frasa_baku")[phrase], "kamus KBBI: sama makna"])
         elif same != phrase:
             rows.append([True, phrase, count, same, f"urutan kata beda dari '{same}' ({counts[same]:,} baris)"])
         else:

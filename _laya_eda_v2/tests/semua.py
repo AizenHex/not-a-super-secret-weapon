@@ -12,7 +12,7 @@ import tempfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-MODULES = ["test_steps", "test_tools", "test_requirements", "test_extra", "test_terima", "test_app"]
+MODULES = ["test_steps", "test_tools", "test_requirements", "test_extra", "test_terima", "test_umum", "test_app"]
 
 
 def main() -> None:

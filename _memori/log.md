@@ -2,6 +2,20 @@
 
 Terbaru di atas. Format di [`README.md`](README.md).
 
+## 2026-11-02 claude-opus-5-5 (cloud) - Laya v2: overhaul UMUM (G1–G7), bukan alat khusus UKT
+- Dikerjakan: uji stres di 10 dataset (Titanic, Penguins, Diamonds, Taxis, MPG, Adult, Ames, Heart, Telco,
+  Fitness unggahan pengguna) membuktikan Temuan hanya mengenali pola UKT (Penguins/Taxis 0 usulan, Ames crash,
+  Adult tanpa judul tak dikenali, Fitness bocor tanpa peringatan). VISI.md bagian 0b (G1–G7) ditambah. Baru:
+  `core/findings.py`, `core/reader.py`, `core/vocab.py` (kamus proyek + preset UKT), op umum (datetime_features,
+  text_stats, to_category, values_to_nan, missing_indicator, custom_code), Temuan dengan pilihan + parameter bisa
+  diedit, ✎ di sidebar, "ubah jadi kode bebas", editor kamus + opsi baca di halaman Data, peringatan skor ≥ 0,99
+  di Latih, perbaikan grafik kolom ber-':' (crash Ames). Uji baru `tests/test_umum.py` + `tests/app_umum.py`;
+  dataset di `_laya_eda/data/umum/` (diabaikan git). Saat commit ini uji lengkap masih berjalan; AppTest Ames,
+  test_steps, test_tools sudah lulus.
+- Dikoreksi pengguna: "terlalu fokus ke data train golongan UKT ... bukan software yang general ... aku bahkan gak
+  bisa mengeditnya ... butuh overhaul" → aturan.md.
+- Berikutnya: hasil `python -m tests.semua`; bocor dari gabungan kolom (Fitness tetap 0,9998); editor jenjang.
+
 ## 2026-11-02 claude-opus-5-5 (cloud) - Laya v2: crash R18 di Temuan (data riil) + data riil dipakai uji
 - Dikerjakan: pengguna melapor `ValueError: R18: kolom tabel tanpa arti: ['kosong per baris', 'jumlah baris']`
   di halaman Temuan (data riil). Arti dua kolom + 'bobot' ditambah di `ui/kamus.py`; kolom tanpa arti di aplikasi

@@ -14,6 +14,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from ui import common, jobs, tab_clean, tab_code, tab_explore, tab_laya, tab_model, tab_split  # noqa: E402
 from ui import tab_submit, tab_train  # noqa: E402
 from ui.flows import FLOWS  # noqa: E402
+from core import vocab  # noqa: E402
 
 st.set_page_config(page_title="Laya EDA", layout="wide")
 
@@ -39,13 +40,14 @@ KEEP = ["insight_column", "op_group", "op_name", "spell_column", "spell_method",
         "spell_mode", "spell_all_method", "split_method", "split_share", "split_seed", "split_stratify",
         "split_group", "split_time", "train_task", "train_metric", "train_mode", "train_models", "train_fold",
         "train_group", "train_time", "train_exclude", "train_imbalance", "train_pick", "sample_path",
-        "pipeline_path_input", "sub_train", "sub_test"]
+        "pipeline_path_input", "sub_train", "sub_test", "edit_index"]
 
 st.sidebar.title("Laya EDA")
 st.sidebar.caption("Alat bantu EDA: data mentah tidak berubah sampai kamu menambah langkah.")
 with st.sidebar.expander("Cara kerja langkah (flowchart)"):
     st.graphviz_chart(FLOWS["langkah"], width="stretch")
 common.restore_session()
+vocab.use(common.project().get("kosakata"))   # kamus proyek (G4) untuk semua alat analisis di run ini
 tab_explore.sidebar_data()
 common.sidebar_steps()
 jobs.sidebar()            # tugas latar (AutoGluon, cleanlab, …): tetap jalan walau halaman dipindah

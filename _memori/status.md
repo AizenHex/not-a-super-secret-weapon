@@ -43,6 +43,8 @@ Pengguna berangkat 2026-11-09. Prioritas dan pohon pekerjaan: [`../RENCANA_LOMBA
   **Belum**: uji di venv Windows `Z:/GEMASTIK/Vignate-GEMASTIK/.venv` (paket
   pandera/feature-engine/skrub/autogluon belum dipasang di sana per 2026-11-02); R17 belum diukur di browser;
   penanda satuan campur + nol mencurigakan; tab Kosong/Encoding. Rincian di STATUS `RENCANA.md`.
+- Laya v2 overhaul UMUM (2026-11-02): Temuan/baca/kamus umum, semua bisa diedit; uji 10 dataset di
+  `_laya_eda/data/umum/` (diabaikan git). Rincian STATUS E di `_laya_eda_v2/RENCANA.md`.
 - `viginte-train.ipynb` dipindah dari root ke `_.Testing/` (diabaikan git).
 - PPT vignette (penyisihan) selesai 2026-10-30. Figur + skripnya di `Z:/GEMASTIK/Vignate-2/outputs/figures/`
   (di luar repo, bukan git); catatan lengkap `Z:/GEMASTIK/Vignate-2/HANDOFF.md`.

@@ -46,6 +46,25 @@ Hubungan dengan R1–R18:
 
 ---
 
+## 0b. Umum: bukan alat khusus `Golongan UKT` (overhaul 2026-11-02)
+
+Ketetapan pengguna (2026-11-02): Laya harus **umum** untuk data tabular apa pun, dan semua yang dibuatnya **bisa
+diedit**. Uji stres di 10 dataset (Titanic, Penguins, Diamonds, Taxis, MPG, Adult, Ames, Heart, Telco, Fitness)
+menunjukkan Temuan hanya mengenali pola kekacauan UKT. Kedudukan: setara bagian 0 (di atas R1–R18). Data UKT tetap
+menjadi salah satu uji, bukan satu-satunya.
+
+| # | Umum | Isi | Cara memastikan |
+|---|---|---|---|
+| G1 | **Temuan umum** | detektor berbasis profil kolom, bukan kamus domain: kosong per kolom (isi + indikator / kategori sendiri / buang kolom), tipe (angka-teks, tanggal-teks, kategori yang ditulis angka), kolom konstan/id, kardinalitas kategori (one-hot / target / langka), teks panjang, nilai penjaga generik (nilai ekstrem yang berulang), kebocoran label (satu kolom menebak label hampir sempurna), label timpang/kosong, duplikat, penanda kosong palsu, ejaan | uji di 10 dataset: temuan yang diharapkan per dataset muncul (mis. Titanic: Age kosong; Taxis: kolom tanggal; Fitness: curiga bocor) |
+| G2 | **Usulan bisa diedit** | setiap usulan Temuan membuka form parameter yang sama dengan tab Operasi (kolom, metode, nilai), pratinjau memakai parameter yang diedit | uji AppTest: ubah parameter usulan → langkah tersimpan dengan parameter baru |
+| G3 | **Langkah bisa diedit** | setiap langkah di sidebar bisa dibuka (form + pratinjau), atau diubah jadi **langkah kode bebas** yang teksnya diedit langsung; kode bebas tetap tanpa def/lambda/class (R4) dan dijalankan apa adanya (R5) | uji: ubah langkah → kode berubah; kode bebas dengan `def` ditolak dengan pesan |
+| G4 | **Kamus proyek bisa diedit** | penanda kosong, singkatan, sinonim, kata pengisi, kata umum, pemisah isian bebas, kata baku: tabel per proyek (disimpan bersama langkah). Default umum (kosong untuk kata domain); kamus UKT/Indonesia = **preset** yang bisa dimuat dan diubah | uji: proyek baru tanpa preset → tidak ada kata UKT di kode; preset UKT → uji UKT lama tetap lulus |
+| G5 | **Baca data umum** | BOM (`utf-8-sig`), pemisah otomatis (`,` `;` tab), file tanpa baris judul (`kolom_1..n`), pilihan "NA" tetap teks; opsi baca ikut tertulis di skrip | uji: Heart (BOM), Adult (tanpa judul), Ames ("NA") terbaca benar, skrip mandiri = aplikasi |
+| G6 | **Op umum baru** | fitur tanggal, statistik teks panjang, jadikan kategori, indikator kosong | uji R2/R3/R8/R12 berlaku untuk op baru |
+| G7 | **Uji regresi umum** | 10 dataset diunduh ke `_laya_eda/data/umum/` (tidak di-commit): semua halaman tanpa galat, semua usulan bisa ditambah, skrip mandiri jalan, Latih jalan | `tests/test_umum.py`; tanpa jaringan/data = dilewati |
+
+---
+
 ## 1. Requirement (wajib, diuji otomatis)
 
 | # | Requirement | Cara memastikan |

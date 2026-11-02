@@ -7,9 +7,9 @@ import numpy as np
 import pandas as pd
 import streamlit as st
 
-from core import outlier_tools, text_tools
+from core import outlier_tools, text_tools, vocab
 from core import steps as engine
-from core.ops import MISSING_MARKERS, OPS, SENTINEL_FLOOR, summary
+from core.ops import DATE_PARTS, OPS, SENTINEL_FLOOR, summary
 from ui.kamus import edit_table, show_table
 from ui import common, jobs
 
@@ -44,6 +44,22 @@ def bound_widgets(values: pd.Series, key: str, old: dict) -> dict:
     default = float(old.get("factor") or outlier_tools.FACTORS[method])
     factor = middle.number_input("k", 0.5, 10.0, default, 0.5, key=f"{key}_k_{method}")
     return {"method": method, "factor": factor, "low": None, "high": None}
+
+
+def _is_float(text: str) -> bool:
+    try:
+        float(text)
+    except ValueError:
+        return False
+    return True
+
+
+def to_code(index: int) -> None:
+    """Callback: langkah ke-index jadi langkah kode bebas berisi kodenya sendiri (G3), lalu bisa diedit."""
+    steps = common.project()["steps"]
+    step = steps[index]
+    steps[index] = {"op": "custom_code", "on": step.get("on", True),
+                    "params": {"title": f"(dari) {summary(step)}", "code": engine.step_code(step)}}
 
 
 def form(op: str, data: pd.DataFrame, old: dict, key: str) -> dict | None:
@@ -92,7 +108,7 @@ def form(op: str, data: pd.DataFrame, old: dict, key: str) -> dict | None:
         return {"columns": picked, "indonesian": indonesian} if picked else None
     if op == "tidy_text":
         picked = many("Kolom teks", texts, texts)
-        markers = st.text_input("Penanda kosong (pisah |)", " | ".join(old.get("markers", MISSING_MARKERS)),
+        markers = st.text_input("Penanda kosong (pisah |)", " | ".join(old.get("markers", vocab.get("penanda_kosong"))),
                                 key=f"{key}_mk")
         marks = sorted({m.strip().lower() for m in markers.split("|")} | {""})
         return {"columns": picked, "markers": marks} if picked else None
@@ -220,6 +236,37 @@ def form(op: str, data: pd.DataFrame, old: dict, key: str) -> dict | None:
             params["fold"] = st.number_input("fold (k; quantiles: porsi ekor, mis. 0.05)", 0.0, 10.0,
                                              float(old.get("fold", 1.5)), 0.05, key=f"{key}_wf")
         return params if picked else None
+    if op == "datetime_features":
+        picked = many("Kolom tanggal/waktu", texts + numbers)
+        parts = st.multiselect("Bagian", list(DATE_PARTS), old.get("parts", list(DATE_PARTS)), key=f"{key}_parts",
+                               format_func=DATE_PARTS.get)
+        return {"columns": picked, "parts": parts} if picked and parts else None
+    if op == "text_stats":
+        picked = many("Kolom teks", texts)
+        return {"columns": picked} if picked else None
+    if op == "to_category":
+        picked = many("Kolom angka yang sebenarnya kode", numbers)
+        return {"columns": picked} if picked else None
+    if op == "values_to_nan":
+        picked = many("Kolom angka", numbers)
+        text = st.text_input("Nilai yang jadi kosong (pisah koma)", ", ".join(f"{v:g}" for v in old.get("values", [])),
+                             key=f"{key}_vals")
+        values = [float(v) for v in text.replace(";", ",").split(",") if v.strip() and _is_float(v)]
+        return {"columns": picked, "values": values} if picked and values else None
+    if op == "missing_indicator":
+        picked = many("Kolom (penanda dibuat sebelum kosong diisi)", columns)
+        return {"columns": picked} if picked else None
+    if op == "custom_code":
+        title = st.text_input("Judul langkah", old.get("title", ""), key=f"{key}_title")
+        code = st.text_area("Kode pandas (train, valid, test, LABEL, pd, np tersedia; tanpa def/lambda/class)",
+                            old.get("code", "for df in (train, valid, test):\n    pass"), height=260,
+                            key=f"{key}_code")
+        try:
+            engine.check_free_code(code)
+        except (SyntaxError, ValueError) as error:
+            st.error(f"Kode belum bisa dipakai: {type(error).__name__}: {error}")
+            return None
+        return {"title": title or "kode bebas", "code": code}
     if op == "autogluon_features":
         if not common.label():
             st.error("Butuh kolom label (sidebar Data).")
@@ -237,7 +284,8 @@ def show_operations() -> None:
     if not common.need_data():
         return
     data = common.current()
-    groups = sorted({spec["group"] for spec in OPS.values()}, key=["Kolom", "Teks", "Kosong", "Baris", "Angka", "Encoding"].index)
+    groups = sorted({spec["group"] for spec in OPS.values()},
+                    key=["Kolom", "Teks", "Kosong", "Baris", "Angka", "Encoding", "Kode"].index)
     group = st.radio("Kelompok", groups, horizontal=True, key="op_group")
     names = [name for name, spec in OPS.items() if spec["group"] == group]
     op = st.selectbox("Operasi", names, format_func=lambda n: OPS[n]["title"], key="op_name")
@@ -261,6 +309,10 @@ def show_operations() -> None:
             common.preview_step(step["op"], params, f"edit_{index}", replace=index)
         with st.expander("Parameter mentah (JSON)"):
             st.code(json.dumps(step["params"], ensure_ascii=False, indent=2), language="json")
+        if step["op"] != "custom_code":
+            st.button("Ubah jadi kode bebas (edit teks kodenya langsung)", key=f"to_code_{index}", on_click=to_code,
+                      args=(index,), help="Langkah diganti langkah 'Kode bebas' berisi kode yang sama; hasil tidak "
+                                          "berubah sampai kodenya kamu edit.")
 
 
 # ---------------------------------------------------------------- ejaan
@@ -482,7 +534,7 @@ def show_free_text() -> None:
                "Kata pengisi dibuang dari tiap bahan dengan satu regex (bahan yang isinya hanya kata pengisi tetap). "
                "Peta frasa hanya untuk bahan yang cukup sering, jadi tetap pendek.")
     fillers = st.multiselect("Kata pengisi (kata nama kolom + 'dari', 'biasa')",
-                             sorted(set(text_tools.fillers_for(column)) | set(text_tools.FILLER_WORDS)),
+                             sorted(set(text_tools.fillers_for(column)) | set(vocab.get("kata_pengisi"))),
                              text_tools.fillers_for(column), key=f"fill_{column}")
     left, right = st.columns(2)
     phrase_min = left.slider("Frasa diperiksa bila muncul di ≥ … baris", 2, 100, 5, key="phrase_min")

@@ -2,6 +2,18 @@
 
 Terbaru di atas. Format: `- YYYY-MM-DD: <keputusan>. Alasan: <...>.`
 
+- 2026-11-02: overhaul umum = "inti umum dulu" (pilihan pengguna dari 3 opsi): mesin Temuan baru
+  `core/findings.py` (detektor profil kolom, bukan kamus), `core/reader.py` (BOM/pemisah/tanpa judul/'NA' teks,
+  blok baca yang sama di skrip), kamus proyek `core/vocab.py` (UMUM default, PRESET_UKT opsional; nilai kamus
+  disalin ke parameter langkah saat dibuat), op umum baru (fitur tanggal, statistik teks, jadikan kategori, nilai →
+  kosong, penanda kosong, kode bebas), ✎ di sidebar + "ubah jadi kode bebas". Arsitektur langkah → kode, Latih,
+  Submission dipertahankan. Alasan: lomba 2026-11-11; tulis ulang total berisiko belum stabil.
+- 2026-11-02: sesi tersimpan tanpa `kosakata` yang sudah punya langkah dianggap proyek UKT (preset UKT); proyek
+  baru = UMUM. Langkah lama tanpa parameter `singkatan`/`pemisah` memakai nilai lama. Alasan: sesi UKT pengguna
+  tidak berubah perilakunya sesudah overhaul.
+- 2026-11-02: dataset uji umum diambil dari cermin GitHub (Hugging Face, OpenML, UCI, Kaggle diblokir proxy
+  sesi cloud, 403) dan disimpan di `_laya_eda/data/umum/` (diabaikan git). Alasan: tidak boleh commit data.
+
 - 2026-11-02: R18 di aplikasi = peringatan (tabel tetap tampil), galat keras hanya di uji (`LAYA_KAMUS_KETAT`).
   Alasan: satu tooltip yang kurang tidak boleh mematikan seluruh halaman Temuan (laporan pengguna); kekurangan tetap
   terlihat dan uji tetap gagal, ditambah cek statis kunci `pd.DataFrame({...})`.

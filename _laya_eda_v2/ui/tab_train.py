@@ -156,6 +156,16 @@ def show_train() -> None:
 def show_results(board: dict) -> None:
     st.subheader("Papan skor (E5)")
     show_table(board["papan"], hide_index=True)
+    finished = board["papan"][board["papan"]["status"] == "selesai"] if "status" in board["papan"] else board["papan"]
+    first_result = next(iter(board["hasil"].values()), None)
+    if first_result is not None and len(finished) and "skor CV" in finished:
+        metric = first_result["setelan"]["metrik"]
+        best = finished["skor CV"].max() if training.METRICS[metric]["higher"] else finished["skor CV"].min()
+        if training.METRICS[metric]["higher"] and metric != "logloss" and best >= 0.99:
+            st.warning(f"**Skor {metric} {best:.4f} hampir sempurna: curiga bocor.** Biasanya ada kolom (atau gabungan "
+                       "kolom) yang dihitung dari label atau baru diketahui sesudah label. Cek temuan 'Curiga bocor' di "
+                       "halaman Temuan dan 'kolom penting' (Analisis kesalahan / AutoGluon). Di test skornya bisa jauh "
+                       "lebih rendah.")
     results = board["hasil"]
     if not results:
         return

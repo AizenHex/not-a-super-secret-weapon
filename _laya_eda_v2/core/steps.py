@@ -10,11 +10,12 @@ import contextlib
 import copy
 import io
 import json
+import textwrap
 
 import numpy as np
 import pandas as pd
 
-from core import split
+from core import reader, split
 from core.ops import MAP_LIMIT, OPS, map_entries, summary
 
 
@@ -23,11 +24,23 @@ def new_project(label: str | None = None) -> dict:
 
 
 def add_step(project: dict, op: str, params: dict) -> None:
-    project["steps"].append({"op": op, "params": copy.deepcopy(params), "on": True})
+    from core.ops import with_vocab
+
+    project["steps"].append({"op": op, "params": copy.deepcopy(with_vocab(op, params)), "on": True})
 
 
 def active(steps: list[dict]) -> list[dict]:
     return [step for step in steps if step.get("on", True)]
+
+
+def check_free_code(code: str) -> None:
+    """R4 untuk kode bebas: tanpa def/lambda/class (kode hasil tetap lurus). SyntaxError dilaporkan apa adanya."""
+    import ast
+
+    found = sorted({type(node).__name__ for node in ast.walk(ast.parse(code))
+                    if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.Lambda, ast.ClassDef))})
+    if found:
+        raise ValueError(f"kode bebas memakai {', '.join(found)}: tidak boleh (R4, kode harus lurus)")
 
 
 def step_code(step: dict) -> str:
@@ -76,8 +89,11 @@ def run(steps: list[dict], label: str | None, train: pd.DataFrame, test: pd.Data
         output = io.StringIO()
         entry = {"langkah": number, "operasi": summary(step)}
         try:
+            code = step_code(step)
+            if step["op"] == "custom_code":
+                check_free_code(code)
             with contextlib.redirect_stdout(output):
-                exec(step_code(step), ns)
+                exec(code, ns)
         except Exception as error:   # kode langkah buatan pengguna: laporkan apa adanya, berhenti di sini
             entry.update(galat=f"{type(error).__name__}: {error}", keluaran=output.getvalue())
             log.append(entry)
@@ -149,12 +165,14 @@ def script_blocks(project: dict, train_path: str, test_path: str = "") -> list[s
     steps, label, config = project["steps"], project["label"], project.get("split")
     parts = [
         header(steps),
-        "# %% baca data\n"
+        "# %% baca data (opsi baca: pemisah, encoding, judul, 'NA' = teks; sama dengan aplikasi)\n"
         f"TRAIN_CSV = {train_path!r}\n"
         f"TEST_CSV = {test_path!r}   # kosongkan bila tidak ada file test\n"
         f"LABEL = {label!r}\n"
-        "train = pd.read_csv(TRAIN_CSV)\n"
-        "test = pd.read_csv(TEST_CSV) if TEST_CSV else train.iloc[:0].drop(columns=[LABEL], errors=\"ignore\")\n"
+        + reader.read_code(project.get("baca"), "TRAIN_CSV", "train") + "\n"
+        "if TEST_CSV:\n" + textwrap.indent(reader.read_code(project.get("baca"), "TEST_CSV", "test"), "    ") + "\n"
+        "else:\n"
+        "    test = train.iloc[:0].drop(columns=[LABEL], errors=\"ignore\")\n"
         'print("train", train.shape, "test", test.shape)\n'
         "# selaraskan test dengan train: kolom hilang -> kosong, urutan & tipe = train (tahan test yang beda bentuk)\n"
         + ALIGN,

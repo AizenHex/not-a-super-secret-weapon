@@ -31,6 +31,8 @@ def frame(n: int = 3000) -> tuple[pd.DataFrame, pd.DataFrame]:
     for df in (train, test):                         # satu kolom angka-teks untuk op Teks → angka
         df["Biaya (teks)"] = (df["Pengeluaran Bulanan Keluarga"].fillna(0) // 1000 * 1000).map("{:,.0f}".format) \
             .str.replace(",", ".")
+        df["Tanggal Daftar"] = pd.Timestamp("2024-01-01") + pd.to_timedelta(np.arange(len(df)) % 300, unit="D")
+        df["Tanggal Daftar"] = df["Tanggal Daftar"].dt.strftime("%Y-%m-%d")    # tanggal sebagai teks (op fitur tanggal)
     return train, test
 
 
@@ -67,6 +69,13 @@ def all_ops() -> list[dict]:
     add("target_encode", columns=["Kota"], kind="kelas")
     add("onehot_sklearn", columns=["Ayah Hidup?"], min_share=0.01)
     add("skrub_encoder", column="Program Studi", kind="string", n_components=4)
+    add("datetime_features", columns=["Tanggal Daftar"], parts=["year", "month", "dayofweek"])
+    add("text_stats", columns=["Program Studi"])
+    add("to_category", columns=["Jumlah Tanggungan dalam Keluarga"])
+    add("values_to_nan", columns=["Daya Listrik (Watt)"], values=[0.0])
+    add("missing_indicator", columns=["NJOP per Meter"])
+    add("custom_code", title="rasio luas", code="for df in (train, valid, test):\n"
+        "    df[\"Luas Bangunan Rumah (m2)_rasio\"] = df[\"Luas Bangunan Rumah (m2)\"] / df[\"Luas Tanah Rumah (m2)\"]")
     add("drop_columns", columns=["Lokasi Tempat Tinggal"], reason="uji: kembar dengan Kota")
     used = {step["op"] for step in p["steps"]}
     assert used == set(OPS) - {"autogluon_features"}, set(OPS) - used
@@ -196,8 +205,13 @@ def test_r8_nama_kolom_asli_tidak_diganti():
         removed = ops.removed_columns(step)
         lost = [c for c in before if c not in after]
         added = [c for c in after if c not in before]
+        if removed is None:                              # kode bebas / AutoGluon: tidak bisa diturunkan dari parameter
+            current = result
+            continue
+        sources = removed + list(step["params"].get("columns", [])) + [step["params"].get("column")]
         assert sorted(lost) == sorted(removed), (step["op"], lost, removed)
-        assert all(any(str(c).startswith(f"{source}_") for source in removed) for c in added), (step["op"], added)
+        assert all(any(str(c).startswith(f"{source}_") for source in sources if source) for c in added), \
+            (step["op"], added)
         assert [c for c in before if c in after] == [c for c in after if c in before], "urutan kolom asli tetap"
         current = result
 

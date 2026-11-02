@@ -43,11 +43,13 @@ FLOWS = {
         a -> user -> b -> c; c -> user [label="belum pas", style=dashed]; c -> steps [label="pakai split"];
         steps -> d -> e;'''),
     "temuan": dot('''
-        a [label="pindai data di langkah terakhir"];
-        b [label="spasi berlebih, penanda kosong ('-' yang sering = jawaban, bukan kosong),\\nejaan berbeda, nilai penjaga 2^31−1, angka-teks, checkbox,\\nkolom id/kembar, duplikat, kolom berurutan"];
-        c [label="setiap temuan → usulan langkah + penjelasan"];
-        user [label="klik 'tambah langkah' (tidak ada yang otomatis)"];
-        a -> b -> c -> user -> steps;'''),
+        r [label="baca file: BOM, pemisah, tanpa judul, 'NA' = teks? (core/reader)"];
+        a [label="profil tiap kolom di data sesudah langkah terakhir (train)"];
+        b [label="detektor umum (core/findings): kosong, id/konstan, angka-teks, tanggal,\\nkategori-angka, kardinalitas, teks panjang, nilai penjaga,\\nbocor label (pohon 1 kolom), timpang, duplikat, teks kotor, ejaan"];
+        k [label="kamus proyek (bisa diedit): penanda kosong, singkatan,\\nkata 'tidak', pemisah, kata baku"];
+        c [label="setiap temuan → pilihan aksi + alasan"];
+        user [label="pilih aksi, UBAH parameter, lihat pratinjau, klik 'tambah langkah'"];
+        r -> b; a -> b; k -> b; b -> c -> user -> steps;'''),
     "operasi": dot(f'''
         a [label="pilih kelompok → operasi"]; b [label="apa / kapan cocok / kapan berbahaya"];
         user [label="isi parameter (kolom, nilai, metode)"]; {PREVIEW}
