@@ -52,8 +52,9 @@ C. [x] (2026-11-02) Uji R1–R18 (`tests/test_requirements.py`, 20 lulus). Kode 
    sintetis 30.380 baris (0,19 / 0,09 / 0,59 s), belum di browser + data riil.
    Belum: uji terima data riil (`tests/test_terima.py`, 10 dilewati); penanda "satuan campur" dan usulan nol
    mencurigakan belum ada di Temuan; tab Kosong dan Encoding (VISI bagian 5) belum dibuat (op-nya ada di Operasi).
-E. [~] (2026-11-02) Overhaul UMUM G1–G7 (VISI.md bagian 0b): kode selesai (findings, reader, vocab, op umum,
-   edit usulan/langkah/kode bebas, kamus proyek). Uji `tests/test_umum.py` di 10 dataset; hasil lengkap menyusul.
+E. [x] (2026-11-02) Overhaul UMUM G1–G7 (VISI.md bagian 0b): findings, reader, vocab, op umum, edit
+   usulan/langkah/kode bebas, kamus proyek. `python -m tests.semua` (data riil UKT + 10 dataset umum di
+   `../_laya_eda/data/umum/`): lulus 63, gagal 0, dilewati 2 (satuan campur, nol mencurigakan).
    Belum: bocor dari gabungan kolom; editor kelompok jenjang di aplikasi.
 D. Daftar lama di bawah.
 
