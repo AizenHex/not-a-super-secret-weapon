@@ -20,6 +20,13 @@ if not defined PY (
 echo Venv yang dipakai: %PY%
 "%PY%" --version
 
+rem setuptools rusak di venv (distutils-precedence.pth tanpa _distutils_hack) = pesan error tiap Python menyala
+"%PY%" -c "import _distutils_hack" 2>nul
+if errorlevel 1 (
+    echo Memperbaiki setuptools yang rusak di venv ...
+    "%PY%" -m pip install --force-reinstall --no-deps setuptools 2>nul
+)
+
 echo [2/3] Memasang library ...
 if exist "..\env\wheelhouse" (
     echo Wheelhouse offline ditemukan: pasang tanpa internet.

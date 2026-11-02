@@ -2,6 +2,14 @@
 
 Terbaru di atas. Format di [`README.md`](README.md).
 
+## 2026-11-02 claude-opus-5-5 (cloud) - setup.bat: perbaiki setuptools rusak
+- Dikerjakan: pengguna melapor `ModuleNotFoundError: No module named '_distutils_hack'` (dari
+  `distutils-precedence.pth`) setiap Python menyala di `Z:\GEMASTIK\Digit-Write\.venv`. Bukan dari requirements.txt:
+  setuptools di venv rusak. `setup.bat` kini memasang ulang setuptools (`--force-reinstall --no-deps`) bila
+  `_distutils_hack` tidak bisa diimpor. Belum diuji di Windows (sesi cloud Linux).
+- Dikoreksi pengguna: -
+- Berikutnya: pengguna menjalankan ulang setup.bat; kirim error lain bila pemasangan berhenti.
+
 ## 2026-11-02 claude-opus-5-5 (cloud) - Laya v2: overhaul UMUM (G1–G7), bukan alat khusus UKT
 - Dikerjakan: uji stres di 10 dataset (Titanic, Penguins, Diamonds, Taxis, MPG, Adult, Ames, Heart, Telco,
   Fitness unggahan pengguna) membuktikan Temuan hanya mengenali pola UKT (Penguins/Taxis 0 usulan, Ames crash,
