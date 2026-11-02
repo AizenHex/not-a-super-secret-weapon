@@ -12,7 +12,10 @@ Terbaru di atas. Format di [`README.md`](README.md).
   (Ayah Hidup?, Ibu Hidup?, Daya Listrik (Watt); Fakultas/Jenis Kelamin karangan dihapus). `test_e6_data_riil`
   kini memakai sample riil (format saja, test = baris train riil dengan id sample).
 - Dikoreksi pengguna: laporan crash (uji sintetis lolos padahal crash di data riil).
-- Berikutnya: hasil `python -m tests.semua` di data riil (sedang jalan saat entri ini ditulis).
+- Hasil `python -m tests.semua` di data riil: lulus 57, gagal 0, dilewati 2 (satuan campur, nol mencurigakan
+  belum diotomasi). Uji terima logika antar kolom sempat gagal karena definisi di uji: 101 = cicilan > hutang
+  dengan hutang > 0; diperbaiki.
+- Berikutnya: penanda satuan campur + nol mencurigakan di Temuan; ukur R17 di browser laptop.
 
 ## 2026-11-02 claude-opus-5-5 (cloud) - Laya v2: bagian C (uji R1–R18) + perbaikan
 - Dikerjakan: `tests/test_requirements.py` (R1–R18, 20 lulus), `tests/test_terima.py` (uji terima data riil, 10

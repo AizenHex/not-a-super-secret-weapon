@@ -60,7 +60,9 @@ def test_kolom_kembar():
 def test_logika_antar_kolom():
     data = real()
     assert len(audit.check_rule(data, "`Luas Bangunan Rumah (m2)` > `Luas Tanah Rumah (m2)`")) == 875
-    assert len(audit.check_rule(data, "`Cicilan Hutang per Bulan` > `Total Hutang`")) == 101
+    # 101 di tabel audit = cicilan > hutang DENGAN hutang > 0; 145 baris lain berhutang 0 tapi cicilan > 0
+    assert len(audit.check_rule(data, "`Cicilan Hutang per Bulan` > `Total Hutang` and `Total Hutang` > 0")) == 101
+    assert len(audit.check_rule(data, "`Total Hutang` == 0 and `Cicilan Hutang per Bulan` > 0")) == 145
 
 
 def test_satuan_campur():

@@ -39,8 +39,8 @@ Pengguna berangkat 2026-11-09. Prioritas dan pohon pekerjaan: [`../RENCANA_LOMBA
   E1–E12 di atas R1–R18; 8 temuan review sudah masuk). E1–E12 diimplementasikan (tab **Latih** dan **Submission**,
   14 halaman) dan R1–R18 punya uji. `python -m tests.semua` di venv cloud (versi persis requirements.txt, torch
   2.11.0 dari PyPI): lulus 47, gagal 0, dilewati 12. Semua uji memakai data **sintetis** (`tests/sintetis.py`);
-  yang dilewati = uji yang butuh data riil `../_laya_eda/data/train.csv` (tidak ada di clone) + sample_submission
-  lomba 2024. **Belum**: uji di data riil dan di venv Windows `Z:/GEMASTIK/Vignate-GEMASTIK/.venv` (paket
+  dengan data riil unggahan pengguna (`../_laya_eda/data/`, diabaikan git): lulus 57, gagal 0, dilewati 2.
+  **Belum**: uji di venv Windows `Z:/GEMASTIK/Vignate-GEMASTIK/.venv` (paket
   pandera/feature-engine/skrub/autogluon belum dipasang di sana per 2026-11-02); R17 belum diukur di browser;
   penanda satuan campur + nol mencurigakan; tab Kosong/Encoding. Rincian di STATUS `RENCANA.md`.
 - `viginte-train.ipynb` dipindah dari root ke `_.Testing/` (diabaikan git).

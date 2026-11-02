@@ -67,6 +67,7 @@ modul; ±8 menit di cloud), atau satu modul `python -m tests.test_requirements [
 uji memakai data sintetis `tests/sintetis.py`; uji data riil dilewati dengan pesan. `test_app` memakai `LAYA_SESI`
 dan `LAYA_OUTPUT` sementara (tidak menimpa `hasil/sesi_terakhir.json` atau `outputs/`).
 Hasil 2026-11-02 (venv cloud, versi `requirements.txt`): lulus 47, gagal 0, dilewati 12.
+Hasil 2026-11-02 dengan **data riil** (train.csv + sample_submission.csv unggahan pengguna di `../_laya_eda/data/`, tidak di-commit): lulus 57, gagal 0, dilewati 2 (penanda satuan campur dan nol mencurigakan belum diotomasi). Satu uji terima sempat gagal karena definisinya salah di uji: 101 = cicilan > hutang dengan hutang > 0 (145 baris lain berhutang 0); 875 bangunan > tanah cocok.
 Data riil `../_laya_eda/data/train.csv` (label `Golongan UKT`) **tidak di-commit** (gitignore); di cloud uji
 butuh data itu diunggah terpisah. Saat diubah di Windows: hindari non-ASCII di `print` kode hasil.
 
