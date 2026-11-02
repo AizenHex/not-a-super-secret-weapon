@@ -62,7 +62,8 @@ def test_app() -> None:
     for page in pages:                                 # setiap halaman tampil tanpa galat, tanpa langkah
         go(app, page)
 
-    app.session_state["project"] = copy.deepcopy(project())
+    from core import vocab
+    app.session_state["project"] = {**copy.deepcopy(project()), "kosakata": copy.deepcopy(vocab.PRESET_UKT)}
     for page in pages:                                 # dan dengan langkah
         go(app, page)
     go(app, "Kode & ekspor")

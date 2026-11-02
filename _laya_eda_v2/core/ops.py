@@ -420,7 +420,7 @@ def text_stats(p):
             "    for kolom in KOLOM_TEKS_PANJANG:\n"
             '        teks = df[kolom].astype("string")\n'
             '        df[kolom + "_panjang"] = teks.str.len().astype(float)\n'
-            '        df[kolom + "_kata"] = teks.str.split().str.len().astype(float)')
+            '        df[kolom + "_kata"] = teks.str.count(r"\\S+").astype(float)   # kosong tetap kosong')
 
 
 def to_category(p):

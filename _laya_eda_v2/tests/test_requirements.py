@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import ast
 import importlib.util
+import io
 import os
 import subprocess
 import sys
@@ -62,13 +63,6 @@ def all_ops() -> list[dict]:
     add("scale", columns=["Cicilan Hutang per Bulan"], method="standard")
     add("winsorize", columns=["Rerata Pengeluaran Listrik & Air per Bulan"], method="iqr", fold=1.5)
     add("power", columns=["Jumlah (Perkiraan Harga Pasar) Kendaraan yang Dimiliki"])
-    add("rare_label", columns=["Pekerjaan Orang Tua/Wali"], tol=0.05)
-    add("ordinal", column="Pendapatan Keluarga", order=sintetis.INCOME)
-    add("onehot", column="Jalur Masuk", min_share=0.01)
-    add("materials_onehot", column="Bahan Atap Rumah", min_share=0.01)
-    add("target_encode", columns=["Kota"], kind="kelas")
-    add("onehot_sklearn", columns=["Ayah Hidup?"], min_share=0.01)
-    add("skrub_encoder", column="Program Studi", kind="string", n_components=4)
     add("datetime_features", columns=["Tanggal Daftar"], parts=["year", "month", "dayofweek"])
     add("text_stats", columns=["Program Studi"])
     add("to_category", columns=["Jumlah Tanggungan dalam Keluarga"])
@@ -76,6 +70,13 @@ def all_ops() -> list[dict]:
     add("missing_indicator", columns=["NJOP per Meter"])
     add("custom_code", title="rasio luas", code="for df in (train, valid, test):\n"
         "    df[\"Luas Bangunan Rumah (m2)_rasio\"] = df[\"Luas Bangunan Rumah (m2)\"] / df[\"Luas Tanah Rumah (m2)\"]")
+    add("rare_label", columns=["Pekerjaan Orang Tua/Wali"], tol=0.05)
+    add("ordinal", column="Pendapatan Keluarga", order=sintetis.INCOME)
+    add("onehot", column="Jalur Masuk", min_share=0.01)
+    add("materials_onehot", column="Bahan Atap Rumah", min_share=0.01)
+    add("target_encode", columns=["Kota"], kind="kelas")
+    add("onehot_sklearn", columns=["Ayah Hidup?"], min_share=0.01)
+    add("skrub_encoder", column="Program Studi", kind="string", n_components=4)
     add("drop_columns", columns=["Lokasi Tempat Tinggal"], reason="uji: kembar dengan Kota")
     used = {step["op"] for step in p["steps"]}
     assert used == set(OPS) - {"autogluon_features"}, set(OPS) - used
@@ -157,9 +158,10 @@ def test_r5_skrip_mandiri_sama_dengan_aplikasi(tmp_path):
     raw_train, raw_test = pd.read_csv(tmp_path / "train.csv"), pd.read_csv(tmp_path / "test.csv")
     part, valid = split.apply(SPLIT, LABEL, raw_train)
     app = run_all(part, valid, raw_test)
-    for name in ("train", "valid", "test"):
+    for name in ("train", "valid", "test"):                 # bandingkan sebagai FILE CSV (format yang diunduh)
         standalone = pd.read_csv(tmp_path / f"{name}_bersih.csv")
-        pd.testing.assert_frame_equal(standalone, app[name].reset_index(drop=True), check_dtype=False)
+        app_file = pd.read_csv(io.StringIO(app[name].to_csv(index=False)))
+        pd.testing.assert_frame_equal(standalone, app_file, check_dtype=False)
 
 
 # ---------------------------------------------------------------- R6–R10

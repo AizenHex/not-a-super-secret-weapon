@@ -90,17 +90,26 @@ def test_g1_g6_semua_usulan_bisa_dijalankan():
             continue
         part, valid = split.apply(config, label, data)
         test = part.drop(columns=[label]).sample(min(200, len(part)), random_state=0)
-        chosen = []
-        for item in findings.scan(part, label):
-            for number, choice in enumerate(item["pilihan"]):
+        for item in findings.scan(part, label):            # setiap pilihan setiap temuan, satu per satu
+            for choice in item["pilihan"]:
                 if choice["op"] is None:
                     continue
                 step = {"op": choice["op"], "params": choice["params"], "on": True}
                 result = steps.run([step], label, part, test, valid=valid)
                 assert result["error"] is None, (name, item["judul"], choice["judul"], result["error"])
                 assert len(result["valid"]) == len(valid) and len(result["test"]) == len(test), (name, choice)
-                if number == 0:
-                    chosen.append(step)
+        chosen, done, current = [], set(), {"train": part, "valid": valid, "test": test}
+        for _ in range(30):                                  # seperti aplikasi: tambah usulan pertama, pindai ulang
+            pending = [item for item in findings.scan(current["train"], label)
+                       if item["pilihan"][0]["op"] and (item["jenis"], tuple(item["kolom"])) not in done]
+            if not pending:
+                break
+            item = pending[0]
+            done.add((item["jenis"], tuple(item["kolom"])))
+            step = {"op": item["pilihan"][0]["op"], "params": item["pilihan"][0]["params"], "on": True}
+            chosen.append(step)
+            current = steps.run([step], label, current["train"], current["test"], valid=current["valid"])
+            assert current["error"] is None, (name, item["judul"], current["error"])
         result = steps.run(chosen, label, part, test, valid=valid)
         assert result["error"] is None, (name, result["error"])
         print(f"{name}: {len(chosen)} usulan pertama berurutan OK → train {result['train'].shape}")

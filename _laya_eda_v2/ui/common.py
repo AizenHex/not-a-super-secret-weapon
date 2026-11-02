@@ -224,7 +224,7 @@ def preview_step(op: str, params: dict, key: str, replace: int | None = None) ->
         st.info("Langkah ini tidak mengubah train, valid, maupun test saat ini.")
     budget = engine.map_budget(project()["steps"], candidate[0], replace)
     if not budget["ok"]:                               # R6: peta hardcoded seluruh skrip ≤ 300 entri
-        st.error(f"Ditolak (R6): skrip akan berisi {budget['total']:,} entri peta hardcoded (batas {budget['batas']}). "
+        st.warning(f"Ditolak (R6): skrip akan berisi {budget['total']:,} entri peta hardcoded (batas {budget['batas']}). "
                  "Pakai versi aturan/library: **Bakukan ejaan dengan rapidfuzz** (kosakata dari train, tanpa daftar), "
                  "**Satukan ejaan** (aturan kunci), atau encoder teks skrub (Operasi → Encoding).")
         return

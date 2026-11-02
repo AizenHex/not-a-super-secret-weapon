@@ -9,7 +9,9 @@ import pandas as pd
 
 from tests import bantu
 
-from core import audit, text_tools  # noqa: E402
+from core import audit, text_tools, vocab  # noqa: E402
+
+vocab.use(vocab.PRESET_UKT)   # data UKT: kamus preset Indonesia/UKT (default proyek baru = umum)
 
 LABEL = bantu.LABEL
 

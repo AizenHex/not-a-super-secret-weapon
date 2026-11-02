@@ -68,14 +68,19 @@ def current() -> dict:
     return copy.deepcopy(_active)
 
 
+def _escape(text: str) -> str:
+    """Escape hanya karakter regex khusus (re.escape juga meng-escape '&', jadi teks regex lama berubah)."""
+    return "".join("\\" + char if char in ".^$*+?{}[]\\|()" else char for char in text)
+
+
 def separator_regex(items: list[str] | None = None, multi: bool = False) -> str:
     """Daftar pemisah → regex. Kata dapat batas \\b; multi=True tanpa '/' dan kurung (SD/MI tetap satu nilai)."""
     items = get("pemisah") if items is None else items
     if multi:
         items = [item for item in items if item not in ("/", "(", ")")]
-    symbols = [re.escape(item) for item in items if not item.isalpha() and item not in ("(", ")")]
-    words = [rf"\b{re.escape(item)}\b" for item in items if item.isalpha()]
-    brackets = [re.escape(item) for item in items if item in ("(", ")")]
+    symbols = [_escape(item) for item in items if not item.isalpha() and item not in ("(", ")")]
+    words = [rf"\b{_escape(item)}\b" for item in items if item.isalpha()]
+    brackets = [_escape(item) for item in items if item in ("(", ")")]
     joined = "|".join(symbols + words + brackets)
     return rf"\s*(?:{joined})\s*" if not multi else joined
 

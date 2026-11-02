@@ -14,6 +14,10 @@ Terbaru di atas. Format di [`README.md`](README.md).
   test_steps, test_tools sudah lulus.
 - Dikoreksi pengguna: "terlalu fokus ke data train golongan UKT ... bukan software yang general ... aku bahkan gak
   bisa mengeditnya ... butuh overhaul" → aturan.md.
+- Uji lengkap pertama sesudah commit overhaul 7a9d394: lulus 51, gagal 12. Bug kode: `text_stats` galat pada
+  sel kosong (pd.NA) → `str.count`; penolakan R6 jadi peringatan. Sisanya uji yang salah: urutan all_ops, uji UKT
+  harus memakai preset UKT, G1/G6 harus pindai ulang tiap langkah, R5 dibandingkan sebagai CSV, pemisah UKT
+  identik dengan regex lama (escape sendiri, bukan re.escape). Uji lengkap kedua berjalan saat commit ini.
 - Berikutnya: hasil `python -m tests.semua`; bocor dari gabungan kolom (Fitness tetap 0,9998); editor jenjang.
 
 ## 2026-11-02 claude-opus-5-5 (cloud) - Laya v2: crash R18 di Temuan (data riil) + data riil dipakai uji
