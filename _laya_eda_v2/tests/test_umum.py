@@ -52,6 +52,21 @@ def test_g5_baca_umum():
     assert options["sep"] == ";" and reader.read(folder / "a.csv", options)["a"].tolist() == [1.5, 2.5]
 
 
+def test_g5_teks_panjang_berkutip():
+    """Teks berkutip + baris baru melewati 64 KB pertama, 'é' terbelah di batas 64 KB: dulu EOF inside string."""
+    folder = Path(tempfile.mkdtemp())
+    rows = ["id,teks,label"] + [f'{i},"pendek {i}",a' for i in range(12)]
+    rows.append('12,"awal\n' + "x" * 65530 + 'é\nbaris kedua, ada koma",b')   # baris baru SEBELUM batas 64 KB
+    rows += [f'{i},"ulasan {i}\nlanjut",a' for i in range(13, 30)]
+    for source in (folder / "t.csv", "\n".join(rows).encode("utf-8")):
+        if isinstance(source, Path):
+            source.write_text("\n".join(rows), encoding="utf-8")
+        options, _ = reader.sniff(source)
+        assert options["encoding"] == "utf-8-sig" and options["sep"] == "," and options["judul"], options
+        data = reader.read(source, options)
+        assert data.shape == (30, 3) and data["teks"][12].endswith("ada koma"), data.shape
+
+
 def test_g1_temuan_umum_di_10_dataset():
     from ui.kamus import meaning_of
 

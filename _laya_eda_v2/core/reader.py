@@ -6,6 +6,7 @@ persis seperti aplikasi. `sniff` menebak opsi dari isi file + mengembalikan temu
 """
 from __future__ import annotations
 
+import codecs
 import csv
 import io
 
@@ -26,6 +27,15 @@ def _head(source, limit: int = 65536) -> bytes:
         return handle.read(limit)
 
 
+def _stream(source):
+    """Sumber → yang bisa dibaca pandas: path apa adanya, bytes/unggahan → BytesIO."""
+    if isinstance(source, (bytes, bytearray)):
+        return io.BytesIO(source)
+    if hasattr(source, "getvalue"):
+        return io.BytesIO(source.getvalue())
+    return source
+
+
 def _is_number(text: str) -> bool:
     try:
         float(str(text).strip())
@@ -41,7 +51,7 @@ def sniff(source) -> tuple[dict, list[dict]]:
     raw = _head(source)
     encoding = "utf-8-sig"
     try:
-        text = raw.decode("utf-8-sig")
+        text = codecs.getincrementaldecoder("utf-8-sig")().decode(raw)   # huruf terpotong di ujung 64 KB bukan error
     except UnicodeDecodeError:
         encoding, text = "cp1252", raw.decode("cp1252", errors="replace")
     lines = "\n".join(text.splitlines()[:-1] or text.splitlines())        # baris terakhir bisa terpotong
@@ -49,7 +59,9 @@ def sniff(source) -> tuple[dict, list[dict]]:
         sep = csv.Sniffer().sniff(lines[:20000], delimiters=",;\t|").delimiter
     except csv.Error:
         sep = ","
-    rows = pd.read_csv(io.StringIO(lines), sep=sep, header=None, dtype=str, keep_default_na=False, nrows=200)
+    # dari file utuh, bukan 64 KB pertama: potongan itu bisa berhenti di tengah teks berkutip (EOF inside string)
+    rows = pd.read_csv(_stream(source), sep=sep, header=None, dtype=str, keep_default_na=False, nrows=200,
+                       encoding=encoding, encoding_errors="replace")
     numeric = [c for c in rows.columns if rows[c].iloc[1:].map(_is_number).mean() >= 0.9]
     header = not numeric or sum(_is_number(rows.loc[0, c]) for c in numeric) < 0.8 * len(numeric)
     comma = sep != "," and any(rows[c].iloc[1:].str.fullmatch(r"-?\d+,\d+").mean() >= 0.5 for c in rows.columns)
