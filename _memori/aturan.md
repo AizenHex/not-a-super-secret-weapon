@@ -43,7 +43,7 @@ Koreksi terbaru pengguna di chat menang atas isi file ini; setelah itu perbarui 
   dan ganti label hanya train. train_siap di aplikasi harus = hasil kode itu. (2026-10-31)
 - Wajib ada pilihan isi angka kosong (median/mean/modus/0, per kolom). (2026-10-31)
 - Kecepatan penting: klik widget tidak boleh menghitung ulang hal berat (pakai `st.cache_data` dengan
-  kunci `ctx["data_key"]`, unduhan CSV lewat callable). Ukur rerun mode baris pada `data/train.csv`
+  kunci `ctx["data_key"]`, unduhan CSV lewat callable). Ukur rerun mode baris pada `../../HAND-WRITE/train.csv`
   (30k baris) sesudah mengubah tab. (2026-10-31)
 - Laya v2 harus **umum** untuk data tabular apa pun, bukan alat `Golongan UKT`; semua yang dibuatnya bisa diedit
   (usulan Temuan, langkah, kode langkah, kamus kata domain). Pengguna: "terlalu fokus ke data train golongan UKT ...

@@ -32,7 +32,7 @@ Pengguna berangkat 2026-11-09. Prioritas dan pohon pekerjaan: [`../RENCANA_LOMBA
 - `_laya_eda/` (2026-10-31): tiga tab terakhir Split data → Kode EDA → Ekspor. Kode EDA memilih
   langkah (buang baris, isi angka kosong, fitur, buang kolom) dan menulis kode train + test yang juga
   dijalankan aplikasi untuk train_siap; nama kolom asli tidak diubah. Rerun mode baris ±4 s di
-  `data/train.csv`. Kamus kolom (tooltip judul kolom + sidebar) dan encoding kategori (one-hot,
+  `../../HAND-WRITE/train.csv`. Kamus kolom (tooltip judul kolom + sidebar) dan encoding kategori (one-hot,
   kode, target, kedekatan makna MiniLM) di Kode EDA. `_uji/test_app.py` dan
   `_uji/test_codegen.py` belum dijalankan ulang penuh.
 - `_laya_eda_v2/` (2026-11-02, sesi cloud, branch `new-gen`): `VISI.md` = satu-satunya sumber target (extra

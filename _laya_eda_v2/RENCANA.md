@@ -112,7 +112,7 @@ flowchart TD
 
 ---
 
-## 1. Seberapa kacau data riilnya (`data/train.csv`, 30.380 baris × 28 kolom)
+## 1. Seberapa kacau data riilnya (`../../HAND-WRITE/train.csv`, 30.380 baris × 28 kolom)
 
 Hasil audit semua kolom. Setiap baris di tabel ini harus ditemukan otomatis oleh aplikasi (uji terima di
 `VISI.md` bagian 6).
@@ -146,7 +146,7 @@ namanya ("Pendidikan Jasmani, Kesehatan, dan Rekreasi") dan `Pendidikan` berisi 
 
 Keputusan pemakaian ada di `VISI.md` bagian 3; tabel ini hanya bukti.
 
-| Masalah | Metode / library | Hasil uji di `data/train.csv` |
+| Masalah | Metode / library | Hasil uji di `../../HAND-WRITE/train.csv` |
 |---|---|---|
 | Tipe kolom, teks angka, tanggal | `skrub.Cleaner(parse_numbers=True, null_strings=[...])` | Kolom tetap 28. Tanpa `null_strings`, `-` di Riwayat Beasiswa (6334) **tidak** tertangkap |
 | Penanda kosong palsu, angka penjaga | aturan pandas: daftar penanda + `>= 2^31-1` / varian `…483647` | tertangkap semua (6 kolom) |

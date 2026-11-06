@@ -132,7 +132,7 @@ Terbaru di atas. Format di [`README.md`](README.md).
   one-hot, kode angka, target encoding (dihaluskan, per kelas atau rata-rata), kedekatan makna
   (MiniLM + PCA dari train, nilai baru di test tetap dapat angka), "saran" (≤10 nilai one-hot, lebih
   makna), buang kolom asli. Sel model MiniLM ber-role "model": aplikasi memberi MINILM sendiri.
-  Diuji pada `data/train.csv` + test tiruan: tanpa error, encoding saran 19.6 s (muat model), ganti
+  Diuji pada `../../HAND-WRITE/train.csv` + test tiruan: tanpa error, encoding saran 19.6 s (muat model), ganti
   ke target 5 s; kode hasil dijalankan mandiri = train_siap aplikasi (30379 × 99, test 300 × 98).
   Ikut diperbaiki: f-string patah di `tab_split.split_code` (cara acak).
 - Dikoreksi pengguna: "ini kok kamu lama banget" → kerja lebih ringkas, kabari kemajuan singkat.
@@ -145,7 +145,7 @@ Terbaru di atas. Format di [`README.md`](README.md).
   Kolom angka tidak lagi diganti nama (`_angka` dihapus di Ekspor dan kode). Tab: ... Temuan utama →
   Split data → Kode EDA → Ekspor; semua file ditulis di Ekspor (unduhan lewat callable). Cache:
   baca CSV, teks/kunci sederhana/statistik/angka (`context.cached_texts`), profil kolom; kunci teks
-  sederhana dipakai ulang di outlier, konflik label, split. Diukur pada `data/train.csv` mode baris:
+  sederhana dipakai ulang di outlier, konflik label, split. Diukur pada `../../HAND-WRITE/train.csv` mode baris:
   rerun 13 s → ±4 s; kode hasil dijalankan mandiri (train.csv + test tiruan, properti kecil + test)
   dan cocok dengan train_siap aplikasi. `_uji/test_app.py`, `_uji/test_codegen.py` disesuaikan tetapi
   belum dijalankan penuh (butuh GPU / `data_latihan` yang tidak ada di clone ini).
