@@ -39,7 +39,7 @@ Urut dari yang paling penting. Centang satu per satu.
 
 1. [ ] **Salin repo + `pretrained/`** ke path pendek (`C:/GEMASTIK/`). Path panjang membuat
    pemasangan library gagal ("Long Path").
-2. [ ] **`setup.bat`** → harus berakhir `OK. GPU: True` lalu `SUKSES`. Python 3.13 64-bit.
+2. [ ] **`../setup.bat`** → harus berakhir `OK. GPU: True` lalu `SUKSES`. Python 3.13 64-bit.
 3. [ ] **Model**: `pretrained/` belum ikut? `download_model.bat` (bisa dijalankan ulang, yang
    sudah ada dilewati). Isi: 18 model Hugging Face (MiniLM, IndoBERT, mDeBERTa NLI/QA, CLIP,
    TrOCR, Qwen 0.5B, Whisper, Chronos, ...), 9 backbone torchvision, YOLOv8n (deteksi/seg/pose),
@@ -48,7 +48,7 @@ Urut dari yang paling penting. Centang satu per satu.
    ```bash
    python -m pip download -r requirements.txt -d ../env/wheelhouse
    ```
-   Harus dijalankan di Windows + Python 3.13 yang sama dengan komputer lomba. `setup.bat`
+   Harus dijalankan di Windows + Python 3.13 yang sama dengan komputer lomba. `../setup.bat`
    otomatis memakai `../env/wheelhouse` kalau folder itu ada.
 5. [ ] **Jalankan sekali setiap notebook yang mungkin dipakai** selagi online. Library tertentu
    diam-diam mengunduh file saat pertama jalan:
