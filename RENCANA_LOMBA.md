@@ -3,6 +3,11 @@
 Dibuat 24 Okt 2026. Final GEMASTIK XIX Data Mining: setup 10 Nov, **pengerjaan 11 Nov 13.00–18.00
 (5 jam)**, presentasi luring 12 Nov. Sisa ±17 hari.
 
+**Pembaruan 2026-11-06: data final dipastikan TEKS (info panitia).** Daftar kerja rinci sekarang di
+[`RENCANA_TEKS.md`](RENCANA_TEKS.md) (peta bidang teks, cakupan repo, butir T1–T13, jalur 5 jam). PC lomba:
+RTX 3070 8 GB, RAM 32 GB, offline; hari setup 10 Nov ada internet. Butir vision di bawah (deteksi, RLE, mAP,
+HF parquet gambar) turun prioritas; tidak dihapus.
+
 Ukuran keberhasilan arsenal ini **bukan jumlah notebook**, tapi:
 1. tiap alur berakhir di file yang bisa diunggah + skor validasi lokal,
 2. tahan terhadap bentuk data soal yang belum pernah dilihat,
@@ -67,7 +72,23 @@ Menang final 11 Nov
     └── ⬜ video profil tim                          di luar repo, urusan tim
 ```
 
-## Urutan kerja (nilai × peluang muncul ÷ usaha)
+## Urutan kerja (data teks, 2026-11-06)
+
+Rincian, uji terima, dan status tiap butir di [`RENCANA_TEKS.md`](RENCANA_TEKS.md) bagian 4.
+
+| # | pekerjaan | butir |
+|---|---|---|
+| 1 | Lingkungan jalan + uji Run All semua notebook teks | T1 |
+| 2 | Baseline k-fold + OOF + submission ≤ 45 menit (`contoh/text/baseline_oof`) | T2 |
+| 3 | Validator submission universal (id, urutan, label, tipe, NaN) + baca format file apa pun | T3 |
+| 4 | Model teks baru (indobert_large, indobertweet, xlmr_base, e5_base) | T4 |
+| 5 | Fine-tune k-fold + OOF (`finetune_oof`) | T5 |
+| 6 | Ensemble OOF di metrik lomba (hill climbing, pengali kelas) + log percobaan | T6 |
+| 7 | Paket kumpul zip (syarat gugur) | T7 |
+| 8 | Teks + kolom tabel, multilabel BERT, regresi/ordinal BERT | T8–T10 |
+| 9 | Tambahan arsenal kecil, gladi 5 jam pakai stopwatch offline, gabung KATALOG/PANDUAN/PETA | T11–T13 |
+
+Urutan lama (vision-sentris, 24 Okt), turun prioritas sejak data dipastikan teks:
 
 | # | pekerjaan | alasan |
 |---|---|---|

@@ -2,12 +2,75 @@
 
 Terbaru di atas. Format: `- YYYY-MM-DD: <keputusan>. Alasan: <...>.`
 
+- 2026-11-06: Rombak `tabular/multitabel` tetap memakai Berka sebagai data demo (bukan data triase GDOC), tetapi semua
+  langkah jadi fungsi berparameter + tabel "jenis tabel → fungsi → sel". Alasan: Berka sudah ada di `data_latihan`
+  (punya kunci jawaban test); data GDOC di luar repo. Keumuman diuji dengan menjalankan sel 1–2 di data GDOC.
+
+- 2026-11-06: T11 menambah sel di AKHIR notebook arsenal (bagian baru 8/9/5/10/9), bukan menyisip di tengah; satu-satunya
+  penyisipan adalah sel `score` F1 makro (bagian 1b, ber-`#`) di ensembling. Alasan: nomor bagian di `arsenal/PETA.md` dan
+  rujukan lain tidak bergeser. Rank average dan kalibrasi tetap ditulis walau rank average buruk untuk multikelas, karena
+  berguna untuk AUC biner; peringatan ditaruh di markdown. Kalibrasi memakai CV 5 fold untuk membandingkan temperature vs
+  isotonic (isotonic mudah overfit), bukan menilai di OOF yang sama dengan fitnya.
+
+- 2026-11-06: T8 memakai `baju_wanita` (Women's E-Commerce Clothing Reviews, CC0, target `rating` 5 kelas) sebagai data demo,
+  `recommended_ind` dibuang. Alasan: teks panjang + angka + kategori, lisensi terbuka, multikelas; `recommended_ind` turunan rating.
+  Model: GBDT di atas SVD (0,399) sedikit di bawah TF-IDF+LogReg (0,434); tetap dipakai karena inti T8 menggabungkan kolom tabel.
+- 2026-11-06: `run_cv` memakai `copy.deepcopy(model)`, bukan `sklearn.clone`. Alasan: `clone` menolak CatBoost dengan `cat_features`.
+
+- 2026-11-06: `baseline_oof` memakai SVM terkalibrasi (bukan LogReg) sebagai model aktif; LogReg jadi alt. Alasan: OOF
+  smsa LogReg 0,8528 < target 0,86, SVC ≈0,860. Pengali kelas dipakai hanya bila naik ≥ `MIN_GAIN` 0,002 (dihitung di
+  OOF yang sama, optimistis). Sel sample demo hanya menulis bila `SAMPLE_CSV` di `OUTPUT_FOLDER`, agar sample panitia tak tertimpa.
+
+- 2026-11-06: validator submission (T3) dibuat dua sel berurutan (#15 struktur+id, #16 isi+label) dan tipe kolom
+  dibandingkan lewat `dtype` pandas, bukan teks mentah. Alasan: satu sel tidak muat 30 baris; dtype memberi
+  pembeda "3" vs "3.0" tanpa fungsi tambahan (harga: sample palsu semua 0 vs probabilitas memicu pesan tipe).
+- 2026-11-06: tebakan encoding `cp1250`/`iso8859_2` dari charset_normalizer ditimpa `cp1252`. Alasan: teks soal
+  Indonesia/Inggris; pada file latin-1 kecil `ï` terbaca `ď` (hanya cp1250 yang jadi kandidat) → data rusak diam-diam.
+- 2026-11-06: `unduh_model.py` melewati bobot ganda hanya per folder (`SKIP_EXTRA` untuk xlmr_base/e5_base) dan
+  berkas latih (`optimizer.pt` dkk) global. Alasan: indobert_large/indobertweet hanya punya `.bin`, skip global
+  `pytorch_model.bin` akan merusaknya; hemat ± 3,9 GB unduhan hari setup.
+
+- 2026-11-06: `baseline_oof`, `finetune_oof`, `ensemble_oof` jadi notebook contoh baru; `klasifikasi_tfidf` dan
+  `klasifikasi_finetune` tetap sebagai jalur cepat. Alasan: k-fold + simpan OOF mengubah alur latih (aturan
+  pemisah pengguna), dan ensemble lintas notebook butuh OOF dari semua model.
+- 2026-11-06: format OOF bersama (`oof_<MODEL_NAME>.npy`/`test_<MODEL_NAME>.npy` di `outputs/text/oof`, urutan
+  kelas `np.unique`, StratifiedKFold(5, shuffle, seed 42) pada urutan train asli, `percobaan.csv`). Alasan: tanpa
+  urutan baris/kelas/fold yang sama, hill climbing di OOF tidak sah.
+- 2026-11-06: prediksi test = rata-rata model per fold, tidak latih ulang di semua data. Alasan: 5 jam lomba;
+  latih ulang menambah satu putaran penuh tanpa bisa divalidasi.
+- 2026-11-06: file bersama punya pemilik tunggal: `requirements.txt` = T1, `_alat/unduh_model.py` = T4,
+  KATALOG/PANDUAN/PETA/SOURCES_text = T13; butir lain menulis blok usulan di STATUS-nya. Alasan: butir G1 jalan
+  paralel; dua sesi menulis file yang sama = konflik.
+- 2026-11-06: model baru = indobert_large, indobertweet, xlmr_base, e5_base (± 4 GB, dugaan). Ditolak: bge-m3
+  (± 2,2 GB, e5 cukup), mdeberta-v3-base (nli_mdeberta sudah ada sebagai backbone), mT5/IndoT5 (peluang soal
+  generasi kecil, B9). Alasan: menutup Indonesia formal besar, medsos, campur bahasa, embedding lebih kuat.
+- 2026-11-06: garis potong sesudah T13; TAPT/MLM (B1) dan NER-BERT end-to-end (B2) di bawah garis. Alasan:
+  jalur kritis GPU ± 17 jam sudah memakan sisa waktu sampai 2026-11-08; klasifikasi lebih mungkin muncul (dugaan).
+  Disetujui pengguna ("Ya, semua").
+- 2026-11-06: uji notebook teks memakai `.venv` baru dari `setup.bat`, bukan Python sistem. Alasan: pilihan
+  pengguna (rekomendasi); sama dengan cara pasang di PC panitia, jadi sekaligus gladi setup.
+
+- 2026-11-06: Prompt A memakai subagent tipe general-purpose (bukan Explore) untuk membaca, perencana membaca
+  sendiri file inti (memori, README, RENCANA_LOMBA, PETA, PANDUAN, KATALOG teks, unduh_model.py) dan mengecek
+  klaim penentu. Alasan: bahan ±1 MB tidak muat satu konteks; Explore hanya membaca potongan, padahal laporan
+  per notebook butuh isi penuh.
+- 2026-11-06: perencana tidak mengukur VRAM/waktu; angkanya "dugaan" dan pengukuran jadi uji terima butir model.
+  Alasan: Prompt A melarang menulis kode, sedangkan "ukur, jangan tebak" butuh menjalankan model.
+- 2026-11-06: cara menangani file bersama (KATALOG, PANDUAN, PETA, unduh_model.py, requirements.txt,
+  SOURCES_text.md) diserahkan ke perencana dengan dua opsi (butir integrasi per grup, atau blok milik sendiri +
+  baca ulang sebelum edit). Alasan: butir contoh/model paralel pasti menyentuh file yang sama; pilihan terbaik
+  bergantung pada jumlah butir yang belum diketahui.
+
 - 2026-11-02: overhaul umum = "inti umum dulu" (pilihan pengguna dari 3 opsi): mesin Temuan baru
   `core/findings.py` (detektor profil kolom, bukan kamus), `core/reader.py` (BOM/pemisah/tanpa judul/'NA' teks,
   blok baca yang sama di skrip), kamus proyek `core/vocab.py` (UMUM default, PRESET_UKT opsional; nilai kamus
   disalin ke parameter langkah saat dibuat), op umum baru (fitur tanggal, statistik teks, jadikan kategori, nilai →
   kosong, penanda kosong, kode bebas), ✎ di sidebar + "ubah jadi kode bebas". Arsitektur langkah → kode, Latih,
   Submission dipertahankan. Alasan: lomba 2026-11-11; tulis ulang total berisiko belum stabil.
+- 2026-11-06: persiapan final teks dibagi dua tahap: perencana (Opus xhigh/max) menulis `RENCANA_TEKS.md`
+  tanpa kode, lalu pekerja (Opus medium/high) per butir dengan uji terima tertulis. Alasan: pilihan
+  pengguna; peta + uji terima membuat pekerja tidak perlu konteks percakapan, dan grup paralel mencegah
+  dua sesi menyentuh file yang sama. Prompt di `PROMPT_FINAL_TEKS.md`.
 - 2026-11-02: sesi tersimpan tanpa `kosakata` yang sudah punya langkah dianggap proyek UKT (preset UKT); proyek
   baru = UMUM. Langkah lama tanpa parameter `singkatan`/`pemisah` memakai nilai lama. Alasan: sesi UKT pengguna
   tidak berubah perilakunya sesudah overhaul.

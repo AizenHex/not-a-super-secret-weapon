@@ -2,6 +2,181 @@
 
 Terbaru di atas. Format di [`README.md`](README.md).
 
+## 2026-11-06 claude-opus-5-5 - Laya v2: batas unggah 200 MB → 2048 MB
+- Dikerjakan: `_laya_eda_v2/.streamlit/config.toml` (`server.maxUploadSize = 2048`); terbaca saat app dijalankan dari
+  folder `_laya_eda_v2` (`jalankan.bat` melakukan `cd` ke sana). Dicek lewat `streamlit.config`, belum lewat unggah
+  nyata 218 MB. Kolom "path CSV" tidak pernah dibatasi dan lebih hemat RAM (unggahan disimpan sebagai bytes).
+- Dikoreksi pengguna: -
+- Berikutnya: -
+
+## 2026-11-06 claude-opus-5-5 - Repo utama ditarik ke origin/new-gen (7fb8cc1)
+- Dikerjakan: stash → fast-forward 3 commit pengguna dari salinan GDOC (d32842f, 3a375ec hapus `_laya_eda/`,
+  7fb8cc1) → stash pop. Konflik hanya `arsenal/tabular/multitabel/multitabel.ipynb`: dipakai versi rombakan lokal
+  (versi origin = suntingan coba-coba path GDOC di notebook Berka lama), lint 0. Perubahan lokal lain utuh (dicek
+  diff vs stash), stash dibuang. Belum di-commit/push.
+- Ditemukan: 7fb8cc1 mengembalikan `setup.bat` versi lama, perbaikan setuptools/_distutils_hack dari 0220a58 hilang.
+- Berikutnya: tunggu keputusan pengguna soal mengembalikan blok setuptools di `setup.bat`.
+
+## 2026-11-06 claude-opus-5-5 - GDOC: target macro-F1 0,85 diperiksa, belum dibuat salinan
+- Dikerjakan: eksperimen saja (scratchpad), tidak ada file GDOC baru. Pembatas = strep vs viral pharyngitis:
+  model biner khusus AUC 0,81, F1 strep terbaik 0,48 di ambang ideal. Plafon kalau dua kelas itu dipisah sempurna
+  = macro-F1 0,879. Tidak bersinyal: bulan/tahun/jam, selisih waktu triase, ejaan mentah gejala (spasi depan,
+  kapital, desimal severity; +0,001). Perkiraan realistis ± 0,75–0,76.
+- Dikoreksi pengguna: -
+- Berikutnya: tunggu keputusan pengguna (salinan dengan peningkatan kecil, atau metrik sebenarnya akurasi?).
+- Lanjutan (pengguna minta coba model lain): fitur sama, 5-fold sama. macro-F1 LightGBM 0,7347 (8 dtk), XGBoost
+  0,7294 (± 90 dtk), CatBoost 0,7194 (± 200 dtk), LogReg 0,6712; blend LGB+XGB+Cat 0,7383 (terbaik, +0,004 = derau).
+  Model bukan pembatasnya; LightGBM tetap dipakai. Tidak ada file GDOC yang diubah.
+
+## 2026-11-06 claude-opus-5-5 - Training latihan data triase GDOC (di luar repo)
+- Dikerjakan: `Z:\GEMASTIK\GDOC\train\latih_diagnosis.ipynb` (di luar repo) untuk soal multi-tabel diagnosis triase
+  (4 kelas, `encounter_id`, riwayat per pasien). LightGBM 5-fold, OOF macro-F1 0,7347 → 0,7412 dengan bobot kelas;
+  strep_pharyngitis F1 0,40 (kelas sulit). Submission di `GDOC\outputs\submission.csv`.
+- Jebakan data yang ditemukan: umur 999, income `USD 1,234`/`115.6k`, marital `M`/`Married`, vital koma desimal +
+  satuan kPa/fraction, ±70 nama gejala bersinonim (disatukan ke 8 kelompok: +0,026 macro-F1). Teks riwayat sebagai
+  TF-IDF menurunkan CV (0,740 → 0,724), tidak dipakai. Riwayat tidak ada yang sesudah `prediction_time`.
+- Dikoreksi pengguna: notebook `arsenal/tabular/multitabel` terlalu spesifik ke uang (lihat `aturan.md`).
+- Lanjutan (disetujui "Ya, rombak"): `arsenal/tabular/multitabel/multitabel.ipynb` ditulis ulang per pola tabel
+  (fungsi `cek_kunci`, `gabung_aman`, `ke_lebar`, `sebelum_kejadian`, `ringkas_angka`, `porsi_kategori`, `KAMUS`;
+  baca semua CSV rekursif; kunci dideteksi dari akhiran `id`). Berka hanya demo, tanpa logika uang masuk/keluar.
+  Lint 0, uji_arsenal LOLOS (AUC test 0,9598; CV +trx_ 0,932); sel 1–2 juga LOLOS di data GDOC. Output ke
+  `OUTPUT_FOLDER` (dulu `submission.csv` di folder kerja). PETA baris multitabel dipecah per sel. Tidak di-commit.
+
+## 2026-11-06 claude-sonnet-5-5 - T11 a, b, d, e selesai (c belum)
+- Dikerjakan: sel baru di akhir empat notebook arsenal, semua lint 0 + uji_arsenal LOLOS (sel baru dan Run All utuh, CPU):
+  `teks/klasifikasi/tfidf` bagian 8-9 (NB-SVM vs LogReg, OOF `.npy`, `submission_nbsvm.csv`), `teks/dasar/praproses` bagian 5
+  (clean/stem ke test, kembar persis/hampir kembar, adversarial), `tabular/ensembling` bagian 1b (`score` F1 makro ber-`#`)
+  + 10 (rank average), `tabular/metrik` bagian 9 (temperature scaling + isotonic). Bukti + blok PETA di STATUS T11 `RENCANA_TEKS.md`.
+- Temuan: NB-SVM menang tipis di smsa (0,8562 vs 0,8544) tapi kalah di emot (0,6692 vs 0,6828); rank average per kelas buruk untuk
+  akurasi/F1 multikelas (covertype 0,56 vs 0,79), dicatat di markdown sel. Temperature scaling turunkan logloss smsa 0,3859 → 0,3813.
+- Belum: T11c (submission NER-BERT, GPU). T13 menyalin blok PETA. Tidak di-commit.
+
+## 2026-11-06 claude-opus-5-5 - G0/G1 jalan; _alat dikembalikan
+- Hasil sesi pekerja (dicek di STATUS `RENCANA_TEKS.md`): T3, T4, T7 selesai (model baru ± 2,9 GB, bukan ± 4 GB);
+  T1 Run All 32/32 `contoh/text` LOLOS, uji arsenal GPU belum; T2 dan T8 notebook ada (lint 0) tapi belum final.
+  T1, T2, T8 berhenti karena batas pemakaian; dikirimi pesan untuk melanjutkan (T8 alt embedding di CPU, GPU
+  hanya T1). Kartu T11 a/b/d/e diusulkan.
+- Ditemukan: folder `_alat/` terpindah ke `_laya_eda/_alat/` sekitar 13:54; tidak ada transkrip sesi yang
+  memindahkannya (dugaan: terseret di IDE). Dikembalikan dengan `mv` (isi utuh, termasuk perubahan T4/T8).
+- Ditemukan T1: kernelspec `python3` pengguna (`%APPDATA%\jupyter\kernels\python3`) menunjuk
+  `Z:\GEMASTIK-DATABASE\.venv` yang tidak ada, jadi `bangun_contoh.bat` apa adanya gagal di laptop ini; sesi
+  memakai `JUPYTER_PATH`. Atas izin pengguna ("Ya, perbaiki") kernelspec dipasang ulang dari `.venv`
+  (`python -m ipykernel install --user --name python3`); `bangun_contoh.bat text\clustering` LOLOS tanpa
+  `JUPYTER_PATH`. Salinan kernel.json lama ada di scratchpad sesi (menunjuk venv yang tidak ada).
+
+## 2026-11-06 claude-sonnet-5-5 - T2 selesai: `contoh/text/baseline_oof.ipynb`
+- Dikerjakan: notebook baru (lint 0, 42 sel), Run All di `.venv` LOLOS: smsa F1 makro OOF 0,8602 (test 0,8343), ±2 dtk/fold;
+  emot 0,6926, hs 0,8654, wrete 0,4779 hanya ubah Konfigurasi. Semua alt diuji (group fillna, NB-SVM biner, proba, waktu,
+  metrik, ambang); validator (salinan T3) menemukan 5 kesalahan sengaja; guard sample diuji sentinel. Detail + blok
+  KATALOG/PANDUAN di STATUS T2 `RENCANA_TEKS.md`. OOF demo di `outputs/text/oof` (`tfidf_svc`, `tfidf_logreg`).
+- Dikoreksi pengguna: -
+- Berikutnya: T13 menyalin blok KATALOG/PANDUAN; T6 memakai OOF `tfidf_svc`.
+
+## 2026-11-06 claude-sonnet-5-5 - T8 selesai: `contoh/text/teks_tabular.ipynb`
+- Dikerjakan: notebook baru (lint 0, Run All demo LOLOS 126 dtk, F1 makro OOF 0,399), `_alat/unduh_data_tambahan.py`
+  +`baju_wanita` (data CC0 ke `data_latihan/text/teks_tabular/`), OOF format bersama. Bentuk beda film LOLOS; alt XGBoost,
+  CatBoost, embedding `minilm_en` (CPU) LOLOS. STATUS T8 di `RENCANA_TEKS.md` memuat bukti + blok KATALOG/PANDUAN/SOURCES.
+- Belum: muat `ensemble_oof` (T6 belum ada), `e5_base` belum diukur. Tidak di-commit.
+
+## 2026-11-06 claude-sonnet-5-5 - T3 + T7: pembaca format apa saja, validator submission, paket kumpul
+- Dikerjakan: `arsenal/umum/baca_folder.ipynb` bagian 12–16 (sel #14–#20: data contoh format, tebak encoding
+  charset_normalizer + pemisah csv.Sniffer, parquet/jsonl, .txt per baris, CoNLL → `sentence_id, token, tag`,
+  label teks list → kolom 0/1, `html.unescape`). `arsenal/umum/simpan_muat.ipynb`: #15 lama diganti validator dua
+  sel (#15 struktur + #16 isi, cetak `MASALAH: n`), zip cadangan jadi #17, sel baru #18 paket kumpul (T7).
+  STATUS T3 dan T7 di `RENCANA_TEKS.md` diisi (termasuk blok PETA untuk T13).
+- Hasil: lint 0; uji_arsenal LOLOS per sel dan tiap notebook utuh; baca balik sama persis (`equals`) untuk smsa
+  (tsv, jsonl, parquet, `;`+latin-1, BOM, `|`, txt), nerp (CoNLL TAB dan spasi), casa (list → 0/1), html.escape
+  smsa: 12 uji, 0 gagal. Validator: 5 kesalahan sengaja pada smsa_test terlaporan semua, file bersih `MASALAH: 0`.
+  Zip: berkas hilang dan melewati `MAX_MB` terlaporan.
+- Ditemukan: charset_normalizer menebak `cp1250` untuk latin-1 ber-`ï` (hanya cp1250 di kandidat) → ditimpa
+  `cp1252`; lint melarang `;` di baris kode mana pun (regex dua statement) → `chr(59)`; Sniffer bisa `csv.Error`
+  tanpa try/except → separator manual. Tes dijalankan di Python sistem karena `.venv` belum berisi paket.
+- Belum: PETA.md belum diubah (milik T13, blok usulan ada di STATUS T3 dan T7).
+
+## 2026-11-06 claude-sonnet-5-5 - T1 selesai: .venv, emoji/ipywidgets, 32/32 contoh teks + 13/13 arsenal LOLOS
+- Dikerjakan: `setup.bat` membuat `Z:/GEMASTIK/Vignate-GEMASTIK/.venv` (Python 3.13.15) dan memasang seluruh
+  `requirements.txt` (SUKSES, GPU True, `pip check` bersih, blok Laya v2 ikut terpasang). `pip install emoji
+  ipywidgets` lalu `requirements.txt` +`emoji==2.16.0`, +`ipywidgets==8.1.9`. `pyarrow` tidak ditambah (sudah
+  terbawa streamlit/openfe/autogluon.common). Run All 32 `contoh/text/` berjalan serial (driver di scratchpad).
+- Hasil sementara: 32 notebook contoh/text LOLOS (0 gagal), 7 arsenal CPU LOLOS (tabel di STATUS T1 `RENCANA_TEKS.md`). Temuan: kernelspec `python3` pengguna menunjuk venv yang tidak ada (uji pakai JUPYTER_PATH). Belum: 6 arsenal GPU, status selesai T1. Hook menandai `teks_tabular.ipynb`:
+  itu perubahan sesi T8, bukan sesi ini. `baseline_oof` (T2) tidak diuji T1.
+
+## 2026-11-06 claude-sonnet-5-5 - T4: 4 model teks baru diunduh, alt e5
+- Dikerjakan: `_alat/unduh_model.py` +4 entri HF (`indobert_large`, `indobertweet`, `xlmr_base`, `e5_base`),
+  `SKIP` +`optimizer.pt|scheduler.pt|training_args.bin`, `SKIP_EXTRA` (`pytorch_model.bin` untuk xlmr/e5);
+  unduhan lewat alat itu (Python sistem). `contoh/text/klasifikasi_embedding.ipynb`: alt e5 + `TEXT_PREFIX`
+  (aktif tetap minilm, tanpa output, lint 0). STATUS T4 di `RENCANA_TEKS.md` diisi.
+- Hasil: ukuran nyata 1279 / 424 / 1077 / 1082 MB (± 2,9 GB, bukan ± 4 GB); keempatnya termuat offline;
+  alt e5 F1 makro 0.8476 (minilm 0.8461). Model card indobertweet: huruf kecil, `@USER`/`HTTPURL`, emoji → teks.
+- Ditemukan: unduhan mentah memuat bobot ganda (xlmr/e5 2,1 GB) dan berkas optimizer (indobertweet) →
+  dibuang dan diskip; kernelspec `python3` pengguna menunjuk `Z:\GEMASTIK-DATABASE\.venv` yang tidak ada
+  (nbconvert Python sistem gagal; disiasati `JUPYTER_PATH` sementara). Belum: blok KATALOG dibawa T13.
+
+
+## 2026-11-06 claude-opus-5-5 - sesi pekerja G0 dimulai, model dikoreksi
+- Dikerjakan: kartu sesi Prompt B untuk T1 (venv + uji Run All) dan T4 (unduh 4 model) dibuat dan dimulai
+  pengguna; keduanya berbagi folder repo (tanpa worktree, karena `RENCANA_TEKS.md` belum di-commit).
+- Dikoreksi pengguna: sesi dibuat tanpa `model` sehingga mewarisi Opus high. Pengguna: "pakai sonnet high bisa
+  itu, tapi kenapa malah pake opus high?". Model kedua sesi diganti ke `claude-sonnet-5-5` mulai giliran
+  berikutnya (giliran pertama tetap Opus). `PROMPT_FINAL_TEKS.md` Prompt B dan aturan.md diubah ke Sonnet high.
+- Ditemukan: T3 dan T7 sama-sama mengedit `arsenal/umum/simpan_muat.ipynb`; `RENCANA_TEKS.md` G1 diubah jadi
+  T3 lalu T7 di satu sesi. Kartu sesi G1 (Sonnet high) diusulkan: T2, T3→T7, T8; T11 menyusul.
+
+## 2026-11-06 claude-opus-5-5 - Prompt A dijalankan: RENCANA_TEKS.md
+- Dikerjakan: `RENCANA_TEKS.md` ditulis (tanpa kode, tanpa commit). 6 subagent sonnet membaca 32
+  `contoh/text`, 12 `arsenal/teks` + jembatan, data/model/alat; klaim penentu dicek sendiri. Isi: 4 pertanyaan
+  untuk pengguna, peta 243 sel (metode ML 72: 33 standar, 31 niche, 8 SOTA), cakupan repo (✅ 105, ⚠️ 62,
+  ❌ 76), prioritas, jalur 5 jam, butir T1–T13 (6 notebook contoh baru, sel arsenal di 7 notebook, 4 model
+  baru; ± 35 jam), garis potong B1–B12, cek silang. `RENCANA_LOMBA.md` diarahkan ke teks (urutan lama vision
+  turun, tidak dihapus).
+- Ditemukan: `Z:/GEMASTIK/Vignate-GEMASTIK/.venv` tidak ada (bangun_contoh gagal cari Python); Python sistem
+  3.13 punya torch/transformers/nbconvert tapi tidak punya setfit, peft, seqeval, gliner, iterstrat, emoji,
+  gensim, datasets, bitsandbytes, faiss. `emoji` dan `ipywidgets` dipakai notebook teks tapi tidak di
+  requirements. GPU laptop = RTX 5060 Laptop 8 GB. Tidak ada `sample_submission` di data latihan.
+- Pengguna menjawab keempat pertanyaan: "Ya, semua" (venv lewat `setup.bat`, pip `emoji`/`ipywidgets`, unduh 4
+  model, garis potong sesudah T13). Dicatat di atas `RENCANA_TEKS.md`.
+- Berikutnya: Prompt B per butir, mulai G0 (T1 + T4 bersamaan), lalu G1 CPU (T2, T3, T7, T8, T11).
+
+## 2026-11-06 claude-opus-5-5 - revisi PROMPT_FINAL_TEKS.md: dua pilar + subagent
+- Dikerjakan: `PROMPT_FINAL_TEKS.md` direvisi (belum dijalankan). Prompt A: bagian "Sasaran" (arsenal +
+  contoh/text sama-sama diperbarui: soal teks baru, metode baru, model baru), aturan pemisah model (≤ 4 baris
+  → alternatif ber-`#`; cara muat beda → notebook sendiri), bagian "Cara membaca" (subagent general-purpose
+  membaca, perencana baca inti sendiri + cek klaim penentu), sumbu peta "keluarga model", peta cakupan dua
+  kolom (arsenal/contoh), syarat butir contoh (data demo, SOURCES_text.md) dan butir model (ukuran, VRAM,
+  waktu), cara file bersama, perencana tidak mengukur (angka "dugaan", ukur di uji terima). Prompt B: aturan
+  notebook contoh, `bangun_contoh.bat`, KATALOG/PANDUAN, izin pip, catat GPU/VRAM/waktu.
+- Dikoreksi pengguna: "boleh pakai agent untuk memadatkan kan?" dan "di dalam kode sebenarnya ada 2 yang
+  penting, arsenal dan contoh kode end to end ... model baru yang cara loadnya berbeda (butuh notebook
+  terpisah ..., bukan yang tinggal ubah 1-4 baris saja)".
+- Revisi kedua (sesi yang sama): aturan pemisah diganti (ganti satu fungsi/beberapa baris tanpa ganti loader
+  → alternatif berkomentar di notebook yang sama; loader/alur latih beda → notebook sendiri). Peta Prompt A
+  dapat sumbu "Metode ML" standar/niche/SOTA (fine-tune trik, loss, pencarian, ensemble hill climbing/
+  Caruana, pasca-proses) dengan tingkat + biaya + tempat per metode; LLM one/zero-shot cukup satu baris.
+  Pengguna: "kalo misalnya cuma perlu ganti 1 fungsi, gak perlu ganti loader, dll. itu boleh 1 note" dan
+  "metode ML dan model kecil, bukan model one shot kayak LLM ... kayak hill climbing".
+- Berikutnya: pengguna menjalankan Prompt A di sesi baru (Opus xhigh/max) → `RENCANA_TEKS.md`.
+
+## 2026-11-06 claude-opus-5-5 - info penting: final 2026 = teks
+- Dikerjakan: tarik `origin/new-gen` (fast-forward 0220a58). Pengguna memberi info: final GEMASTIK 2026
+  (BINUS) dipastikan data teks, jebakan belum diketahui. Audit arsenal teks: 10 notebook `arsenal/teks/` +
+  32 `contoh/text/` sudah lebar, tapi semuanya menganggap satu CSV, satu kolom `TEXT`, satu `TARGET`, data
+  demo. Pendapat + usulan rencana disampaikan di chat; belum ada kode yang diubah.
+- Dikoreksi pengguna: arsenal "masih menjungkir ke satu arah", minta dikembangkan untuk ML teks umum.
+- Pengguna menempel email panitia: offline, PC panitia (i7-12700, 32 GB, RTX 3070 8 GB), data/training/
+  submission wajib di PC itu. Dicatat di status.md; daftar pertanyaan untuk panitia diberikan di chat.
+  Tambahan pengguna: hari setup ada internet, jadi pemasangan online di PC panitia; offline jadi cadangan.
+- Dikoreksi pengguna: agen mengusulkan "skrip setup PC lomba" padahal `setup.bat` (venv + pip + cek GPU)
+  dan `download_model.bat` (`_alat/unduh_model.py`: indobert, distilbert id/en, minilm, mDeBERTa NLI/QA,
+  qwen 0.5B, dst.) sudah mencakupnya; aturan baru di aturan.md. Pengguna: model > 0,5 GB boleh.
+- Atas permintaan pengguna dibuat `PROMPT_FINAL_TEKS.md`: Prompt A (perencana Opus xhigh/max → menulis
+  `RENCANA_TEKS.md`: peta cakupan, peta jebakan, jalur 5 jam, butir T1.. dengan uji terima, grup paralel,
+  garis potong) dan Prompt B (pekerja Opus medium/high, satu butir per sesi). Belum dijalankan.
+- Dikoreksi pengguna: "kenapa gak suruh dia bikin map ML dalam bidang data text secara keseluruhan?
+  daripada mengarahkannya kepada satu mosi". Prompt A kini mulai dari peta ML teks lengkap (bentuk data,
+  tugas, representasi, model, jebakan, evaluasi, presentasi, kendala), lalu cakupan repo, baru prioritas.
+- Berikutnya: pengguna bertanya ke panitia (OS, Python/driver, flashdisk, hari setup) dan memilih rencana;
+  susun ulang RENCANA_LOMBA.md ke teks + paket pasang offline di PC asing.
+
 ## 2026-11-02 claude-opus-5-5 (cloud) - setup.bat: perbaiki setuptools rusak
 - Dikerjakan: pengguna melapor `ModuleNotFoundError: No module named '_distutils_hack'` (dari
   `distutils-precedence.pth`) setiap Python menyala di `Z:\GEMASTIK\Digit-Write\.venv`. Bukan dari requirements.txt:

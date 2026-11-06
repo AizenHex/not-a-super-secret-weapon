@@ -10,6 +10,26 @@ Koreksi terbaru pengguna di chat menang atas isi file ini; setelah itu perbarui 
 - "Mode latihan" hanya kalau pengguna menyalakannya: saat itu jangan menulis kode, hanya arahan dan
   review. Default: mode biasa. Ragu → tanya satu baris. (2026-10-23)
 - Jangan menulis tebakan sebagai fakta (pola dari nama file, isi data yang tidak dibaca pasti). (2026-10-30)
+- Sebelum mengusulkan alat/skrip baru, baca dulu yang sudah ada (`setup.bat`, `download_model.bat`,
+  `_alat/`, arsenal) dan usulkan hanya celahnya. Pengguna kesal: "repo sekarang kan udh berkali-kali aku
+  pakai. kamu gak bahkan ngecek setup.bat ama download model.bat kah?" (2026-11-06)
+- Saat soal belum diketahui, rencana/prompt dimulai dari peta bidang yang lengkap, lalu dicocokkan ke repo,
+  baru diprioritaskan. Jangan menyempitkan ke tebakan soal di awal. Pengguna: "kenapa gak suruh dia bikin
+  map ML dalam bidang data text secara keseluruhan? daripada mengarahkannya kepada satu mosi" (2026-11-06)
+- Subagent (alat Agent) boleh dipakai untuk membaca dan memadatkan bahan besar; klaim yang menentukan
+  keputusan tetap dicek sendiri. Pengguna: "boleh pakai agent untuk memadatkan kan?" (2026-11-06)
+- Persiapan teks memperbarui DUA pilar: `arsenal/` (potongan) dan `contoh/text/` (notebook end-to-end).
+  Model/metode baru yang cukup ganti satu fungsi atau beberapa baris (loader dan alur latih tetap) →
+  alternatif ber-`#` dengan komentar di notebook yang sama; yang loader/cara muat/alur latihnya beda →
+  notebook sendiri. Pengguna: "model baru yang cara loadnya berbeda (butuh notebook terpisah ...)" lalu
+  "kalo misalnya cuma perlu ganti 1 fungsi, gak perlu ganti loader, dll. itu boleh 1 note, cuma nanti
+  ber komentar" (2026-11-06)
+- Sesi pekerja (Prompt B, satu butir `RENCANA_TEKS.md` per sesi) dan subagent baca memakai Sonnet effort high,
+  bukan Opus; Opus hanya untuk perencana. Saat membuat sesi, isi `model` secara eksplisit (kalau kosong, sesi
+  mewarisi Opus). Pengguna: "pakai sonnet high bisa itu, tapi kenapa malah pake opus high?" (2026-11-06)
+- Peta metode wajib memuat metode ML standar, niche, dan SOTA (mis. hill climbing) serta model kecil;
+  LLM one/zero-shot bukan fokus. Pengguna: "metode ML dan model kecil, bukan model one shot kayak LLM"
+  (2026-11-06)
 
 ## Kode
 
@@ -49,14 +69,21 @@ Koreksi terbaru pengguna di chat menang atas isi file ini; setelah itu perbarui 
   (usulan Temuan, langkah, kode langkah, kamus kata domain). Pengguna: "terlalu fokus ke data train golongan UKT ...
   bukan software yang general ... aku bahkan gak bisa mengeditnya ... aku butuh overhaul". Kata domain (Indonesia/UKT)
   hanya sebagai preset kamus proyek, bukan tertanam di kode. Uji di banyak dataset (`tests/test_umum.py`). (2026-11-02)
+- Notebook arsenal/contoh harus bisa dipakai untuk domain apa pun: nama variabel dan komentar menjelaskan pola
+  (tabel utama, 1-ke-1, long per sampel, riwayat per entitas + filter waktu), bukan domain demo. Pengguna soal
+  `arsenal/tabular/multitabel` (data bank): "terlalu menjerumus ke perhitungan uang dan gak umum, jadinya aku bingung". (2026-11-06)
 - Laya v2: uji yang lulus di data sintetis belum bukti; jalankan juga di data riil (`_laya_eda/data/train.csv`, tidak di-commit) sebelum menyebut selesai. (2026-11-02)
 - Setiap kolom yang tampil di tabel harus punya arti di `kamus.py` (nilai apa, dari apa); tabel
   baru pakai `kamus.show_table`, bukan `st.dataframe`. Pengguna bingung arti "nilai". (2026-10-31)
 
 ## Lingkungan
 
-- Venv: `Z:\GEMASTIK\Vignate-GEMASTIK\.venv` (Python 3.13). Pretrained offline:
-  `Z:\GEMASTIK\Vignate-GEMASTIK\pretrained`.
+- Venv yang dicari alat: `Z:\GEMASTIK\Vignate-GEMASTIK\.venv` (Python 3.13), dibuat `setup.bat`
+  (T1, 2026-11-06). Python sistem (cadangan):
+  `C:\Users\EYZARIM\AppData\Local\Programs\Python\Python313\python.exe`. Pretrained offline:
+  `Z:\GEMASTIK\Vignate-GEMASTIK\pretrained`. GPU laptop RTX 5060 Laptop 8 GB; PC lomba RTX 3070 8 GB.
+  `.venv` dibuat 2026-11-06 lewat `setup.bat`; kernelspec Jupyter `python3` pengguna menunjuk venv itu (tanpa
+  `JUPYTER_PATH`).
 - Laptop pernah mati mendadak saat beban GPU berat: jalankan build GPU satu per satu di foreground,
   batch kecil (mis. 8), jangan menaikkan batch yang komentarnya menyebut panas. (2026-10-24)
 - Tanya dulu sebelum memasang paket pip.

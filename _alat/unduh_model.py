@@ -14,7 +14,10 @@ if len(sys.argv) > 1:
     TARGET = os.path.abspath(sys.argv[1])
 
 SKIP = ["onnx/*", "openvino/*", "*.onnx", "*.h5", "*.msgpack", "*.ot", "*.tflite", "rust_model*",
-        "coreml/*", "tf_model*", "flax_model*"]
+        "coreml/*", "tf_model*", "flax_model*", "optimizer.pt", "scheduler.pt", "training_args.bin"]
+
+# folder: pola tambahan yang dilewati (bobot ganda .safetensors + .bin, hemat ± 1 GB per model)
+SKIP_EXTRA = {"xlmr_base": ["pytorch_model.bin"], "e5_base": ["pytorch_model.bin"]}
 
 # folder: repo Hugging Face
 HF = {
@@ -23,6 +26,10 @@ HF = {
     "distilbert_id": "cahya/distilbert-base-indonesian",
     "distilbert_en": "distilbert/distilbert-base-uncased",
     "indobert": "indobenchmark/indobert-base-p1",
+    "indobert_large": "indobenchmark/indobert-large-p1",
+    "indobertweet": "indolem/indobertweet-base-uncased",
+    "xlmr_base": "FacebookAI/xlm-roberta-base",
+    "e5_base": "intfloat/multilingual-e5-base",
     "nli_mdeberta": "MoritzLaurer/mDeBERTa-v3-base-xnli-multilingual-nli-2mil7",
     "qa_mdeberta": "timpal0l/mdeberta-v3-base-squad2",
     "qwen_05b": "Qwen/Qwen2.5-0.5B-Instruct",
@@ -122,7 +129,7 @@ def main():
             continue
         print(f"[{number}/{len(jobs)}] {folder}: mengunduh ...", flush=True)
         if folder in HF:
-            snapshot_download(HF[folder], local_dir=f"{TARGET}/{folder}", ignore_patterns=SKIP)
+            snapshot_download(HF[folder], local_dir=f"{TARGET}/{folder}", ignore_patterns=SKIP + SKIP_EXTRA.get(folder, []))
         elif folder in TORCHVISION:
             download_torchvision(folder, TORCHVISION[folder][0], TORCHVISION[folder][1])
         elif folder in FILES:

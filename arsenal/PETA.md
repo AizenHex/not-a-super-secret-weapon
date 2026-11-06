@@ -147,7 +147,10 @@ fitur → tuning seperlunya → ensembling. Semua skor dipilih dari **OOF/CV**, 
 | metrik ditulis sendiri (F1, AUC, logloss, RMSE, QWK, MAP@k, NDCG) | `tabular/metrik/metrik` | 1–5 |
 | optimasi ambang QWK / pengali kelas F1 macro | `tabular/metrik/metrik` | 6–8 |
 | urutkan item per query (LGBMRanker, NDCG@k) | `tabular/ranking/ranking` | semua |
-| banyak tabel (induk + transaksi), agregasi sebelum tanggal kejadian | `tabular/multitabel/multitabel` | semua |
+| banyak tabel: baca semua CSV + `cek_kunci` (jenis tiap tabel) | `tabular/multitabel/multitabel` | 1–2 |
+| tabel 1-ke-1 `gabung_aman` / panjang → lebar `ke_lebar` (vital, nilai per jenis) | `tabular/multitabel/multitabel` | 4–5 |
+| riwayat: `sebelum_kejadian` (filter waktu) + `ringkas_angka` + jendela N hari | `tabular/multitabel/multitabel` | 6–7 |
+| kode/sinonim di tabel anak: `KAMUS` + `porsi_kategori`; skor CV per tabel | `tabular/multitabel/multitabel` | 8, 10 |
 | segmentasi pelanggan (RFM + KMeans/GMM), profil segmen | `tabular/pengelompokan/segmentasi` | semua |
 | anomali tanpa label (robust z, Mahalanobis, IsolationForest, LOF) | `tabular/anomali/anomali` | semua |
 | "yang beli A juga beli B" (apriori, lift, rekomendasi) | `tabular/asosiasi/asosiasi` | semua |

@@ -238,6 +238,13 @@ def tweet_topik():
     print("tweet_topic", df.shape)
 
 
+def baju_wanita():
+    # teks panjang + kolom angka/kategori; CC0 (Kaggle nicapotato, repack HF chibifire), target rating 1-5
+    url = HF + "chibifire/kaggle-womens-ecom-clothing-reviews/parquet/default/train/0.parquet"
+    df = pd.read_parquet(unduh(url, "baju_wanita.parquet")).drop(columns="row_id")
+    simpan_split(df, DL / "text" / "teks_tabular", "baju_wanita", "rating")
+
+
 def cmapss():
     folder = DL / "timeseries" / "rul"
     folder.mkdir(parents=True, exist_ok=True)
@@ -317,6 +324,6 @@ def ravdess():
 if __name__ == "__main__":
     langkah = sys.argv[2:] or ["ids", "ordinal", "geo", "satelit", "uplift", "absa", "pasangan",
                                "tweet_inggris", "yelp", "pos", "nusax", "facqa", "arxiv",
-                               "tweet_topik", "cmapss", "nile", "retail", "mutag", "ravdess"]
+                               "tweet_topik", "baju_wanita", "cmapss", "nile", "retail", "mutag", "ravdess"]
     for nama in langkah:
         globals()[nama]()

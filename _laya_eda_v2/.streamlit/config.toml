@@ -1,0 +1,3 @@
+[server]
+# bawaan Streamlit 200 MB; CSV lomba bisa lebih besar (MB)
+maxUploadSize = 2048
