@@ -1104,7 +1104,7 @@ Bentuk soal → notebook (✅ ada, T = dibuat butir):
   Bentuk beda: (1) `nusax` dengan xlmr_base `FOLDS_TO_RUN=[0]`; (2) `pair` wrete dengan alt pasangan.
 - Uji terima: lint 0; LOLOS (Run All demo); dua bentuk beda jalan dengan Konfigurasi/alt saja.
 - Dependensi: T1 (Python), T4 (checkpoint baru). Gelombang G2. Ukuran L, ± 5 jam.
-- STATUS:
+- STATUS: dikerjakan (2026-11-07)
 
 ### T6. `contoh/text/ensemble_oof.ipynb` (baru)
 
@@ -1120,7 +1120,72 @@ Bentuk soal → notebook (✅ ada, T = dibuat butir):
   tunggal terbaik di OOF (kalau tidak, notebook memilih model tunggal dan mengatakannya).
   Bentuk beda: OOF emot dari T2 saja (tanpa BERT, 5 kelas).
 - Uji terima: lint 0; LOLOS. Dependensi: T2 (format), uji penuh setelah T5. Gelombang G1b. Ukuran M, ± 2,5 jam.
-- STATUS:
+- STATUS: selesai sebagian (2026-11-07): semua uji yang bisa dijalankan sekarang LOLOS; **menunggu T5:** (a) demo
+  "T2 + OOF indobert" (OOF `indobert` belum ada di folder bersama saat uji) dan (b) `finetune_oof` memuat `pseudo_label.csv`
+  (T6 sudah menulisnya; kolom id, teks, target seperti train). Selebihnya selesai.
+  - File: `contoh/text/ensemble_oof.ipynb` (baru, 52 sel, 30 sel kode, 409 baris kode, tanpa output). `python _alat/lint.py`
+    → 0 masalah. Tidak ada file lain di repo yang diubah (skrip pembangun dan varian uji ada di scratchpad, bukan di repo).
+  - Isi: Konfigurasi (`TASK` classification/regression, `MODEL_NAMES`, `MIN_GAIN`, `WRITE_PSEUDO`) → Metrik (`score(truth,
+    pred)`, besar = baik; aktif F1 makro, alt ber-#: akurasi, logloss, QWK, AUC biner/multikelas, RMSE, QWK regresi) → baca →
+    sample demo (HAPUS) → muat OOF → skor + korelasi → cara gabung → skor jujur → putusan → temperature (alt) → pengali
+    kelas → simpan + `percobaan.csv` + ablation → CSV pseudo-label → submission → validator T3 → kunci (HAPUS).
+  - **Penyaringan per dataset (catatan T8):** (1) pasangan `oof_`/`test_` lengkap; (2) bentuk = (n_train, n_kelas) dan
+    (n_test, n_kelas); (3) angka terbatas, tanpa baris nol (OOF split waktu tak lengkap); baris dinormalkan ke jumlah 1
+    (NB-SVM per kelas); (4) skor OOF harus melewati tebakan konstan DAN skor OOF yang barisnya diacak (+10% +0,005).
+    Alasan (4): untuk F1 makro tebakan konstan terlalu rendah (0,19), jadi OOF dataset lain yang sebentuk (≈ acak 0,33)
+    lolos; pembanding diacak menangkapnya. `MODEL_NAMES` diisi = saringan skor dimatikan.
+  - **Skor jujur:** semua cara gabung berantarmuka `(fit_stack, truth, apply_stacks)`, jadi bobot dicari di 4/5 baris OOF dan
+    dinilai di 1/5 (seed `SEED+1`, 5 putaran). Skor dalam sampel dicetak sebagai pembanding. Putusan = cara PALING SEDERHANA
+    (urutan tunggal → rata → hill → alt) yang skor jujurnya ≥ terbaik − `MIN_GAIN`; bila model tunggal yang menang dicetak
+    "TIDAK ADA gabungan yang mengalahkan model tunggal terbaik". Pengali kelas juga dinilai jujur.
+  - Cara gabung: aktif tunggal, rata, hill climbing Caruana (dengan pengembalian, di metrik lomba); alt ber-#: rank average,
+    Nelder-Mead (`scipy.optimize`, bobot softmax), stacking LogReg (regresi: Ridge). Pasca: pengali kelas (aktif, jujur) +
+    temperature scaling (alt ber-#). Voting mayoritas tidak dibuat (diterima di peta).
+  - Hasil gabungan disimpan di `OUTPUT_FOLDER` (`blend_oof_jujur.npy`, `blend_test.npy`, `ablation.csv`), BUKAN di `OOF_FOLDER`,
+    supaya run berikut tidak menggabungkan hasil gabungan. Baris `percobaan.csv`: `ensemble_oof, ensemble_<cara>, <metrik>,
+    <skor jujur>`. Sel ablation membandingkan skor OOF yang dihitung ulang dengan baris terakhir `percobaan.csv` per model
+    (beda > 0,002 dicetak: tanda baris dari dataset/metrik lain).
+  - **Uji terima 1, demo smsa, folder bersama `outputs/text/oof` apa adanya** (python `.venv`: `jupyter nbconvert --execute
+    --output-dir ../outputs/uji_contoh/text contoh/text/ensemble_oof.ipynb`): LOLOS, 13 detik. Folder berisi `tfidf_svc`,
+    `tfidf_logreg` (smsa) + `lgbm_teks_tabular` (baju, ditolak: bentuk 17614×5). F1 makro OOF: svc 0,8602, logreg 0,8528;
+    skor jujur tunggal 0,8602, rata 0,8572, hill 0,8602 → dipilih tunggal (`tfidf_svc`), pengali −0,0015 tidak dipakai; test
+    (kunci) 0,8343; `MASALAH: 0`. Dua model itu berkorelasi 0,97 sehingga tidak ada gabungan yang menang, dan notebook
+    mengatakannya (sesuai target "hasil ≥ tunggal terbaik, bila tidak pilih tunggal"). Dua baris `ensemble_tunggal` masuk ke
+    `percobaan.csv` bersama (dua run penerimaan).
+  - **Uji 2, 6 varian smsa** (scratch: svc, logreg, nbsvm, ridge, kata, char dari salinan `baseline_oof`; ditambah OOF emot,
+    baju, dan dua berkas palsu): saringan menolak `emot_*` dan `lgbm_teks_tabular` (bentuk), `tanpa_test` (tak ada test),
+    `asing` (0,3298 ≤ acak 0,3303) dan `diacak` (baris tertukar, 0,3394 ≤ 0,3381 + margin); 6 model asli lolos. F1 makro:
+    tunggal jujur 0,8576, hill 0,8589, **rata 0,8640** (dipilih, +0,0064); test (kunci) 0,8427 vs terbaik tunggal di test (ridge)
+    0,8432, jadi setara. Akurasi: rata 0,8654 jujur vs tunggal 0,8563; test 0,8802 vs terbaik 0,8786. QWK: hill 0,7801 jujur,
+    rata dipilih (selisih < MIN_GAIN); test 0,8117 vs 0,8109. AUC multikelas: stacking 0,9642 jujur, hill dipilih 0,9626
+    (dalam MIN_GAIN); test 0,9667 vs terbaik 0,9638. **Logloss (alt dinyalakan): stacking −0,3539 jujur vs tunggal −0,3832; test
+    −0,3175 vs terbaik −0,3375**; temperature scaling dinyalakan (T = 1,003: proba sudah terkalibrasi); rank average −0,65
+    (jangan dipakai di logloss, sesuai peringatan di notebook).
+  - **Bentuk beda emot** (5 varian `baseline_oof` di folder scratch, tanpa BERT; alt rank/Nelder-Mead/stacking dinyalakan):
+    LOLOS, `MASALAH: 0`; stacking dipilih (jujur 0,6966 vs tunggal 0,6926), test 0,6776 vs terbaik tunggal 0,6714.
+  - Bentuk lain: **regresi** (yelp, `TASK="regression"`, RMSE; 2 OOF Ridge dibuat di scratch): LOLOS, stacking Ridge jujur RMSE
+    0,8744 vs tunggal 0,9003, test 0,8681 vs 0,8940; validator `MASALAH: 0` (sel sample demo diberi nilai float untuk regresi).
+    **Biner** (ujaran_kebencian `HS`, 2 varian, AUC): LOLOS, tunggal dipilih (stacking 0,9405 vs 0,9392, dalam MIN_GAIN).
+    **Satu model = OOF T8** (baju, `TARGET=rating`): dimuat dan dicatat; pengali kelas naik jujur +0,0407 (F1 0,399 → 0,440; test
+    0,404 → 0,457). Jalur pengali dipaksa dipakai (smsa, `use_weights=True`): submission dan validator `MASALAH: 0`.
+    `WRITE_PSEUDO=True`: 501 dari 1260 test yakin ≥ 0,9, `pseudo_label.csv` (kolom id, text, label).
+  - **Menutup uji T8:** OOF `lgbm_teks_tabular` (T8) dimuat `ensemble_oof` tanpa masalah bentuk/urutan kelas.
+  - Temuan di luar T6: `contoh/text/baseline_oof.ipynb` (milik T2) memuat `language_info.codemirror_mode: null` yang ditolak
+    validasi `nbformat` Python sistem ini (`NotebookValidationError`); `ensemble_oof` ditulis tanpa field itu. Di uji varian saya
+    mengganti metadata di salinan scratch. Usulan: T2/T13 hapus `codemirror_mode`/`version` null. (Run All sebelumnya LOLOS
+    di T2, jadi mungkin versi nbformat berbeda.)
+  - Batas: tidak diuji di data besar (> 100 ribu baris) dan paling banyak 6 model; Nelder-Mead di F1 (bertingkat) hampir tidak
+    bergerak dari bobot sama (disebut di notebook); rank average buruk di multikelas (disebut di notebook).
+  - Blok KATALOG (T13 salin, `contoh/KATALOG.md`): `## text/ensemble_oof` | Metrik: sesuai lomba (aktif F1 makro); asli: smsa 6 varian
+    `baseline_oof`, rata 0.8640 jujur (tunggal terbaik 0.8576); logloss stacking −0.3539 vs −0.3832 | Aktif: tunggal, rata, hill
+    climbing (Caruana), pengali kelas jujur | Alt: rank, Nelder-Mead, stacking LogReg/Ridge, temperature scaling, metrik
+    akurasi/logloss/QWK/AUC/RMSE, regresi, CSV pseudo-label | LOLOS 13 dtk (CPU).
+  - Blok PANDUAN (T13 salin, tabel tanda-soal): "Sudah ada ≥ 2 OOF dari notebook lain (baseline_oof / finetune_oof / teks_tabular),
+    mau digabung dengan metrik lomba" → `text/ensemble_oof` (ganti Konfigurasi + sel Metrik; pilihan memakai skor JUJUR, bukan
+    dalam sampel); lalu submit `submission.csv`, pilih final dari CV bukan LB saja.
+  - Blok PETA (T13): peta yang ditutup: P.met.e.1–e.6, P.met.p.2 (alt), P.met.p.4, P.met.d.1 (tulis CSV; T5 memuat), P.eval.16,
+    P.eval.26 (percobaan.csv dibandingkan), P.pres.7 (`ablation.csv`), P.pres.11 (tabel skor model). `tabular/ensembling` dan
+    `tabular/metrik#14` diadaptasi ke `contoh/text/ensemble_oof`.
 
 ### T7. Paket kumpul (arsenal/umum)
 

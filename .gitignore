@@ -23,3 +23,8 @@ handoff.md
 kritik.md
 rencana_pengisian.md
 _.Testing
+
+# Laya v3: hasil build exe (± ratusan MB, dibawa lewat flashdisk) dan proyek/log lokal
+_laya_eda_v3/build/
+_laya_eda_v3/dist/
+_laya_eda_v3/proyek/

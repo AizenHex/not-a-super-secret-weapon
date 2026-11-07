@@ -423,6 +423,37 @@ def text_stats(p):
             '        df[kolom + "_kata"] = teks.str.count(r"\\S+").astype(float)   # kosong tetap kosong')
 
 
+# pola siap pakai langkah regex_replace: nama → [(pola, ganti), ...]; dijalankan urut daftar ini (spasi terakhir)
+REGEX_PRESETS = {
+    "URL": [(r"https?://\S+|www\.\S+", " ")],
+    "tag HTML": [(r"<[^>]+>", " ")],
+    "mention @nama": [(r"@\w+", " ")],
+    "hashtag → kata (#mantap → mantap)": [(r"#(\w+)", r"\1")],
+    "angka": [(r"\d+", " ")],
+    "tanda baca": [(r"[^\w\s]", " ")],
+    "emoji & huruf non-ASCII (é ikut hilang)": [(r"[^\x00-\x7F]+", " ")],
+    "huruf berulang (bangeeet → banget)": [(r"([a-zA-Z])\1{2,}", r"\1")],
+    "spasi berlebih + spasi tepi": [(r"\s+", " "), (r"^ | $", "")],
+}
+
+
+def regex_replace(p):
+    return ("# regex: tiap (pola, ganti) dijalankan berurutan pada kolom teks; kosong tetap kosong\n"
+            f"KOLOM_REGEX = {lit(p['columns'])}\n"
+            f"ATURAN_REGEX = {lit([tuple(rule) for rule in p['rules']])}\n"
+            "for df in (train, valid, test):\n"
+            "    for kolom in KOLOM_REGEX:\n"
+            "        for pola, ganti in ATURAN_REGEX:\n"
+            "            df[kolom] = df[kolom].astype('string').str.replace(pola, ganti, regex=True)")  # 'string': kosong tetap kosong
+
+
+def regex_extract(p):
+    return (f"# regex: ambil isi grup ( ) pertama dari {p['column']!r} ke kolom baru (tidak cocok = kosong); kolom asli tetap\n"
+            f"POLA_AMBIL = {p['pattern']!r}\n"
+            "for df in (train, valid, test):\n"
+            f"    df[{p['new']!r}] = df[{p['column']!r}].astype('string').str.extract(POLA_AMBIL, expand=False)")
+
+
 def to_category(p):
     return (f"# angka kode -> kategori teks (3.0 -> '3'), kosong tetap kosong; nama kolom tetap\n"
             f"KOLOM_KATEGORI = {lit(p['columns'])}\n"
@@ -613,6 +644,16 @@ OPS = {
                        what="Kolom baru <kolom>_panjang (karakter) dan <kolom>_kata (jumlah kata). Kolom asli tetap.",
                        fits="Teks bebas (ulasan, deskripsi) sebagai fitur sederhana.",
                        danger="Panjang teks bisa jadi bocoran (mis. catatan petugas lebih panjang untuk kasus tertentu)."),
+    "regex_replace": dict(group="Teks", title="Regex: ganti/hapus pola (bersihkan teks)", code=regex_replace,
+                          what="Pola regex diganti teks lain (kosong = dihapus). Pola siap pakai: URL, HTML, mention, "
+                               "hashtag, angka, tanda baca, emoji, huruf berulang, spasi berlebih. Bisa ditambah pola sendiri.",
+                          fits="Teks bebas/ulasan/tweet sebelum TF-IDF atau model teks; kode/format yang perlu dirapikan.",
+                          danger="Pola terlalu luas menghapus isi penting (angka = harga, tanda baca = emoji teks :) ). "
+                                 "Cek pratinjau sebelum → sesudah."),
+    "regex_extract": dict(group="Teks", title="Regex: ambil bagian teks → kolom baru", code=regex_extract,
+                          what="Isi grup ( ) dari pola regex diambil ke kolom baru: 'Jl. Mawar No. 12' + No\\. (\\d+) → '12'.",
+                          fits="Angka/kode yang terselip di teks (nomor, satuan, kode wilayah, domain email).",
+                          danger="Hasilnya masih teks; pakai Teks → angka bila perlu. Baris tak cocok jadi kosong."),
     "to_category": dict(group="Kolom", title="Jadikan kategori (angka kode → teks)", code=to_category,
                         what="Angka yang sebenarnya kode (jenis 0–3) jadi teks '0'..'3'. Nama kolom tetap.",
                         fits="Kolom bilangan bulat dengan sedikit nilai yang artinya kategori, untuk one-hot.",
@@ -743,7 +784,7 @@ LIBRARY = {"drop_columns": "pandas", "to_number": "pandas", "tidy_text": "pandas
            "materials_onehot": "pandas", "skrub_encoder": "skrub", "autogluon_features": "autogluon",
            "target_encode": "sklearn", "onehot_sklearn": "sklearn", "rare_label": "feature_engine",
            "winsorize": "feature_engine", "power": "sklearn", "datetime_features": "pandas", "text_stats": "pandas",
-           "to_category": "pandas", "values_to_nan": "pandas", "missing_indicator": "pandas", "custom_code": "pandas"}
+           "regex_replace": "pandas", "regex_extract": "pandas", "to_category": "pandas", "values_to_nan": "pandas", "missing_indicator": "pandas", "custom_code": "pandas"}
 
 
 def removed_columns(step: dict) -> list[str] | None:
@@ -809,5 +850,6 @@ def summary(step: dict) -> str:
              "custom_code": f": {p.get('title')}",
              "spelling": f" ({sum(len(o) for g in p.get('groups', {}).values() for o in g.values())} gabung)",
              "map_values": f" ({len(p.get('mapping', {}))} nilai)", "free_text": f" ({len(p.get('words', {}))} kata, {len(p.get('phrases') or {})} frasa)",
-             "drop_rows_query": f": {p.get('rule')}", "skrub_encoder": f" ({p.get('kind')})"}.get(step["op"], "")
+             "drop_rows_query": f": {p.get('rule')}", "regex_replace": f" ({len(p.get('rules', []))} pola)",
+             "regex_extract": f" → {p.get('new')}","skrub_encoder": f" ({p.get('kind')})"}.get(step["op"], "")
     return f"{op}" + (f" · {target}" if target else "") + extra

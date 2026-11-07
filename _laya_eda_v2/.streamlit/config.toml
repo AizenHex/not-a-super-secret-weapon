@@ -1,3 +1,7 @@
+[global]
+# app.py menulis ulang kunci KEEP tiap run agar pilihan tetap saat pindah halaman (sengaja); peringatan ini salah alarm
+disableWidgetStateDuplicationWarning = true
+
 [server]
 # bawaan Streamlit 200 MB; CSV lomba bisa lebih besar (MB)
 maxUploadSize = 2048

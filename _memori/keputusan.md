@@ -2,6 +2,77 @@
 
 Terbaru di atas. Format: `- YYYY-MM-DD: <keputusan>. Alasan: <...>.`
 
+- 2026-11-07: Laya v3 baseline tabular memakai LightGBM (200 pohon, lr 0,1, n_jobs <= 8: 4 s/fold di UKT 30 rb baris);
+  teks bebas (unik > 50% baris) dilewati, teks pendek jadi kategori. Alasan: model teks salah untuk data tabel
+  (screenshot pengguna), LightGBM sudah di venv dan tahan outlier/kosong. Hasil model tampil di tab Model sendiri
+  (panel kanan disembunyikan), bukan panel sempit. Validasi disimpan per proyek dan dipakai semua tugas.
+- 2026-11-07: `ensemble_oof` memilih cara gabung dari SKOR JUJUR (bobot dicari di 4/5 baris OOF, dinilai di 1/5) dan memilih yang paling
+  sederhana dalam `MIN_GAIN` dari yang terbaik; OOF gabungan ditulis ke `OUTPUT_FOLDER`, bukan `OOF_FOLDER`; OOF dataset lain disaring
+  dengan bentuk + skor di atas OOF yang barisnya diacak. Alasan: hill climbing/stacking di OOF yang sama dengan penilaiannya
+  optimistis (smsa: hill dalam sampel 0,8658, jujur 0,8589); tebakan konstan terlalu rendah di F1 makro sehingga OOF dataset
+  lain sebentuk lolos; menyimpan gabungan di folder bersama akan ikut tergabung di run berikutnya.
+
+- 2026-11-07: Tugas model Laya (M4) memakai HashingVectorizer kata 1–2 paralel + SGDClassifier log-loss, tanpa
+  n-gram huruf, dijalankan python venv lewat QProcess; validator submission (H1) jalan di dalam Laya. Alasan:
+  gerbang VISI F1 ≤ 60 s di GDOC; TfidfVectorizer kata 51 s dan + n-gram huruf 143 s, lbfgs menit-an, sedangkan
+  hashing paralel ± 8 s; n-gram huruf tidak menaikkan macro-F1 GDOC (0,571 vs 0,586). Proses terpisah supaya exe
+  tetap kecil (tanpa sklearn) dan crash/Batal tidak menjatuhkan Laya. H1 cukup polars, jadi tidak perlu venv.
+
+- 2026-11-06: Grafik Laya v3 digambar sendiri dengan QPainter (grafik mini per baris profil) dan batang HTML di
+  rincian, bukan QtCharts/matplotlib; histogram dipotong di p99. Alasan: pengguna minta grafik; QtCharts ada di
+  PySide6-Addons (tidak terpasang, exe membesar), matplotlib berat; grafik mini sebaris membuat semua kolom bisa
+  dibandingkan sekilas. Skala p99 karena panjang teks berekor panjang (satu teks 18 ribu huruf membuat 96% baris
+  masuk satu batang).
+
+- 2026-11-06: Rombak UI Laya v3 memakai pola "pilih di tengah → rincian di kanan" dengan widget Qt bawaan
+  (QTableWidget untuk profil, QTreeWidget untuk temuan, QTextBrowser + HTML untuk rincian, batang histogram dari
+  tabel HTML), bukan grafik. Temuan sejenis lintas kolom (list-sebagai-teks, mojibake) digabung jadi satu butir.
+  Alasan: pengguna menilai teks polos "chaos" dan susah dinavigasi; pola tiga panel konsisten di semua tab; tanpa
+  pustaka tambahan (matplotlib/QtCharts) dan exe tidak membesar. Ditolak: dasbor kartu/grafik (lebih banyak kode,
+  lebih lambat di 50 ribu baris), tab terpisah per tingkat temuan (navigasi bertambah).
+
+- 2026-11-06: Laya v3 M3: temuan dihitung pada **tahap resep yang sedang dilihat** (bukan selalu data mentah), hanya
+  saat tab Profil/Temuan dibuka, satu kali per tahap. Tiap temuan membawa ekspresi polars untuk "Lihat baris" dan
+  langkah usulan yang lewat form biasa (pengguna tetap melihat dan mengubah kodenya). Label ditebak sebagai kolom
+  train yang tidak ada di test, lalu disimpan dan bisa diganti. Pencarian yang dijadikan langkah = langkah kode
+  `df.filter(...)` bertanda latih saja. Profil berupa teks + histogram huruf, bukan grafik. Mojibake diperbaiki per
+  rangkaian non-ASCII yang hasil baliknya UTF-8 sah. Alasan: setelah langkah, temuan menunjukkan apakah langkah itu
+  berhasil; menghitung semua tab terus-menerus memakan ~11 s waktu mesin di GDOC; saring baris test merusak
+  submission; grafik butuh pustaka tambahan (matplotlib/QtCharts) untuk nilai yang kecil. Ditolak: cek temuan
+  per sel (lambat), perbaiki mojibake seluruh teks sekaligus (gagal bila teks campur benar dan rusak).
+
+- 2026-11-06: Laya v3 M2: langkah resep disimpan sebagai **kode polars** (plus isian form untuk diubah lagi), bukan
+  sebagai operasi abstrak; app dan ekspor menjalankan string kode yang sama, dan `bantu.py`/`muat.py` disalin apa
+  adanya ke skrip ekspor. Tabel test = "pasangan" yang ikut resep train: tiap langkah menerima `LATIH` (train sebelum
+  langkah itu) untuk median/modus; saring baris, buang duplikat, tumpuk default "latih saja". Cache tahap = hash
+  (kunci tahap sebelumnya, kode, kunci tabel acuan, kunci tahap latih). Preset "huruf berulang" memakai 63 kali
+  `replace_all` polars, bukan regex backreference Python. Alasan: satu sumber kode = ekspor pasti sama dengan app
+  (gerbang 6.5, diuji di subprocess); LATIH mencegah bocor statistik test; regex Python 8,8 s vs polars 0,4 s di
+  konten GDOC dengan hasil identik (batas: huruf non-ASCII berulang tidak diringkas). Ditolak: kode ekspor dibuat
+  ulang dari operasi abstrak (dua jalur yang bisa beda), pipeline fit/transform ala sklearn (berat, pandas).
+
+- 2026-11-06: Laya v3 membaca CSV dengan semua kolom sebagai teks, lalu `tebak_tipe` mengubah ke angka hanya bila
+  seluruh isi kolom angka biasa; nol depan (`007`), format Indonesia (`1.234,5`), dan bulat > Int64 tetap teks.
+  Alasan: tebakan tipe polars membuang nol depan kode/ID tanpa jejak (melanggar "tidak menebak diam-diam") dan bisa
+  gagal di baris > 10 rb. JSON berbentuk objek: dipakai daftar record di kunci pertama berisi list (dicatat di
+  laporan), bukan satu baris struct. Proyek + log disimpan di `proyek/` di samping exe (cadangan LOCALAPPDATA/Laya),
+  bukan di folder data (N4). Exe mengecualikan torch/pandas/numpy/geo/cloud (513 → 303 MB); latih berat tetap di venv.
+
+- 2026-11-06: Laya v3 = kokpit lomba. Exe (PySide6 + polars) memuat, memahami, merapikan, dan mengekspor; latih berat
+  (AutoGluon Tabular, fine-tune transformer, ensemble) jalan sebagai proses terpisah memakai venv, lewat notebook
+  arsenal (`# UBAH` jadi formulir, nbclient) dan AutoGluon. Fitur yang belum lulus gerbangnya disembunyikan di build
+  lomba. Menggantikan "latih model tidak masuk Laya" (entri di bawah). Alasan: pengguna minta fitur sebanyak mungkin
+  termasuk AutoGluon; proses terpisah menjaga exe kecil dan Laya tidak jatuh saat GPU kehabisan memori; notebook
+  arsenal sudah teruji, jadi tidak ada kode latih kedua. Ditolak: AutoGluon preset extreme (VRAM 20–32 GB + unduh
+  bobot saat fit; PC lomba 8 GB, offline), pasang `autogluon.multimodal` sebelum lomba (versi torch/transformers bisa
+  berubah), asisten LLM di Laya (aturan tanpa AI).
+- 2026-11-06: Laya v3 (usulan, menunggu persetujuan pengguna di `_laya_eda_v3/VISI.md` bagian 8) = PySide6 + polars +
+  PyInstaller; langkah = kode polars yang di-`exec` apa adanya dan diekspor sama persis; latih model tidak masuk Laya
+  (bagian latih diganti entri di atas).
+  Alasan: pengguna minta `.exe` bukan web; tabel Qt virtual; polars membaca GDOC 229 MB 0,5 s (v2 buka app 20 s);
+  satu sumber kode mencegah beda hasil app vs ekspor; fitur latih v2 (E1–E12) melebarkan lingkup dan sudah ada di
+  notebook arsenal. Ditolak: Tkinter (tabel lemah), Electron/Tauri (web), C# (ekspor bukan Python), DuckDB (belum perlu).
+
 - 2026-11-06: Rombak `tabular/multitabel` tetap memakai Berka sebagai data demo (bukan data triase GDOC), tetapi semua
   langkah jadi fungsi berparameter + tabel "jenis tabel → fungsi → sel". Alasan: Berka sudah ada di `data_latihan`
   (punya kunci jawaban test); data GDOC di luar repo. Keumuman diuji dengan menjalankan sel 1–2 di data GDOC.

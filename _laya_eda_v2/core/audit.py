@@ -24,7 +24,7 @@ def guess_type(series: pd.Series) -> str:
         return "kosong"
     if pd.api.types.is_numeric_dtype(series):
         return "id" if series.is_unique and len(series) > 50 else "angka"
-    text = tidy(series)
+    text = tidy(values.sample(min(len(values), 20_000), random_state=0))   # porsi, bukan jumlah: sampel cukup
     if text.str.lower().str.match(NUMBER_PATTERN).mean() > 0.95:
         return "angka-teks"
     return "isian bebas" if text_tools.is_free_text(series) else "kategori"

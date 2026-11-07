@@ -65,6 +65,8 @@ def all_ops() -> list[dict]:
     add("power", columns=["Jumlah (Perkiraan Harga Pasar) Kendaraan yang Dimiliki"])
     add("datetime_features", columns=["Tanggal Daftar"], parts=["year", "month", "dayofweek"])
     add("text_stats", columns=["Program Studi"])
+    add("regex_replace", columns=["Program Studi"], rules=[["x", "y"], *ops.REGEX_PRESETS["spasi berlebih + spasi tepi"]])
+    add("regex_extract", column="Biaya (teks)", pattern=r"^(\d+)", new="Biaya (teks)_awal")
     add("to_category", columns=["Jumlah Tanggungan dalam Keluarga"])
     add("values_to_nan", columns=["Daya Listrik (Watt)"], values=[0.0])
     add("missing_indicator", columns=["NJOP per Meter"])

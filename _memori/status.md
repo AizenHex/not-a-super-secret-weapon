@@ -1,6 +1,6 @@
 # Status repo
 
-Terakhir diperbarui: 2026-11-06.
+Terakhir diperbarui: 2026-11-07.
 
 ## Tujuan
 
@@ -57,6 +57,51 @@ F1 makro val 0,427; kelas ke-2 F1 0).
   dan file lepas di root `Vignate-GEMASTIK` dipindah ke `Z:/GEMASTIK/_arsip/`, tidak dihapus.
 - `_laya_eda/` (Laya v1) dihapus pengguna (commit 3a375ec "laya v1 removed", 2026-11-06); yang dipakai
   `_laya_eda_v2/`. Data riil Laya sekarang dirujuk sebagai `../../HAND-WRITE/train.csv`.
+- Laya v2 perbaikan 2026-11-06 (belum di-commit): batas unggah 2048 MB + peringatan KEEP dimatikan
+  (`.streamlit/config.toml`), `reader.sniff` aman untuk teks berkutip panjang, langkah `regex_replace`/`regex_extract`
+  (+ pola siap pakai pembersih teks), kolom teks panjang dikenali (`text_tools.is_long_text`) sehingga halaman tidak
+  lagi jeda 15–150 s di CSV 229 MB (sisa: Temuan kunjungan pertama 23 s). Pengguna menjalankan Laya dari salinan
+  `Z:/GEMASTIK/GDOC/not-a-super-secret-weapon`, yang belum punya perbaikan ini sampai ditarik.
+- **Laya DIBEKUKAN (2026-11-06)**: pengguna tidak memakainya untuk final. Perubahan Laya yang belum di-commit
+  dibiarkan apa adanya.
+- **Laya v3 (`_laya_eda_v3/`, 2026-11-06)**: pengguna memilih mulai sekarang, sebagai `.exe` desktop, dan minta fitur
+  "tank" sebanyak mungkin (termasuk AutoGluon/latih). Baru ada `VISI.md`: kokpit lomba, 79 fitur (17 P0, 44 P1,
+  17 P2) dengan gerbang, latih lewat proses venv + komandan notebook arsenal, jadwal M1–M5 s.d. 8 Nov malam, garis
+  potong Sabtu malam. 5 keputusan di bagian 8 menunggu pengguna (termasuk pasang ftfy/datasketch/grex dan 3 pertanyaan
+  untuk panitia). Katalog disetujui pengguna; **M1 selesai 2026-11-06** (muat folder, baca tahan banting, grid
+  virtual, panel isi, opsi baca, proyek otomatis, `Laya.exe` 303 MB via `buat_exe.bat`, cadangan `jalankan.bat`,
+  `python uji.py` lulus). Kecepatan N1 belum diukur pengguna. **M2 selesai 2026-11-06 malam**: resep 17 jenis langkah
+  (`mesin/langkah.py`), mesin tahap ber-cache + pasangan train/test + tabel turunan `T[...]` (`mesin/resep.py`),
+  fungsi bantu yang ikut tersalin ke ekspor (`mesin/bantu.py`), ekspor .py/.ipynb + simpan parquet/csv
+  (`mesin/ekspor.py`), panel resep + form langkah dengan pratinjau (`tampilan/form.py`). Gerbang 6.3/6.5 lulus di
+  `uji.py`; belum dicoba pengguna dengan klik nyata. **M3 selesai 2026-11-06 malam**: `mesin/temuan.py` (profil
+  kolom, temuan integritas/teks/label, banding train-test, relasi antartabel, cari teks/regex/SQL/kode, sampel acak
+  dan per label) + tab Data/Profil/Temuan di jendela ("Lihat baris", "Jadikan langkah"). Gerbang 6.4 lulus otomatis
+  (`uji.py` → `uji_emas`, GDOC + Berka). **UI dirombak 2026-11-06 malam** setelah kritik pengguna (susah navigasi,
+  profil kacau): kiri tabel/resep, tengah tab Data/Profil/Temuan, kanan rincian dari yang dipilih
+  (`tampilan/pahami.py`), plus grafik mini sebaran per kolom di tabel Profil; pengguna oke dengan UI ini (2026-11-07).
+  **M4 selesai kode 2026-11-07**: tab Model (Ctrl+4, `tampilan/tab_model.py`) menjalankan `mesin/tugas.py` di python
+  venv lewat QProcess (antrean, log langsung, Batal membunuh proses): baseline + label mencurigakan (cleanlab),
+  kata khas per label, uji label acak, adversarial train vs test; hasil di panel kanan HASIL MODEL; "Lihat baris" /
+  "Jadikan langkah" untuk baris curiga. Menu Model → Validasi file submission (Ctrl+M, `mesin/submisi.py`). Python
+  venv dicari: `proyek/python.txt` (tombol Python…), VIRTUAL_ENV, lalu `.venv`/`venv` di folder Laya/data dan
+  induknya (`mesin/venv.py`). GDOC: baseline 40,8 s (macro-F1 0,586), adversarial 37 s (AUC 0,499), kata 11 s di
+  laptop 32 thread; PC panitia 20 thread belum diukur. Exe uji di scratchpad lulus (`--uji` menjalankan tugas kata
+  sungguhan lewat python venv); `dist\Laya` di-build ulang 2026-11-07 00.44: `--uji` GDOC 0 gagal, python ditemukan otomatis dari `.venv` repo, tugas kata exit 0. Belum dicoba pengguna dengan klik nyata. **2026-11-07 siang: perbaikan UI/UX setelah keluhan pengguna**: bilah alur
+  5 langkah, warna ikut tema, hasil model lebar, langkah outlier + temuan penanda/outlier, kontrol validasi (6 cara),
+  Baseline tabular (LightGBM); exe di-build ulang 11.10 (`--uji` 0 gagal). Celah fitur berprioritas di VISI 8b.
+  **Ditunda atas permintaan pengguna ("nanti")**: jenis langkah resep lebih lengkap (one-hot encoding dan sejenisnya,
+  D11 di VISI). PySide6 6.12.0 +
+  pyinstaller 6.22.3 terpasang di `../.venv`; `requirements.txt` + polars/PySide6_Essentials/pyinstaller. Semua
+  belum di-commit.
+- Temuan data GDOC (berguna untuk latihan, diukur 2026-11-06): 32% baris test punya `konten_berita` persis sama
+  dengan train (label kembar di train 0 konflik); 11.806 baris train berkonten kembar = artikel sama yang terambil
+  lewat beberapa kategori/kata kunci (CV harus per konten); `sentimen_kutipan` = label 58%; footer
+  `COPYRIGHT ¬© ANTARA`; kolom list-sebagai-teks. Rincian di `_laya_eda_v3/VISI.md` 6.4.
+- **Rencana pengguna (2026-11-06): UI Laya diganti dari Streamlit ke Flask + web, "nanti"** (belum dimulai, waktu
+  belum ditentukan). Ukuran: `ui/` + `app.py` 2.867 baris (379 baris memanggil `st.*`), `core/` 3.546 baris tanpa
+  Streamlit (dipakai ulang). Ukur per halaman (CSV 229 MB): jeda berasal dari hitungan, bukan Streamlit (Temuan 94 s,
+  Ejaan 75 s, Isian bebas 155 s/47 s, Latih 14 s dan Laya 16 s tiap kunjungan; halaman ringan 0,1 s). Rincian di log.
 - `_laya_eda_v2/` (2026-11-02, sesi cloud, branch `new-gen`): `VISI.md` = satu-satunya sumber target (extra
   E1–E12 di atas R1–R18; 8 temuan review sudah masuk). E1–E12 diimplementasikan (tab **Latih** dan **Submission**,
   14 halaman) dan R1–R18 punya uji. `python -m tests.semua` di venv cloud (versi persis requirements.txt, torch
@@ -80,8 +125,10 @@ F1 makro val 0,427; kelas ke-2 F1 0).
 ## Pekerjaan terbuka
 
 Teks (utama sejak 2026-11-06): butir T1–T13 di `RENCANA_TEKS.md` bagian 4, mulai T1 (lingkungan + uji Run All).
-T8 selesai 2026-11-06 (`contoh/text/teks_tabular.ipynb`; sisa: uji muat di `ensemble_oof` setelah T6, `e5_base` belum diukur;
+T8 selesai 2026-11-06 (`contoh/text/teks_tabular.ipynb`; sisa: `e5_base` belum diukur; uji muat di `ensemble_oof` sudah lulus 2026-11-07;
 blok KATALOG/PANDUAN/SOURCES ada di STATUS T8 untuk T13).
+T6 `contoh/text/ensemble_oof.ipynb` selesai sebagian 2026-11-07 (lint 0, LOLOS di smsa/emot/regresi/biner/OOF T8; sisa: uji dengan OOF
+`indobert` dari T5 dan `finetune_oof` memuat `pseudo_label.csv`; blok KATALOG/PANDUAN/PETA di STATUS T6 untuk T13).
 Daftar lama di bawah (vision-sentris) turun prioritas; validator (2), zip (3), log percobaan (8) masuk T3/T7/T6.
 
 1. Deteksi objek sampai `submission.csv` + mAP lokal (pembaca YOLO generik, split val, format

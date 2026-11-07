@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import re
 
 import numpy as np
 import pandas as pd
@@ -9,7 +10,7 @@ import streamlit as st
 
 from core import outlier_tools, text_tools, vocab
 from core import steps as engine
-from core.ops import DATE_PARTS, OPS, SENTINEL_FLOOR, summary
+from core.ops import DATE_PARTS, OPS, REGEX_PRESETS, SENTINEL_FLOOR, summary
 from ui.kamus import edit_table, show_table
 from ui import common, jobs
 
@@ -52,6 +53,15 @@ def _is_float(text: str) -> bool:
     except ValueError:
         return False
     return True
+
+
+def _regex(pattern: str):
+    """Pola terkompilasi, atau None + pesan galat (pola salah ditolak sebelum jadi langkah)."""
+    try:
+        return re.compile(pattern)
+    except re.error as error:
+        st.error(f"Pola regex salah: {error}")
+        return None
 
 
 def to_code(index: int) -> None:
@@ -244,6 +254,32 @@ def form(op: str, data: pd.DataFrame, old: dict, key: str) -> dict | None:
     if op == "text_stats":
         picked = many("Kolom teks", texts)
         return {"columns": picked} if picked else None
+    if op == "regex_replace":
+        picked = many("Kolom teks", texts)
+        presets = st.multiselect("Pola siap pakai (jalan urut daftar ini, sesudah pola sendiri)", list(REGEX_PRESETS),
+                                 old.get("presets", []), key=f"{key}_pre")
+        custom = old.get("custom", ["", ""])
+        pattern = st.text_input("Pola sendiri (regex Python, opsional)", custom[0], key=f"{key}_pat")
+        repl = st.text_input("Ganti dengan (kosong = hapus; \\1 = isi grup pertama)", custom[1], key=f"{key}_rep")
+        if pattern and _regex(pattern) is None:
+            return None
+        rules = ([[pattern, repl]] if pattern else []) + [list(rule) for name in REGEX_PRESETS if name in presets
+                                                         for rule in REGEX_PRESETS[name]]
+        return ({"columns": picked, "rules": rules, "presets": presets, "custom": [pattern, repl]}
+                if picked and rules else None)
+    if op == "regex_extract":
+        column = one("Kolom teks", texts)
+        pattern = st.text_input("Pola; yang diambil = isi ( ) pertama, tanpa ( ) = seluruh yang cocok",
+                                old.get("pattern", r"(\d+)"), key=f"{key}_pat")
+        suffix = st.text_input("Kolom baru = <kolom>_<akhiran ini> (R8)", old.get("suffix", "ambil"), key=f"{key}_new")
+        compiled = _regex(pattern) if pattern else None
+        if compiled is None or not column or not suffix.strip():
+            return None
+        if compiled.groups > 1:
+            st.error("Pakai satu grup ( ) saja; grup lain jadikan (?: ).")
+            return None
+        return {"column": column, "pattern": pattern if compiled.groups else f"({pattern})",
+                "suffix": suffix.strip(), "new": f"{column}_{suffix.strip()}"}
     if op == "to_category":
         picked = many("Kolom angka yang sebenarnya kode", numbers)
         return {"columns": picked} if picked else None
@@ -505,6 +541,11 @@ def show_free_text() -> None:
         return
     column = st.selectbox("Kolom isian bebas", texts,
                           index=next((i for i, c in enumerate(texts) if c.startswith("Bahan")), 0), key="free_column")
+    if text_tools.is_long_text(data[column]):
+        st.info(f"'{column}' = teks panjang ({data[column].nunique():,} nilai unik), bukan daftar bahan pendek. "
+                "Peta kata per bahan tidak dihitung (di file besar makan menit). Untuk ulasan/tweet pakai langkah "
+                "**Regex: ganti/hapus pola** di tab Operasi, lalu TF-IDF/model teks.")
+        return
     related = st.multiselect("Kolom terkait (kosakata digabung)", [c for c in texts if c != column],
                              [c for c in texts if c != column and c.startswith("Bahan")], key="free_related")
     left, right = st.columns(2)

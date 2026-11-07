@@ -67,6 +67,22 @@ def test_g5_teks_panjang_berkutip():
         assert data.shape == (30, 3) and data["teks"][12].endswith("ada koma"), data.shape
 
 
+def test_regex_bersihkan_dan_ambil():
+    from core.ops import REGEX_PRESETS
+
+    data = pd.DataFrame({"t": ["Cek https://x.id @andi #Mantap bangeeet!!  ", None, "No. 12 ok 😀"], "y": [0, 1, 0]})
+    names = ["URL", "mention @nama", "hashtag → kata (#mantap → mantap)", "tanda baca",
+             "emoji & huruf non-ASCII (é ikut hilang)", "huruf berulang (bangeeet → banget)", "spasi berlebih + spasi tepi"]
+    rules = [list(rule) for name in names for rule in REGEX_PRESETS[name]]
+    clean = {"op": "regex_replace", "params": {"columns": ["t"], "rules": rules}, "on": True}
+    take = {"op": "regex_extract", "params": {"column": "t", "pattern": r"No\. (\d+)", "new": "t_nomor"}, "on": True}
+    result = steps.run([take, clean], "y", data, None)
+    assert result["error"] is None, result["error"]
+    out = result["train"]
+    assert out["t"].tolist()[0] == "Cek Mantap banget" and pd.isna(out["t"][1]) and out["t"][2] == "No 12 ok", out["t"]
+    assert out["t_nomor"].tolist()[2] == "12" and out["t_nomor"].isna().sum() == 2
+
+
 def test_g1_temuan_umum_di_10_dataset():
     from ui.kamus import meaning_of
 

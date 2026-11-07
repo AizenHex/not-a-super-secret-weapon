@@ -101,6 +101,9 @@ def show_laya() -> None:
     from core import text_tools
     texts = common.object_columns(common.current())
     column = st.selectbox("Kolom isian bebas", texts, key="laya_same_column")
+    if text_tools.is_long_text(data[column]):
+        st.info(f"'{column}' = teks panjang; kandidat sinonim hanya untuk kolom isian bebas pendek.")
+        return
     pairs = text_tools.similar_vocabulary(data[column])
     show_table(pairs, hide_index=True)
     if not pairs.empty and st.button("Tanya Laya: pasangan ini sama?", disabled=jobs.running("laya_same")):

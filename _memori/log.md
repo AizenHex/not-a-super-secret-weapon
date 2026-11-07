@@ -2,6 +2,228 @@
 
 Terbaru di atas. Format di [`README.md`](README.md).
 
+## 2026-11-07 claude-opus-5-5 - Laya v3: perbaikan UI/UX + outlier + validasi + baseline tabular [selesai, exe di-build]
+- Pemicu: pengguna marah (2 screenshot): UI membingungkan, tidak fokus ke visualisasi/UX, "deteksi outlier gak ada, split
+  gak ada", fitur v2 tidak dibawa, langkah tidak jelas; minta skill impeccable. Tambahan: pikirkan fitur preprocessing
+  yang kurang.
+- Akar masalah: data tabel (UKT) dipaksa ke model teks (kata '#123' tak terbaca), warna HTML mati untuk tema terang
+  (blok kode putih di abu terang pada tema gelap), hasil model di panel kanan sempit (matriks pecah per huruf; Qt
+  mengabaikan atribut `nowrap`, hanya CSS `white-space:nowrap`), proyek baru tanpa tabel terpilih, tanpa panduan.
+- Dikerjakan: mesin: langkah `outlier` (IQR/z/MAD/persentil; winsorize/kosongkan/buang baris = latih saja,
+  `bantu.batas_outlier` dari LATIH), temuan `cek_penanda` (2.147.483.647 dsb.) + `cek_outlier`, profil outlier per cara,
+  `tugas.lipatan` (otomatis/stratified/k-fold/grup teks kembar/grup kolom/holdout), tugas `tabular` (LightGBM, gain,
+  matriks, regresi, `kembar_lintas`), `tebak_label` dari kolom sample_submission. Tampilan: `pahami.W()` palet per tema
+  (kontras >= 4,5:1), blok kode berlatar sendiri, heatmap matriks, `_html_tabular`, glyph ikon dibuang; tab Model:
+  kontrol Validasi tersimpan di `proyek["validasi"]`, tombol Baseline tabular, hasil lebar di tab sendiri (panel kanan
+  disembunyikan); jendela: bilah alur 1 Data > 2 Pahami > 3 Rapikan > 4 Validasi & model > 5 Ekspor + kalimat
+  "Berikutnya" (bisa diklik), tabel train otomatis dibuka. VISI.md 8b: daftar celah fitur preprocessing berprioritas.
+- Bukti: `uji.py` lulus semua (+ uji tabular baru); screenshot tema gelap + terang di data UKT 2024; LightGBM UKT
+  macro-F1 0,418 (stratified), kelas 0.0 recall 0,996 (curiga bocor lewat Riwayat Beasiswa, belum dicek);
+  `dist\Laya` di-build ulang 11.10, `--uji` 0 gagal.
+- Dikoreksi pengguna: UI/UX dan alur harus jelas, fitur v2 (outlier, split) wajib ada, pakai skill impeccable.
+- Berikutnya: pengguna mencoba exe; P0 di VISI 8b (teks rentang -> angka, encoding kategori OOF, kategori langka,
+  penanda kosong, fitur tanggal, ekspor kolom fold, cek kebocoran per kolom).
+
+## 2026-11-07 claude-sonnet-5-5 - T6 `contoh/text/ensemble_oof.ipynb` [selesai sebagian, menunggu OOF T5]
+- Dikerjakan: notebook baru `contoh/text/ensemble_oof.ipynb` (lint 0). Memuat `oof_*/test_*.npy`, menyaring per dataset
+  (bentuk, NaN, baris nol, skor harus melewati tebakan konstan dan OOF yang barisnya diacak), memilih cara gabung (tunggal, rata,
+  hill climbing; alt rank, Nelder-Mead, stacking) lewat SKOR JUJUR (bobot dari 4/5 baris, dinilai di 1/5), pengali kelas jujur,
+  ablation, `percobaan.csv`, CSV pseudo-label, submission + validator. Bukti dan angka di STATUS T6 `RENCANA_TEKS.md`
+  (smsa 6 varian: rata 0,8640 vs tunggal 0,8576; emot, regresi, biner, OOF T8 baju juga LOLOS). Hanya `RENCANA_TEKS.md` (STATUS T6)
+  dan `_memori/` yang diubah selain notebook baru.
+- Dikoreksi pengguna: -
+- Berikutnya: uji dengan OOF `indobert` dari T5 dan `finetune_oof` memuat `pseudo_label.csv`; T13 menyalin blok KATALOG/PANDUAN/PETA
+  dari STATUS T6. Temuan: `baseline_oof.ipynb` punya `codemirror_mode: null` yang ditolak nbformat Python sistem (bukan milik T6).
+
+## 2026-11-07 claude-opus-5-5 - Laya v3 M4: tab Model + validator submission [selesai, exe di-build]
+- Pemicu: pengguna oke dengan UI, "lanjutin penyelesaian softwarenya"; langkah resep lebih lengkap (one-hot dsb.)
+  "nanti" (dicatat di status sebagai pekerjaan tertunda).
+- Dikerjakan: `mesin/tugas.py` (F1 baseline + F2 cleanlab, F3 adversarial, F4 label acak, T1 kata khas; hashing kata
+  1–2 paralel + SGD log-loss, CV berkelompok per teks kembar), `mesin/submisi.py` (H1), `mesin/venv.py` (cari python
+  venv, path skrip saat beku), `tampilan/tab_model.py` (tab Model, QProcess, antrean, Batal, riwayat, panel HASIL
+  MODEL, Lihat baris / Jadikan langkah, validasi submission), `tampilan/tata.py` (kolom/baris/bagian dipindah dari
+  jendela), `pahami.html_hasil`. `buat_exe.bat` ikut mengemas `tugas.py`. `--uji` exe kini juga menjalankan tugas
+  kata sungguhan (2.000 baris) lewat python venv.
+- Bukti: `uji.py` exit 0 (uji_submisi 5 rusak ditolak; uji_tugas sinyal/label dibalik/acak/adversarial + render HTML).
+  Asap UI M2, M3, M4 (QProcess baseline + adversarial antre, lihat baris 27 baris, jadikan langkah 400→373, batal,
+  validasi submission) lulus. Tangkap layar GDOC diperiksa (baseline 40,8 s, adversarial 37,3 s, kata 11,4 s).
+  Exe uji di scratchpad: `--uji` GDOC 0 gagal, tugas kata exit 0 (6,2 s) dengan `proyek\python.txt`.
+- Catatan: dengan VIRTUAL_ENV di-set lewat PowerShell Start-Process, exe uji tidak menemukan python (sebabnya belum
+  dicek); jalur utama (naik folder dari dist\Laya ke `.venv` repo) baru teruji setelah `dist` di-build ulang.
+- Build `dist\Laya` 00.44 setelah pengguna menutup Laya.exe: `--uji` GDOC 3 tabel 0 gagal, python venv ditemukan otomatis (naik folder ke `.venv` repo, tanpa python.txt), tugas kata exit 0 (6,1 s). `buat_exe.bat` menghapus `dist\Laya` lama termasuk `proyek\` (perilaku lama, bukan baru).
+- Belum: dicoba pengguna, di-commit.
+
+## 2026-11-06 claude-opus-5-5 - Laya v3: grafik mini di tabel Profil [selesai kode, exe belum di-build]
+- Pemicu: pengguna "gak pake graphic gitu?" setelah rombak UI.
+- Dikerjakan: kolom "Sebaran" di tabel Profil digambar `Batang` (QStyledItemDelegate + QPainter, tanpa pustaka
+  baru): porsi tiap nilai untuk kolom ≤ 20 nilai unik, histogram panjang/nilai untuk lainnya (`pahami.sebaran`); putih
+  saat baris terpilih. `temuan.histogram` sekarang memotong skala di p99 dan memasukkan ekor ke batang terakhir
+  (label batang terakhir s.d. maks); sebelumnya `kutipan` GDOC 50.564 dari 52.889 baris jatuh di batang pertama.
+- Bukti: `uji.py` exit 0 (emas GDOC + Berka lulus), cek kecil histogram (jumlah tetap, batang terakhir s.d. maks),
+  asap UI M2 + M3 lulus, tangkap layar GDOC diperiksa.
+- Exe di-build ulang 23.41 setelah pengguna menutup Laya.exe lama (303 MB). `Laya.exe --uji` GDOC: 3 tabel, 0 gagal;
+  temuan train 22 butir (tanpa pasangan test, jadi tanpa temuan train-test; turun dari 34 karena temuan lintas kolom
+  digabung), 0 cek gagal, 12,0 s waktu mesin di thread latar.
+- Belum: dicoba pengguna dengan klik nyata, belum di-commit.
+
+## 2026-11-06 claude-opus-5-5 - Laya v3: rombak UI/UX + profil (kritik pengguna) [selesai kode, exe belum di-build]
+- Pemicu: pengguna mencoba M3: "ui/ux ini jelek ... susah di navigasi ... profiling nya gak jelas nampilin apa, chaos".
+- Dikerjakan: `tampilan/jendela.py` tata letak tiga panel tetap (kiri TABEL + RESEP · nama; tengah judul tabel besar +
+  tab Data/Profil/Temuan, Ctrl+1/2/3 di menu Lihat; kanan berganti otomatis: ISI SEL / RINCIAN KOLOM / RINCIAN
+  TEMUAN), lembar gaya ringan. Profil = tabel urut-able (Kolom, Tipe, Kosong, Unik, Ringkasan satu baris) + rincian
+  HTML kolom terpilih (null/kosong/spasi, kuantil panjang/kata/nilai, sebaran batang, nilai terbanyak); baris pertama
+  langsung terpilih. Temuan = pohon Penting/Perhatian/Info dengan jumlah, kolom Jenis, judul tab "Temuan (n)",
+  rincian HTML + kode langkah usulan. `mesin/temuan.py`: list-sebagai-teks dan mojibake digabung jadi satu temuan
+  lintas kolom; `teks_profil` dihapus (pindah ke `tampilan/pahami.py`). Status bar kembali ke ringkasan tabel setelah
+  tugas selesai (sebelumnya tertinggal "Mencari temuan…").
+- Bukti: `python uji.py` exit 0 (emas GDOC + Berka lulus; ekspektasi diubah ke "List Python"). Asap UI offscreen M2 +
+  M3 lulus (diubah untuk pohon/tabel). Tangkap layar GDOC diperiksa: profil 18 kolom satu baris per kolom, temuan 26
+  (6 penting, 13 perhatian, 7 info).
+- Belum: `buat_exe.bat` tidak dijalankan karena `dist\Laya\Laya.exe` sedang terbuka (PID 8612); `--uji` yang jalan
+  memakai exe lama, jadi bukan bukti rombakan. Belum dicoba pengguna. Belum di-commit.
+
+## 2026-11-06 claude-opus-5-5 - Laya v3 M3: pahami data (profil, temuan, train-test, relasi, cari, sampel) [selesai, menunggu coba pengguna]
+- Dikerjakan: `_laya_eda_v3/mesin/temuan.py` (C1 profil + histogram teks; C2 kembar persis/isi kembar + kolom yang
+  berbeda dalam grup + konflik label, penanda kosong tersamar, tipe campur, satu nilai, ejaan beda, tanggal sebagai
+  teks; C4 list-sebagai-teks, mojibake, awalan/akhiran berulang dari n-gram ujung teks, URL/mention/emoji/huruf
+  berulang, HURUF BESAR, karakter tak terlihat, panjang; label: sebaran + kolom yang sama dengan label; C3 banding
+  train-test; C5 relasi kolom senama 1:1/banyak:1 + nilai yatim; B2 cari teks/regex/SQL/kode + hitung per label; B3
+  sampel seed 42 / N per label). Tiap temuan punya ekspresi "Lihat baris" dan langkah usulan. `bantu.perbaiki_mojibake`
+  (balik MacRoman/cp1252 hanya bila hasil UTF-8 sah). UI: tengah jadi tab Data (bilah cari + tampil sampel) / Profil /
+  Temuan (pilih label, Relasi antartabel, Lihat baris, Jadikan langkah); label ditebak = kolom train yang tidak ada di
+  pasangan test, disimpan di `proyek["label"]`. `uji.py` + `uji_temuan` (data buatan, korpus tanpa cek gagal) +
+  `uji_emas` (GDOC/Berka, dilewati bila folder tidak ada).
+- Bukti: `python uji.py` lulus semua. GDOC: 5.451 salinan kembar persis di luar id, konten 11.806 salinan (5.141 grup,
+  beda di katakunci 3.758/subkategori 2.500/kategori 2.104, label 0 konflik), mojibake, `COPYRIGHT ¬© ANTARA 2021`
+  18.223, awalan `(ANTARA) -` 9.488 (cara hitung beda dari angka emas 9.221 yang memakai ≤60 huruf), list-sebagai-teks,
+  label 52/32/16, `sentimen_kutipan` 58%, test 7.214 baris persis ada di train, tanggal sama. Berka: loan ↔ account
+  terbaca **1:1** (tiap akun paling banyak 1 pinjaman; VISI menulis m:1), langkah usulan dipasang di loan.csv ambil
+  account.csv. Asap UI offscreen M2 + M3 lulus. `Laya.exe --uji` GDOC: 34 temuan, 0 cek gagal, 11,7 s waktu mesin
+  untuk temuan + profil train (jalan di thread latar; bukan waktu yang diukur pengguna).
+- Belum: dicoba pengguna dengan klik nyata; temuan hanya untuk tahap yang sedang dilihat (relasi memakai hasil akhir).
+  Belum di-commit.
+
+## 2026-11-06 claude-opus-5-5 - Laya v3 M2: resep langkah + ekspor [selesai, menunggu coba pengguna]
+- Dikerjakan: `_laya_eda_v3/mesin/langkah.py` (17 jenis: regex ganti/ambil + 10 preset, rapikan teks, ubah tipe,
+  jadi kosong, isi kosong, ganti nilai/nama, buang kolom, saring, buang duplikat, urai list, pecah, join, tumpuk,
+  agregasi, SQL, kode bebas), `mesin/resep.py` (tahap ber-cache, pasangan train/test dengan `LATIH`, tabel turunan
+  `T["..."]`, acuan berputar ditolak, petunjuk galat berbahasa Indonesia, ringkasan perubahan + contoh sel),
+  `mesin/bantu.py`, `mesin/ekspor.py` (.py/.ipynb mandiri + simpan parquet/csv), `tampilan/form.py`, panel resep +
+  menu Resep/turunan di `tampilan/jendela.py`, `buat_exe.bat` (`--add-data` sumber), `uji.py` (+ matriks, + ekspor).
+- Bukti: `python uji.py` lulus (korpus 27, matriks 351 langkah×tipe: 290 jalan, 61 gagal dengan pesan, 9 cek nilai;
+  ekspor .py/.ipynb di subprocess = hasil app untuk train, test, turunan). GDOC asli: resep 6 langkah, test tetap
+  22.665 baris, ekspor = app; hitung pertama 1,3 s, ubah langkah 5 → 0,07 s (setelah preset huruf berulang diganti
+  ke polars; sebelumnya 12,9 s). Uji asap UI offscreen lulus. `Laya.exe --uji` (303 MB) lulus termasuk resep +
+  skrip ekspor di exe beku.
+- Belum: dicoba pengguna dengan klik nyata; waktu yang dirasakan pengguna (N1). Belum di-commit.
+
+## 2026-11-06 claude-opus-5-5 - Laya v3 M1: kerangka + exe percobaan [selesai, menunggu ukur pengguna]
+- Dikerjakan: `_laya_eda_v3/` `mesin/muat.py` (pindai folder + subfolder, xlsx per sheet; baca csv/tsv/txt/json/jsonl/
+  parquet/xlsx tahan banting: tebak encoding BOM/utf-16/utf-8/cp1252, pemisah lewat modul csv, kutip + baris baru dalam
+  sel, baris tak rata, nama kolom kosong/ganda, gagal → `BacaGagal` + 100 baris mentah; semua kolom dibaca teks lalu
+  `tebak_tipe` mengubah ke angka kecuali nol depan/`1.234,5`/bulat > Int64), `mesin/proyek.py` (`.laya.json`, folder
+  absolut + relatif, tulis-lalu-ganti), `tampilan/` (grid virtual blok 200 baris, panel isi sel penuh, opsi baca
+  Ctrl+B, satu thread latar + Batal, proyek terakhir dibuka otomatis), `laya.py` (`--uji <folder>`), `uji.py`
+  (korpus 27 file jahat + proyek: lulus), `buat_exe.bat`, `jalankan.bat`, `.gitignore` (build/dist/proyek).
+- Ukur (mode `--uji`, bukan waktu yang dirasakan pengguna): exe 303 MB (awal 513 MB: library geo/cloud ikut,
+  dikecualikan), jendela tampil 0,35–0,6 s, GDOC train baca+tampil 0,17 s, Berka trans 1 jt baris 0,75 s, korpus
+  jahat 26 terbaca + `rusak.parquet` gagal dengan pesan. Antivirus laptop tidak memblokir exe.
+- Berikutnya: pengguna mencoba `dist/Laya/Laya.exe` (atau `jalankan.bat`) dengan GDOC dan mengukur N1; lalu M2
+  (langkah D1–D3 + ekspor E1–E2 + A3).
+
+## 2026-11-06 claude-opus-5-5 - Laya v3: katalog fitur "tank" (AutoGluon, latih, submission, presentasi) [selesai, menunggu persetujuan]
+- Dikerjakan: `_laya_eda_v3/VISI.md` ditulis ulang jadi kokpit lomba: 79 fitur (17 P0, 44 P1, 17 P2, 1 ditolak) di
+  modul A–J + T + V, tiap fitur punya nilai/biaya/gerbang; latih berat (AutoGluon Tabular 1.6.3 terpasang, fine-tune,
+  ensemble) jalan di proses venv terpisah + komandan notebook arsenal (`# UBAH` → formulir, nbclient); fitur yang belum
+  lulus disembunyikan; jadwal M1–M5. Ditolak: AutoGluon preset extreme (VRAM 20–32 GB + unduh bobot), pasang
+  `autogluon.multimodal` sebelum lomba, asisten LLM (aturan tanpa AI). Riset 11 pencarian web (sumber di VISI.md
+  bagian 9) + inventaris paket venv.
+- Ralat agen (cek ulang polars): 11.806 baris train GDOC berkonten kembar **bukan** kembar penuh. Di 5.141 grup,
+  artikel/tokoh/kutipan/label selalu sama, yang beda kategori/subkategori/katakunci (3.799 grup); kembar persis
+  kecuali id hanya 5.451 baris. Temuan lain: `sentimen_kutipan` = label 58,4% (kelas terbanyak 52%), proporsi negatif
+  per kategori 0,11–0,29, Okezone 64% positif, rentang tanggal train = test (split acak).
+- Dikoreksi pengguna: fitur sebanyak mungkin dalam arti luas ("tank" lawan "kapak batu"), termasuk AutoGluon/latih;
+  keputusan lama "latih tidak masuk Laya" diganti (aturan.md, keputusan.md).
+- Berikutnya: pengguna menjawab VISI.md bagian 8, lalu M1 (kerangka + exe percobaan).
+
+## 2026-11-06 claude-opus-5-5 - Laya v3: rencana fitur + requirement [selesai, menunggu persetujuan]
+- Dikerjakan: `_laya_eda_v3/VISI.md` (inti, akar kegagalan v1/v2, alur lomba, fitur A–E P0/P1/P2 dengan kriteria
+  selesai, N1–N7, arsitektur, uji terima dengan dataset holdout + korpus file jahat + temuan emas GDOC, jadwal
+  M1–M4, 4 keputusan untuk pengguna). Data GDOC diukur dengan polars (skrip di scratchpad, bukan repo).
+- Dikoreksi pengguna: minta agen menyusun rencana karena tidak tahu apa yang terbaik; .exe bukan web (aturan.md
+  diperbarui, aturan Flask diganti).
+- Berikutnya: pengguna menjawab VISI.md bagian 8, lalu M1 (kerangka + exe percobaan).
+
+## 2026-11-06 claude-opus-5-5 - Laya: visi baru dari pengguna [diskusi]
+- Dikerjakan: tidak ada kode. Visi dicatat di aturan.md (workbench persiapan data: banyak file, multi-tabel,
+  data apa pun, bisa diatur). Usul: mesin DuckDB (bukan DB buatan sendiri), halaman web yang tidak menghitung ulang
+  saat pindah halaman, setiap langkah = keputusan yang diekspor jadi kode. Waktu mulai belum diputuskan pengguna.
+- Dikoreksi pengguna: Laya bukan EDA biasa; harus loader + perapi data jenis apa pun.
+- Berikutnya: pengguna memilih kapan mulai (sebelum/sesudah final).
+- Lanjutan: pengguna pilih **mulai sekarang** dan **.exe, bukan web**. Dipasang di `../.venv`: PySide6 6.12.0,
+  pyinstaller 6.22.3; `requirements.txt` + polars 2.1.0 (sudah terpasang, belum tercatat), PySide6_Essentials,
+  pyinstaller. Rencana: `_laya_eda_v3/` (mesin polars, langkah = baris kode polars yang dijalankan = kode ekspor;
+  tampilan Qt). Belum ada kode; pengguna menghentikan untuk bertanya dulu.
+
+## 2026-11-06 claude-opus-5-5 - Laya dibekukan [selesai]
+- Dikerjakan: tidak ada kode. Diskusi: akar masalah Laya = VISI.md "data tabular" (overfit UKT) vs final teks, plus
+  model rerun Streamlit. Disarankan tidak rewrite web/DB/IDE sebelum lomba; final pakai notebook.
+- Dikoreksi pengguna: tidak percaya Laya lagi, berhenti memakainya; klaim jeda 0,1–0,3 s (AppTest) ditolak karena
+  tidak sesuai yang dirasakan di browser. Masuk aturan.md.
+- Berikutnya: EDA/pembersihan teks lewat notebook arsenal, sesuai kebutuhan data berita pengguna.
+
+## 2026-11-06 claude-opus-5-5 - Laya v2: jeda halaman di CSV besar (teks panjang) [selesai]
+- Ukur ulang (CSV 229 MB, kunjungan pertama): buka app 20→7 s, pilih label 24→3 s, Temuan 94→23 s (kedua 0,2 s),
+  Ejaan 75→1,4 s, Isian bebas 155→1,3 s, Latih 14→1,1 s, Laya 16→0,7 s. Uji: `test_requirements` lulus 19, gagal 0,
+  dilewati 1 (R16); `test_umum` g5×2, regex, g1, g1_g6, g3, g4 lulus. **Belum dijalankan**: `test_g2_g3_g7` (AppTest 5
+  dataset, ± 25 menit). Uji pakai data sintetis; belum dengan CSV 218 MB pengguna.
+- Profil (cProfile, CSV 229 MB, kolom teks 40 kata): waktu habis di analisis ejaan per nilai unik (`keys`, `key_of`,
+  `education_levels`, `fingerprint`; 0,6–1,2 jt panggilan) karena teks panjang tanpa koma/'dan' dianggap kategori.
+- Dikerjakan: `text_tools.is_long_text` (> 1000 unik dan ≥ 50% sel unik) masuk `is_free_text` (jadi dilewati analisis
+  ejaan di Temuan/Ejaan); `is_free_text` dan `audit.guess_type` menilai ≤ 20 rb sel acak (random_state 0). Isian bebas
+  dan Laya (kandidat sinonim) berhenti dengan penjelasan bila kolom teks panjang (arahkan ke Regex/TF-IDF).
+- Berikutnya: ukur ulang per halaman + uji Laya (berjalan).
+
+## 2026-11-06 claude-opus-5-5 - Laya v2: langkah regex (ganti/hapus + ambil) [selesai]
+- Dikerjakan: `core/ops.py` op `regex_replace` (pola sendiri + `REGEX_PRESETS`: URL, HTML, mention, hashtag, angka,
+  tanda baca, emoji/non-ASCII, huruf berulang, spasi) dan `regex_extract` (grup ( ) pertama → kolom baru); form di
+  `ui/tab_clean.py` (pola salah ditolak, >1 grup ditolak); LIBRARY/summary; `tests/test_requirements.all_ops` +
+  `tests/test_umum.test_regex_bersihkan_dan_ambil` lulus. `test_requirements` penuh dan profil halaman lambat
+  sedang jalan. Fitur dasar lain sudah ada (33 op); yang belum: filter baris pakai regex (pakai Kode bebas).
+  Perbaikan dari uji: kedua op memakai `astype('string')` dulu (kolom kosong-semua/angka di valid/test membuat `.str`
+  galat); kolom hasil ambil = `<kolom>_<akhiran>` (R8). `test_requirements`: lulus 18, R8 lulus sesudah perbaikan,
+  dilewati 1 (R16, wajar di venv ini).
+- Dikoreksi pengguna: minta regex + pembersihan dasar ("kaget fitur dasar seperti itu tidak ada").
+- Berikutnya: hasil uji + profil → cache/sampel halaman Isian bebas/Temuan/Ejaan/Latih/Laya.
+  `contoh/text/baseline_oof.ipynb` berubah bukan oleh sesi ini.
+
+## 2026-11-06 claude-opus-5-5 - Laya: pengguna memutuskan ganti Streamlit → Flask (nanti)
+- Dikerjakan: belum ada kode. Ukur biaya cache CSV 229 MB (scratchpad): unpickle `cache_data` 0,1 s, hash bytes
+  0,2 s, jadi bukan penyebab jeda. Pengukuran waktu per halaman (AppTest, 14 halaman × 2) dijalankan di latar.
+- Dikoreksi pengguna: jangan pakai Streamlit lagi untuk Laya; pakai Flask + web (aturan.md).
+- Hasil ukur (AppTest, CSV sintetis 229 MB = 600 rb baris, kolom teks 40 kata): pindah ke halaman ringan
+  0,1–0,3 s (overhead Streamlit kecil). Lambat = hitungan: buka app 20 s, pilih label 24 s, Temuan 94 s, Ejaan 75 s,
+  Isian bebas 155 s (kunjungan kedua masih 47 s, tidak ter-cache penuh), Latih 14 s dan Laya 16 s **tiap kunjungan**.
+  Kunjungan kedua Temuan/Ejaan 0,2 s (cache jalan). Kesimpulan: Flask tidak menghapus jeda ini; yang menolong =
+  analisis di sampel baris + cache halaman Isian bebas/Latih/Laya (+ kerja di latar agar UI tidak beku).
+- Berikutnya: pengguna menentukan kapan rewrite dimulai; perbaikan titik lambat di `core/` berguna untuk keduanya.
+
+## 2026-11-06 claude-opus-5-5 - Laya v2: peringatan "free_min ... set via the Session State API" dimatikan
+- Dikerjakan: `.streamlit/config.toml` `[global] disableWidgetStateDuplicationWarning = true`. Sebab: `app.py`
+  menulis ulang semua kunci `KEEP` tiap run (pola simpan pilihan antarhalaman, sengaja); Streamlit memperingatkan
+  sekali per proses untuk widget KEEP pertama yang punya nilai bawaan. Nilai tidak salah. Dicek opsi terbaca
+  (`streamlit.config`); opsi ada di Streamlit kedua venv (utama + GDOC).
+- Dikoreksi pengguna: -
+- Berikutnya: pengguna menjalankan Laya dari salinan GDOC; perbaikan repo utama baru sampai sana setelah ditarik.
+
+## 2026-11-06 claude-opus-5-5 - Laya v2: reader.sniff ParserError "EOF inside string"
+- Dikerjakan: `core/reader.py` `sniff` membaca 200 baris dari file utuh (`_stream`), bukan dari potongan 64 KB yang
+  bisa berhenti di tengah teks berkutip; dekode potongan pakai incremental decoder (huruf UTF-8 terbelah di batas
+  64 KB tidak dianggap cp1252). Uji baru `tests/test_umum.py::test_g5_teks_panjang_berkutip` (path + bytes): kode
+  lama gagal, kode baru lulus. Run penuh `tests.test_umum` dihentikan pengguna, belum lengkap.
+- Dikoreksi pengguna: -
+- Berikutnya: -
+
 ## 2026-11-06 claude-opus-5-5 - Laya v2: batas unggah 200 MB → 2048 MB
 - Dikerjakan: `_laya_eda_v2/.streamlit/config.toml` (`server.maxUploadSize = 2048`); terbaca saat app dijalankan dari
   folder `_laya_eda_v2` (`jalankan.bat` melakukan `cd` ke sana). Dicek lewat `streamlit.config`, belum lewat unggah

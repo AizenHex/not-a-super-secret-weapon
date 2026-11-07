@@ -16,6 +16,7 @@ python-pptx==1.0.2
 shapely==2.1.2
 regex==2026.9.29
 openpyxl==3.1.5
+polars==2.1.0                # mesin Laya v3 + kode yang diekspor Laya
 
 # Tabular
 scikit-learn==1.9.1
@@ -45,6 +46,8 @@ rapidfuzz==3.14.6            # skor kemiripan string (entity resolution)
 PySastrawi==1.2.1
 laya==0.4.8                  # Laya (alat bantu peta kategori), bobot di pretrained/laya
 streamlit==1.66.0            # web lokal _laya_eda (jalankan.bat)
+PySide6_Essentials==6.12.0   # tampilan desktop Laya v3 (_laya_eda_v3)
+pyinstaller==6.22.3          # membuat Laya.exe (_laya_eda_v3/buat_exe.bat)
 emoji==2.16.0                # contoh/text/inggris (demojize)
 ipywidgets==8.1.9            # contoh/text/anotasi_teks (tombol label)
 

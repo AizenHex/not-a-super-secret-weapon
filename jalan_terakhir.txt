@@ -1,0 +1,66 @@
+metrik: f1_macro | device: cuda
+train: (5148, 3) | test: (1260, 2) | NaN target: 0
+sample demo ditulis ke ../../../outputs/uji_t5/pseudo/sample_submission_demo.csv
+sample_submission: (1260, 2) ['id', 'label']
+id test = id sample: True
+mantap!! cek HTTPURL @USER :grinning_face:
+token khusus: [2] [3]
+encode_rows siap
+token per teks: p50 23 | p95 72 | p99 84 | maks 104
+MAX_LENGTH 128: teks terpotong 0.0%
+teks kosong: train 0 | test 0
+{'negative': 2000, 'positive': 2000, 'neutral': 1148}
+kelas: ['negative', 'neutral', 'positive'] | fold: 5 | ukuran validasi: [1030, 1030, 1030, 1029, 1029]
+baris train: 5148 | test: 1260 | pseudo: 1106
+make_model siap: ../../../pretrained/indobert
+param_groups siap, LAYER_DECAY 1.0
+loss: ce | FGM_EPS: 0.0
+EMA_DECAY: 0.0
+pick/forward/predict siap
+langkah latih siap | ACCUM_STEPS 1
+check_val siap | PATIENCE 0
+build_run siap
+train_epoch siap
+train_fold siap
+run_fold siap | seed: [42]
+[transformers] You passed `num_labels=3` which is incompatible to the `id2label` map of length `5`.
+[transformers] [1mBertForSequenceClassification LOAD REPORT[0m from: ../../../pretrained/indobert
+Key               | Status  | 
+------------------+---------+-
+classifier.bias   | MISSING | 
+classifier.weight | MISSING | 
+
+Notes:
+- MISSING:	those params were newly initialized because missing from the checkpoint. Consider training on your downstream task.
+    langkah 327: f1_macro validasi 0.9312
+  seed 42 epoch 1/1: 40.3 dtk (termasuk validasi) | terbaik 0.9312
+fold 0: f1_macro 0.9312 | sisa ± 0.0 menit
+rata-rata fold: 0.9312 +- 0.0000
+detik/epoch rata-rata 40.3 | VRAM puncak 2.29 GB | total 0.7 menit
+f1_macro OOF (1030 baris): 0.9312
+              precision    recall  f1-score   support
+
+    negative       0.93      0.93      0.93       400
+     neutral       0.90      0.93      0.91       230
+    positive       0.95      0.94      0.95       400
+
+    accuracy                           0.93      1030
+   macro avg       0.93      0.93      0.93      1030
+weighted avg       0.93      0.93      0.93      1030
+
+OOF tidak lengkap (FOLDS_TO_RUN?): tidak disimpan
+                  waktu      notebook             model    metrik  skor_cv  detik                                                                                                                                    catatan
+6   2026-11-07 11:05:07  finetune_oof        m_mdeberta  f1_macro   0.9317   58.4             nli_mdeberta | StratifiedKFold | fold [0] | epoch 1 batch 16x1 lr 3e-05 len 128 | detik/epoch 53.8 | VRAM 5.35 GB | seeds [42]
+7   2026-11-07 11:08:38  finetune_oof      b_nusax_xlmr  f1_macro   0.9053  161.8                xlmr_base | StratifiedKFold | fold [0] | epoch 3 batch 16x1 lr 3e-05 len 128 | detik/epoch 52.1 | VRAM 4.92 GB | seeds [42]
+8   2026-11-07 11:09:30  finetune_oof  b_wrete_indobert  f1_macro   0.7993   34.8      indobert | StratifiedKFold | fold [0, 1, 2, 3, 4] | epoch 3 batch 16x1 lr 3e-05 len 128 | detik/epoch 2.0 | VRAM 2.41 GB | seeds [42]
+9   2026-11-07 11:11:19  finetune_oof  b_wrete_mdeberta  f1_macro   0.9134   84.0  nli_mdeberta | StratifiedKFold | fold [0, 1, 2, 3, 4] | epoch 3 batch 16x1 lr 3e-05 len 128 | detik/epoch 4.9 | VRAM 5.36 GB | seeds [42]
+10  2026-11-07 11:12:24  finetune_oof          b_pseudo  f1_macro   0.9312   44.0                 indobert | StratifiedKFold | fold [0] | epoch 1 batch 16x1 lr 3e-05 len 128 | detik/epoch 40.3 | VRAM 2.29 GB | seeds [42]
+sebaran prediksi test: {'positive': 0.557, 'negative': 0.333, 'neutral': 0.11}
+label
+positive    702
+negative    419
+neutral     139
+Name: count, dtype: int64
+MASALAH: 0
+f1_macro di test (kunci): 0.9030
+f1_macro OOF train: 0.9312

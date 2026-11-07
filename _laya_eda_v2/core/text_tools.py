@@ -68,9 +68,21 @@ def key_table(series: pd.Series) -> pd.DataFrame:
     return table
 
 
+def is_long_text(series: pd.Series) -> bool:
+    """Teks panjang (ulasan, tweet, catatan): > 1000 nilai unik dan ≥ separuh sel unik. Bukan kategori, jadi
+    analisis ejaan/kunci (Python per nilai unik) dilewati: di 600 rb kalimat itu makan menit."""
+    text = series.dropna()
+    unique = text.nunique()
+    return unique > 1000 and unique >= 0.5 * len(text)
+
+
 def is_free_text(series: pd.Series) -> bool:
-    """Isian bebas: > 100 kunci berbeda dan ≥ 3% sel berisi beberapa bagian (',', '&', 'dan')."""
+    """Isian bebas: > 100 kunci berbeda dan ≥ 3% sel berisi beberapa bagian (',', '&', 'dan'), atau teks panjang.
+    Dinilai dari ≤ 20 rb sel acak (tetap): cukup untuk dua ambang ini, cepat di file besar."""
+    if is_long_text(series):
+        return True
     text = series.dropna().astype(str)
+    text = text.sample(min(len(text), 20_000), random_state=0)
     return keys(text).nunique() > 100 and text.str.contains(vocab.separator_regex(multi=True), regex=True).mean() >= 0.03
 
 

@@ -47,6 +47,34 @@ Koreksi terbaru pengguna di chat menang atas isi file ini; setelah itu perbarui 
 
 ## Laya EDA (`_laya_eda/`)
 
+- **Laya dibekukan (pengguna, 2026-11-06: "capek sama laya", tidak percaya hasil maupun prosesnya).** Jangan
+  memperbaiki, menyarankan, atau memakai Laya v2 (Streamlit) untuk final; EDA/pembersihan final lewat notebook
+  arsenal. Pengguna sendiri memulai Laya v3 (2026-11-06, lihat di bawah); v3 tidak boleh jadi jalur wajib final.
+- **Visi Laya baru (pengguna, 2026-11-06)**: bukan EDA biasa ("kalau gitu langsung pandas"), tapi workbench
+  persiapan data: loader banyak file sekaligus (multi-tabel/relasional, mis. GDOC `train/multitabel.ipynb` +
+  folder `riwayat-medis/`), data jenis apa pun (teks, tabular, multi-level), bisa diatur sesuai keinginan pengguna.
+  Bukan alat yang dioptimasi untuk satu dataset (pelajaran UKT).
+- Jangan menyajikan ukuran uji (AppTest, tanpa browser) sebagai waktu yang dirasakan pengguna; yang dirasakan
+  pengguna di browser yang benar (dikoreksi 2026-11-06: "0,1–0,3 s ... bullshit").
+- **Laya v3 = aplikasi desktop `.exe`, bukan web, bukan Streamlit** (pengguna, 2026-11-06: "buatin jadi .exe aku
+  gak mau jadi web"; menggantikan aturan lama "Flask + web"). `_laya_eda_v3/VISI.md` = satu-satunya sumber tujuan,
+  fitur (P0/P1/P2), requirement, dan uji terima v3. Pengguna ingin `.exe` tinggal ditempel di repo lalu dipakai.
+- Pengguna tidak tahu fitur apa yang terbaik untuknya dan meminta agen (dipanggil "max") menyusunnya: beri
+  rekomendasi tegas dengan alasan dan bukti data, bukan daftar pilihan tanpa saran. (2026-11-06)
+- **Laya v3 = "tank"** (pengguna, 2026-11-06: "aku harus menyiapkan tank sekalipun meski lawan-lawanku hanya membawa
+  kapak batu"): fitur sebanyak mungkin dalam arti luas, bukan hanya EDA: latih model (mis. AutoGluon), submission,
+  presentasi, kesiapan PC lomba, dokumentasi offline. Riset alat lain (bukan hanya ide sendiri) sebelum menyusun fitur.
+- **UI Laya v3 harus jelas dan visual** (pengguna, 2026-11-07, marah: "asli yang kamu buat itu membingungkan"):
+  pakai skill `impeccable` untuk kerja UI; tiap perubahan UI diverifikasi dengan screenshot tema gelap DAN terang
+  (Windows dark mode); warna HTML lewat `pahami.W()`, bukan hex mati; alur langkah selalu terlihat (bilah alur).
+  Fitur yang ada di v2 (outlier, split/validasi, dsb.) harus ikut ke v3 sebelum fitur baru. Saat menambah fitur
+  preprocessing, pikirkan juga fitur yang belum diminta (lihat VISI 8b).
+- **UI Laya v3 harus mudah dinavigasi dan tiap layar jelas menampilkan apa** (pengguna, 2026-11-06: "ui/ux ini jelek
+  ... susah di navigasi ... profiling nya gak jelas nampilin apa, chaos"). Pola tetap: kiri = tabel + resep, tengah =
+  daftar yang bisa dipilih (Data/Profil/Temuan), kanan = rincian dari yang dipilih. Jangan menaruh dinding teks
+  polos; pakai tabel ringkas + rincian per butir. Sebelum menyebut UI selesai, tangkap layar offscreen
+  (`QT_QPA_FONTDIR=C:/Windows/Fonts`) dengan data riil dan periksa sendiri.
+
 - Laya v2 (`_laya_eda_v2/`): `VISI.md` = satu-satunya sumber tujuan, requirement (R1–R18), prinsip, library,
   dan uji terima. `RENCANA.md` hanya status, arsitektur yang jalan, dan bukti uji; jangan menulis prinsip
   atau pilihan library di sana. (2026-11-02)
