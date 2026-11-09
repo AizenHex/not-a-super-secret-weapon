@@ -182,7 +182,8 @@ def html_temuan(t):
 # ---------- hasil tugas model (M4) ----------
 JUDUL = {"tabular": "Baseline tabular (LightGBM)", "baseline": "Baseline teks + label mencurigakan",
          "kata": "Kata khas per label", "acak": "Uji label acak", "adversarial": "Adversarial train vs test",
-         "submisi": "Validasi submission"}
+         "submisi": "Validasi submission", "fold": "Ekspor kolom fold", "bocor": "Cek bocor per kolom",
+         "asosiasi": "Peta asosiasi + pola kosong"}
 
 
 def d3(v):
@@ -206,6 +207,13 @@ def ringkas_hasil(r):
         return f"AUC {d3(h['auc'])}"
     if r["jenis"] == "kata":
         return f"{len(h['kelas'])} label"
+    if r["jenis"] == "fold":
+        return f"{len(h['per_fold'])} fold"
+    if r["jenis"] == "bocor":
+        n = sum(_curiga(h, x) for x in h["kolom"])
+        return f"{n} kolom curiga" if n else "tidak ada yang curiga"
+    if r["jenis"] == "asosiasi":
+        return f"{len(h['kolom'])} kolom"
     n = sum(t == "galat" for t, _ in h["cek"])
     return f"{n} galat" if n else "lulus"
 
@@ -222,8 +230,26 @@ def html_hasil(r):
             out.append(kode("\n".join(r["log"][-25:])))
         return "".join(out)
     out += {"tabular": _html_tabular, "baseline": _html_baseline, "adversarial": _html_adv, "acak": _html_acak,
-            "kata": _html_kata, "submisi": _html_submisi}[r["jenis"]](h)
+            "kata": _html_kata, "submisi": _html_submisi, "fold": _html_fold, "bocor": _html_bocor,
+            "asosiasi": _html_asosiasi}[r["jenis"]](h)
     return "".join(out)
+
+
+def html_banding(r, sama):
+    """Skor run ini vs run lain (jenis + tabel sama) beserta beda resepnya: langkah mana yang menaikkan skor."""
+    if r["status"] != "ok" or r["jenis"] not in ("tabular", "baseline") or len(sama) < 2:
+        return ""
+    ini = r.get("resep", [])
+    isi = []
+    for x in sama:
+        tambah = [s for s in x["resep"] if s not in ini]
+        kurang = [s for s in ini if s not in x["resep"]]
+        beda = "; ".join(["+ " + escape(s[:50]) for s in tambah] + ["− " + escape(s[:50]) for s in kurang])
+        isi.append([("<b>" + x["jam"] + "</b>") if x is r else x["jam"], ringkas_hasil(x), rb(len(x["resep"])),
+                    "run ini" if x is r else beda or redup("resep sama")])
+    return ("<h3>Banding versi resep</h3><p>" + redup("run lain dengan tugas dan tabel sama; + = langkah yang ada di "
+                                                    "run itu tapi tidak di run ini, − = sebaliknya") + "</p>"
+            + _tabel(["Jam", "Skor", "Langkah", "Beda resep dengan run ini"], isi, kanan=(2,), bungkus=(3,)))
 
 
 def _matriks(h):
@@ -286,6 +312,114 @@ def _html_tabular(h):
         out += _per_label(h)
         if len(h["kelas"]) <= 15:
             out += _matriks(h)
+    return out
+
+
+def _pct(v):
+    return f"{100 * v:.1f}%".replace(".", ",")
+
+
+def _html_fold(h):
+    w = W()
+    out = [f"<p style='font-size:large'><b>{len(h['per_fold'])} fold</b> &nbsp; {escape(h['validasi'])}</p>",
+           f"<p>fold.csv: kolom <b>{escape(h['kunci'])}</b> + <b>fold</b> (0 s.d. {len(h['per_fold']) - 1}"
+           + (f"; {rb(h['tanpa_fold'])} baris -1 = hanya latih" if h["tanpa_fold"] else "") + ")</p>",
+           kode(h["path"])]
+    kepala = ["Fold", "Baris"]
+    isi = []
+    if h["klasifikasi"] and len(h["kelas"]) <= 10:
+        kepala += [escape(k[:8]) for k in h["kelas"]]
+        isi.append(["semua", rb(sum(f["n"] for f in h["per_fold"]))] + [_pct(v) for v in h["sebaran_semua"]])
+        isi += [[str(f["fold"]), rb(f["n"])] + [_pct(v) for v in f["sebaran"]] for f in h["per_fold"]]
+    elif h["klasifikasi"]:
+        kepala.append("Selisih porsi kelas terbesar")
+        isi = [[str(f["fold"]), rb(f["n"]), _pct(max(abs(a - b) for a, b in zip(f["sebaran"], h["sebaran_semua"])))]
+               for f in h["per_fold"]]
+    else:
+        kepala.append(f"Rata-rata {escape(h['label'])}")
+        isi = [["semua", "", d3(h["sebaran_semua"])]] + [[str(f["fold"]), rb(f["n"]), d3(f["sebaran"])]
+                                                        for f in h["per_fold"]]
+    out += ["<h3>Isi tiap fold</h3><p>" + redup("porsi label tiap fold harus mirip baris 'semua'") + "</p>",
+            _tabel(kepala, isi, kanan=tuple(range(1, len(kepala))))]
+    k = h["kunci"]
+    sambung = (f'df = df.join(fold, on="{k}", how="left")' if k != "baris"
+               else 'df = df.with_columns(fold["fold"])  # urutan baris harus sama dengan tabel di Laya')
+    out += ["<h3>Pakai di notebook</h3><p>" + redup("salin fold.csv ke folder kerja; semua model memakai split yang "
+                                                    "sama, jadi OOF bisa di-ensemble") + "</p>",
+            kode(f'import polars as pl\nfold = pl.read_csv(r"{h["path"]}")\n{sambung}\n'
+                 f'for k in range({len(h["per_fold"])}):\n'
+                 f'    latih, val = df.filter(pl.col("fold") != k), df.filter(pl.col("fold") == k)\n'
+                 f'# scikit-learn: PredefinedSplit(df["fold"].to_numpy())'),
+            f"<p style='color:{w['redup']}'>Fold dihitung dari tabel di tahap resep yang terbuka saat tugas jalan.</p>"]
+    return out
+
+
+def _curiga(h, x):
+    return (x["skor"] >= 0.9 or x.get("f1_kelas_maks", 0) >= 0.95) if h["klasifikasi"] else x["skor"] >= 0.9
+
+
+def _html_bocor(h):
+    w = W()
+    curiga = [x for x in h["kolom"] if _curiga(h, x)]
+    out = [f"<p style='font-size:large'><b>{len(curiga)} kolom curiga</b> dari {len(h['kolom'])}</p>" if curiga else
+           "<p style='font-size:large'><b>Tidak ada kolom yang sendirian menebak label</b></p>",
+           "<p>" + redup(f"Satu model kecil per kolom ({escape(h['validasi'])}, 3 fold pertama). Acuan tebak kelas "
+                         f"terbanyak: {h['metrik']} {d3(h['acuan'])}. Curiga = {h['metrik']} ≥ 0,9"
+                         + (" atau satu kelas F1 ≥ 0,95" if h["klasifikasi"] else "") + ".") + "</p>"]
+    if curiga:
+        out.append(f"<p style='color:{w['perhatian']}'>Cek tiap kolom curiga: apakah nilainya sudah diketahui sebelum "
+                   "label ditentukan? Kalau dibuat dari label (atau sesudahnya), buang. Kalau sah (aturan bisnis, "
+                   "mis. penerima beasiswa = golongan 0), pertahankan dan sebut di presentasi.</p>")
+    kepala = ["", "Kolom", h["metrik"], ""] + (["Kelas paling tertebak", "F1 kelas", ""] if h["klasifikasi"] else [])
+    maks = max([x["skor"] for x in h["kolom"]] + [1e-9])
+    isi = []
+    for x in sorted(h["kolom"], key=lambda x: (not _curiga(h, x), -x["skor"])):
+        tanda = f"<b style='color:{w['penting']}'>curiga</b>" if _curiga(h, x) else ""
+        isi.append([tanda, escape(x["kolom"][:36]), d3(x["skor"]), _batang(max(x["skor"], 0), maks, 90)]
+                   + ([escape(x["kelas_maks"]), d3(x["f1_kelas_maks"]), _batang(x["f1_kelas_maks"], 1, 90)]
+                      if h["klasifikasi"] else []))
+    out.append(_tabel(kepala, isi, kanan=(2, 5) if h["klasifikasi"] else (2,)))
+    if h.get("dilewati"):
+        out.append(f"<p>{redup('Kolom dilewati: ' + escape(', '.join(h['dilewati'])))}</p>")
+    return out
+
+
+def _heat(kol, m, judul, ket):
+    """Heatmap persegi 0..1; kolom diberi nomor supaya tabel tidak melebar."""
+    w = W()
+    out = [f"<h3>{judul}</h3><p>{redup(ket)}</p><table cellspacing='1' cellpadding='3'><tr><td></td>"
+           + "".join(f"<td align='center' style='font-size:8pt; color:{w['redup']}'>{i}</td>"
+                     for i in range(1, len(kol) + 1)) + "</tr>"]
+    for i, (c, baris) in enumerate(zip(kol, m), 1):
+        sel = []
+        for j, v in enumerate(baris, 1):
+            f = min(abs(v), 1.0)
+            teks = "#ffffff" if f > w["terang_di_panas"] else "inherit"
+            angka = round(100 * f) if i != j and f >= 0.3 else ""  # angka kecil hanya mengotori; warna sudah cukup
+            sel.append(f"<td align='center' width='22' bgcolor='{_campur(f)}' "
+                       f"style='white-space:nowrap; font-size:8pt; color:{teks}'>{angka}</td>")
+        out.append(f"<tr><td style='white-space:nowrap; padding-right:8px'>{i} {escape(c[:24])}</td>" + "".join(sel) + "</tr>")
+    out.append("</table>")
+    return out
+
+
+def _html_asosiasi(h):
+    out = [f"<p style='font-size:large'><b>{len(h['kolom'])} kolom</b></p><p>"
+           + redup(f"{rb(h['baris'])} baris; angka-angka: |Spearman|, selain itu: Cramér's V (angka dibagi 10 ember). "
+                   "0 = tidak terkait, 1 = sama persis") + "</p>", "<h3>Pasangan paling terkait</h3>",
+           _tabel(["Kolom", "Kolom", "", "Nilai", "Cara"],
+                  [(escape(a[:30]), escape(b[:30]), _batang(v, 1, 80), d3(v), cara.split("'")[0])
+                   for v, a, b, cara in h["pasangan"]], kanan=(3,)),
+           "<p>" + redup("≥ 0,95: hampir duplikat, satu bisa dibuang (mis. kota dan lokasi). Kolom yang sangat terkait "
+                         "dengan label: cek kebocoran (tugas Cek bocor per kolom).") + "</p>"]
+    out += _heat(h["kolom"], h["matriks"], "Peta asosiasi", "angka sel = nilai x 100; nomor kolom = nomor baris")
+    k = h["kosong"]
+    if k["matriks"]:
+        out += _heat(k["kolom"], k["matriks"], "Pola kosong bersama",
+                     "korelasi penanda kosong: tinggi = kolom-kolom ini kosong di baris yang sama (satu sumber "
+                     "data hilang; satu kolom penanda kosong cukup)")
+    elif k["kolom"]:
+        out.append(f"<p>{redup('Hanya satu kolom yang punya nilai kosong.')}</p>")
     return out
 
 

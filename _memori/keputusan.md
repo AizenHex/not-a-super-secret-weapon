@@ -2,6 +2,16 @@
 
 Terbaru di atas. Format: `- YYYY-MM-DD: <keputusan>. Alasan: <...>.`
 
+- 2026-11-08: Laya v3 target encoding OOF di langkah resep: fungsi tahu sedang di train lewat `df is LATIH` (train
+  dijalankan `f(df, df)`), maka nilai train dihitung out-of-fold (k=5, smoothing m=10) dan test memakai rata-rata seluruh
+  train. Alasan: tidak perlu jalur khusus di mesin resep; ekspor .py berperilaku sama.
+- 2026-11-08: drift (PSI pada desil train + KS) dan skema test dihitung dengan polars + stdlib di `temuan.py`, bukan
+  numpy/scipy. Alasan: Temuan berjalan di exe (tanpa venv); hanya tugas berat yang lewat python venv.
+- 2026-11-08: cek bocor per kolom = LightGBM 60 pohon per satu kolom, 3 fold pertama dari skema validasi; curiga bila
+  macro-F1 >= 0,9 atau F1 satu kelas >= 0,95. Alasan: menangkap kolom yang menebak satu kelas saja (Riwayat Beasiswa
+  UKT: kelas 0 F1 0,998 walau macro-F1 0,18), yang tidak terlihat dari skor rata-rata.
+- 2026-11-08: undo/redo resep menyimpan salinan seluruh resep (semua tabel, maks 50) sebelum tiap perubahan, bukan
+  operasi per langkah. Alasan: satu titik (`_ubah_resep`) menangkap semua jenis ubahan; resep kecil.
 - 2026-11-07: Laya v3 baseline tabular memakai LightGBM (200 pohon, lr 0,1, n_jobs <= 8: 4 s/fold di UKT 30 rb baris);
   teks bebas (unik > 50% baris) dilewati, teks pendek jadi kategori. Alasan: model teks salah untuk data tabel
   (screenshot pengguna), LightGBM sudah di venv dan tahan outlier/kosong. Hasil model tampil di tab Model sendiri

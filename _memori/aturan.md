@@ -30,6 +30,9 @@ Koreksi terbaru pengguna di chat menang atas isi file ini; setelah itu perbarui 
 - Peta metode wajib memuat metode ML standar, niche, dan SOTA (mis. hill climbing) serta model kecil;
   LLM one/zero-shot bukan fokus. Pengguna: "metode ML dan model kecil, bukan model one shot kayak LLM"
   (2026-11-06)
+- Aturan AI saat lomba dikoreksi pengguna (2026-11-07): AI **boleh** dipakai untuk membantu menulis kode untuk
+  hal tak terduga, bukan "tanpa AI" mutlak. Arsenal tetap utama; asisten kode lokal hanya penambal. Dasarnya
+  ucapan pengguna di chat, belum ada kutipan guidebook.
 
 ## Kode
 
@@ -132,6 +135,19 @@ Koreksi terbaru pengguna di chat menang atas isi file ini; setelah itu perbarui 
   pita judul + pita bawah pastel, chevron antar kartu. **Jangan** tambah pita "kenapa", bayangan,
   atau kurung fase; pengguna menilai versi polos lebih rapi. Satu angka = satu sumber (semua figur
   deteksi pakai prediksi `yolo_2cls_v2.pt` yang sama).
+
+- Koreksi pengguna 2026-11-07 (figur pipeline GDOC):
+  - **Baca bagian Figur ini sebelum membuat figur apa pun.** Kanvas selalu ~13×5,4 in (atau 16:9); **jangan
+    pita pipih/menyamping** (mis. 13×3,2): di PPT tidak bisa di-scale dengan benar. Huruf besar (judul ≥ 18).
+  - Istilah teknis ditulis seperti di kode, jangan diterjemahkan ("patience 2", bukan "sabar 2"; max_length, epoch).
+  - Keterangan sedikit dan kecil; satu baris catatan per kotak paling banyak. Figur pipeline hanya pipeline:
+    jangan tambah jalur contoh/ilustrasi (mis. "contoh bersihkan()"); rincian data masuk figur "what we see".
+  - Pipeline wajib menyebut input yang benar-benar dipakai: kolom mana yang dimuat (mis. hanya konten_berita →
+    sentimen_berita) dan bahwa kolom lain diabaikan; keluaran submission sebut kolomnya (id, label).
+  - Figur hasil model: pakai output notebook/file yang sudah ada; jangan menjalankan ulang model/inferensi tanpa
+    diminta (limit pengguna, 2026-11-07).
+  - Pengecualian kanvas: gambar pengganti foto/kolase di slide (mis. kolase kartu berita) boleh persegi, ikuti
+    ukuran tempatnya di slide.
 
 ## Git
 

@@ -28,7 +28,15 @@ TIP = {"tabular": "LightGBM di semua kolom (angka, kategori, tanggal) selain lab
                    "(cleanlab). GDOC 52 rb artikel ± 40 s.",
        "kata": "Kata/bigram yang khas untuk tiap label (log-odds).",
        "acak": "CV dengan label diacak; skor jauh di atas tebakan = ada kebocoran.",
-       "adversarial": "Bisakah model membedakan train dari test? Butuh tabel pasangan (menu Resep)."}
+       "adversarial": "Bisakah model membedakan train dari test? Butuh tabel pasangan (menu Resep).",
+       "fold": "Tulis fold.csv (id + nomor fold) sesuai pengaturan Validasi, supaya semua notebook/model memakai "
+               "split yang sama dan OOF-nya bisa di-ensemble.",
+       "bocor": "Satu model kecil per kolom: kolom yang sendirian hampir menebak label (atau satu kelasnya) "
+                "ditandai curiga bocor. Data tabel ± 30 s.",
+       "asosiasi": "Heatmap keterkaitan antar kolom (|Spearman| / Cramér's V) + kolom yang kosong bersamaan. "
+                   "Tidak butuh label."}
+CEK = ("fold", "bocor", "asosiasi")
+TANPA_TEKS = ("tabular",) + CEK
 
 
 class TabModel(QWidget):
@@ -41,11 +49,11 @@ class TabModel(QWidget):
         self.ket = QLabel(objectName="meta")
         py = QPushButton("Python…", toolTip="Pilih python.exe venv (yang punya scikit-learn) secara manual")
         py.clicked.connect(self.pilih_python)
-        tombol = []
+        tombol, tombol_cek = [], []
         for jenis in TIP:
             b = QPushButton(pahami.JUDUL[jenis], toolTip=TIP[jenis])
             b.clicked.connect(lambda _=False, jenis=jenis: self.mulai(jenis))
-            tombol.append(b)
+            (tombol_cek if jenis in CEK else tombol).append(b)
         batal = QPushButton("Batal", toolTip="Hentikan tugas yang berjalan dan kosongkan antrean")
         batal.clicked.connect(self.batal)
 
@@ -81,7 +89,8 @@ class TabModel(QWidget):
         lay.setContentsMargins(0, 0, 0, 0)
         lay.addWidget(baris(self.ket, None, self.teks_tombol, py))
         lay.addWidget(baris(QLabel("Validasi"), self.v_cara, QLabel("fold"), self.v_fold, self.v_kolom, None))
-        lay.addWidget(baris(*tombol, None, batal))
+        lay.addWidget(baris(QLabel("Model"), *tombol, None, batal))
+        lay.addWidget(baris(QLabel("Cek data"), *tombol_cek, None))
         lay.addWidget(isi, 1)
         self._dipilih(-1)
 
@@ -170,13 +179,14 @@ class TabModel(QWidget):
         if df is None:
             return QMessageBox.information(self, "Laya", "Buka tabel train dulu.")
         teks, lab = self._teks(df), self._label(df)
-        if not teks and jenis != "tabular":
+        if not teks and jenis not in TANPA_TEKS:
             return QMessageBox.information(self, "Laya", "Tugas ini butuh kolom teks (tombol Kolom teks). Untuk data "
                                                          "tabel pakai Baseline tabular.")
-        if jenis != "adversarial" and not lab:
+        if jenis not in ("adversarial", "asosiasi") and not lab:
             return QMessageBox.information(self, "Laya", "Tabel ini belum punya label. Pilih kolom label di tab Temuan.")
         pem, r = resep.resep_dari(j.proyek, j.aktif)
         pasangan = r.get("pasangan", []) if pem == j.aktif else []
+        versi = [langkah.ringkas(x) for x in r.get("langkah", [])[:j.indeks] if x.get("nyala", True)]
         if jenis == "adversarial" and not pasangan:
             return QMessageBox.information(self, "Laya", "Adversarial butuh tabel test sebagai pasangan resep "
                                                          "(Resep → Tabel pasangan).")
@@ -193,7 +203,7 @@ class TabModel(QWidget):
             return QMessageBox.information(self, "Laya", "Pilih kolom grup untuk validasi 'grup: kolom'.")
         t = {"jenis": jenis, "latih": str(folder / "latih.parquet"), "uji": None, "teks": teks, "label": lab,
              "id": idk, "keluar": str(folder), "seed": 42, "fold": 5, "validasi": v}
-        pakai = df.columns if jenis == "tabular" else list(dict.fromkeys(teks + [c for c in (lab, idk, grup) if c]))
+        pakai = df.columns if jenis in TANPA_TEKS else list(dict.fromkeys(teks + [c for c in (lab, idk, grup) if c]))
 
         def kerja():
             folder.mkdir(parents=True, exist_ok=True)
@@ -209,12 +219,12 @@ class TabModel(QWidget):
                 d.select(teks).write_parquet(t["uji"])
             (folder / "tugas.json").write_text(json.dumps(t, ensure_ascii=False, indent=1), encoding="utf-8")
 
-        ket = f"{nama} tahap {i} · " + (f"{len(pakai)} kolom" if jenis == "tabular" else f"teks {', '.join(teks)}") \
+        ket = f"{nama} tahap {i} · " + (f"{len(pakai)} kolom" if jenis in TANPA_TEKS else f"teks {', '.join(teks)}") \
             + (f" · label {lab}" if lab else "") + \
               (f" · test {pasangan[0]}" if jenis == "adversarial" else "")
         j.jalankan(f"Menyiapkan {pahami.JUDUL[jenis]}", kerja, lambda _: self._antre(
             {"jenis": jenis, "folder": folder, "ket": ket, "tabel": nama, "id": idk, "status": "antre", "log": [],
-             "jam": time.strftime("%H.%M"), "hasil": None}))
+             "jam": time.strftime("%H.%M"), "hasil": None, "resep": versi}))
 
     def _antre(self, r):
         self.riwayat.append(r)
@@ -298,7 +308,9 @@ class TabModel(QWidget):
 
     def _dipilih(self, _):
         r = self._terpilih()
-        self.rinci.setHtml(pahami.html_hasil(r) if r else
+        sama = [x for x in self.riwayat if r and x["status"] == "ok" and x["jenis"] == r["jenis"]
+                and x["tabel"] == r["tabel"] and "resep" in x]
+        self.rinci.setHtml(pahami.html_hasil(r) + pahami.html_banding(r, sama) if r else
                            "<h3>Belum ada hasil</h3><p>Atur <b>Validasi</b>, lalu tekan <b>Baseline tabular</b> (data "
                            "tabel) atau <b>Baseline teks</b> (kolom kalimat). Tugas berjalan di python venv terpisah; "
                            "Laya tetap bisa dipakai. Hasil yang dipilih di RIWAYAT tampil di sini.</p>")

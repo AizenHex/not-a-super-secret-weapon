@@ -305,6 +305,8 @@ Pembanding: alat preprocessing umum (OpenRefine, Data Wrangler, KNIME, pipeline 
 format, profil, temuan (duplikat, penanda kosong/angka, outlier, tulisan beda), 20 jenis langkah termasuk outlier,
 validasi CV + baseline tabular/teks, ekspor .py/.ipynb. Yang belum, urut nilai/biaya:
 
+**Status 2026-11-08: semua butir di bawah sudah dibuat** (langkah rentang/encode/langka/penanda_kosong/tanggal/skala/mirip, isi kosong per grup, tugas fold/bocor/asosiasi, drift + skema di Temuan train-test, Ctrl+Z/Ctrl+Y resep, banding versi resep di hasil model). Batasnya di `_memori/log.md` 2026-11-08.
+
 | Prio | Fitur | Kenapa |
 |---|---|---|
 | P0 | Teks rentang → angka ("Rp 1.000.000 s.d. 2.000.000" → batas bawah/tengah/atas) | data UKT 2024 penuh kolom seperti ini; sekarang hanya jadi kategori |

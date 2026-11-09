@@ -321,7 +321,129 @@ def tabular(t, df, uji):
     return hasil
 
 
-JENIS = {"tabular": tabular, "baseline": baseline, "adversarial": adversarial, "acak": acak, "kata": kata_khas}
+def _label(s):
+    """(klasifikasi, y, kelas): klasifikasi bila label teks atau angka dengan <= 20 nilai (sama dengan tabular)."""
+    if not s.dtype.is_numeric() or s.n_unique() <= 20:
+        kelas, y = np.unique(s.cast(pl.String).fill_null("(kosong)").to_numpy(), return_inverse=True)
+        return True, y, kelas
+    y = s.cast(pl.Float64).to_numpy()
+    if np.isnan(y).any():
+        raise ValueError(f"label {s.name} punya {int(np.isnan(y).sum())} nilai kosong; isi atau buang dulu")
+    return False, y, None
+
+
+def fold(t, df, uji):
+    """Kolom fold sesuai pengaturan validasi -> fold.csv, supaya notebook/ensemble memakai split yang sama persis."""
+    klas, y, kelas = _label(df[t["label"]])
+    g = grup(teks_dari(df, t["teks"])) if t.get("teks") else None
+    bagi, ket = lipatan(t, df, y, g, klas)
+    f = np.full(len(y), -1)
+    for k, (_, b) in enumerate(bagi):
+        f[b] = k
+    kunci = t.get("id") if t.get("id") in df.columns else None
+    out = pl.DataFrame({kunci or "baris": df[kunci] if kunci else np.arange(len(y)), "fold": f})
+    path = Path(t["keluar"]) / "fold.csv"
+    out.write_csv(path)
+    lapor(f"validasi: {ket}; fold.csv {len(out)} baris")
+    per = []
+    for k in range(len(bagi)):
+        m = f == k
+        per.append({"fold": k, "n": int(m.sum()),
+                    "sebaran": (np.bincount(y[m], minlength=len(kelas)) / max(m.sum(), 1)).tolist() if klas
+                    else float(y[m].mean())})
+    return {"validasi": ket, "path": str(path), "kunci": kunci or "baris", "per_fold": per, "klasifikasi": klas,
+            "kelas": [str(k) for k in kelas] if klas else None, "label": t["label"],
+            "sebaran_semua": (np.bincount(y, minlength=len(kelas)) / len(y)).tolist() if klas else float(y.mean()),
+            "tanpa_fold": int((f < 0).sum())}
+
+
+def bocor(t, df, uji):
+    """Model kecil per SATU kolom (CV 3 fold): kolom yang sendirian hampir menebak label (atau satu kelasnya)
+    sempurna patut dicurigai bocor (dibuat dari label, atau baru diketahui sesudah label)."""
+    import lightgbm as lgb
+    klas, y, kelas = _label(df[t["label"]])
+    X, lewat = _matriks_fitur(df, [c for c in df.columns if c not in {t["label"], t.get("id")}])
+    bagi, ket = lipatan(t, df, y, None, klas)
+    bagi = bagi[:3]
+    lapor(f"{X.shape[1]} kolom x {len(bagi)} fold; validasi {ket}")
+    par = dict(n_estimators=60, learning_rate=0.2, num_leaves=15, min_child_samples=10, random_state=t["seed"],
+               verbose=-1, n_jobs=min(8, os.cpu_count() or 1))
+    if klas:
+        acuan = f1_score(y, np.full(len(y), np.bincount(y).argmax()), average="macro")
+    else:
+        acuan = 0.0
+    hasil = []
+    for i, c in enumerate(X.columns, 1):
+        p, dinilai = np.zeros(len(y), int if klas else float), np.zeros(len(y), bool)
+        for a, b in bagi:
+            m = (lgb.LGBMClassifier(**par) if klas else lgb.LGBMRegressor(**par)).fit(X[[c]].iloc[a], y[a])
+            p[b], dinilai[b] = m.predict(X[[c]].iloc[b]), True
+        yv, pv = y[dinilai], p[dinilai]
+        if klas:
+            per = f1_score(yv, pv, average=None, labels=range(len(kelas)), zero_division=0)
+            hasil.append({"kolom": c, "skor": float(f1_score(yv, pv, average="macro")),
+                          "kelas_maks": str(kelas[per.argmax()]), "f1_kelas_maks": float(per.max())})
+        else:
+            hasil.append({"kolom": c, "skor": float(r2_score(yv, pv))})
+        if i % 5 == 0:
+            lapor(f"{i}/{X.shape[1]} kolom")
+    hasil.sort(key=lambda h: -h["skor"])
+    return {"klasifikasi": klas, "validasi": ket, "acuan": float(acuan), "kolom": hasil, "dilewati": lewat,
+            "label": t["label"], "metrik": "macro-F1" if klas else "R²"}
+
+
+def _kode_kolom(s):
+    """Kolom -> kode bilangan untuk Cramér's V: angka jadi ember desil, kategori 50 teratas, kosong = kode sendiri."""
+    if s.dtype.is_numeric() and s.n_unique() > 10:
+        tepi = np.unique(np.nanquantile(s.cast(pl.Float64).to_numpy(), np.linspace(0.1, 0.9, 9)))
+        v = s.cast(pl.Float64).to_numpy()
+        return np.where(np.isnan(v), -1, np.searchsorted(tepi, v, side="right"))
+    v = s.cast(pl.String).fill_null("(kosong)")
+    atas = set(v.value_counts(sort=True).head(50)[v.name].to_list())
+    return np.unique(np.where(v.is_in(list(atas)).to_numpy(), v.to_numpy(), "(lainnya)"), return_inverse=True)[1]
+
+
+def _cramer(a, b):
+    ia, ib = np.unique(a, return_inverse=True)[1], np.unique(b, return_inverse=True)[1]
+    m = np.zeros((ia.max() + 1, ib.max() + 1))
+    np.add.at(m, (ia, ib), 1)
+    if min(m.shape) < 2:
+        return 0.0
+    e = np.outer(m.sum(1), m.sum(0)) / m.sum()
+    return float(np.sqrt(((m - e) ** 2 / e).sum() / m.sum() / (min(m.shape) - 1)))
+
+
+def asosiasi(t, df, uji):
+    """Peta asosiasi antar kolom (|Spearman| untuk angka-angka, Cramér's V selain itu; 0 = tak terkait,
+    1 = sama) + korelasi pola kosong (kolom yang kosong bersamaan)."""
+    d = df.sample(min(df.height, 20000), seed=t["seed"]) if df.height > 20000 else df
+    kol = [c for c in d.columns if c != t.get("id") and not d.schema[c].is_nested()
+           and not (d.schema[c] == pl.String and d[c].n_unique() > max(50, 0.5 * d.height))][:40]
+    angka = {c for c in kol if d.schema[c].is_numeric() and d[c].n_unique() > 10}
+    lapor(f"{len(kol)} kolom, {d.height} baris")
+    kode = {c: _kode_kolom(d[c]) for c in kol}
+    rank = d.select([pl.col(c).cast(pl.Float64).rank() for c in angka]) if angka else None
+    m = np.eye(len(kol))
+    for i, a in enumerate(kol):
+        for j in range(i):
+            b = kol[j]
+            if a in angka and b in angka:
+                v = rank.select(pl.corr(a, b)).item()
+                v = abs(v) if v is not None and np.isfinite(v) else 0.0
+            else:
+                v = _cramer(kode[a], kode[b])
+            m[i, j] = m[j, i] = v
+    pasang = sorted(((m[i, j], kol[i], kol[j], "Spearman" if kol[i] in angka and kol[j] in angka else "Cramér's V")
+                     for i in range(len(kol)) for j in range(i)), reverse=True)[:15]
+    kos = [c for c in df.columns if df[c].null_count() and c in kol]
+    mk = np.corrcoef(df.select([pl.col(c).is_null().cast(pl.Float64) for c in kos]).to_numpy().T) if len(kos) > 1 else None
+    return {"kolom": kol, "matriks": m.round(3).tolist(), "pasangan": [(float(v), a, b, cara) for v, a, b, cara in pasang],
+            "label": t.get("label"), "kosong": {"kolom": kos, "matriks": np.nan_to_num(mk).round(3).tolist()} if mk is not None
+            else {"kolom": kos, "matriks": None}, "baris": d.height}
+
+
+JENIS = {"tabular": tabular, "baseline": baseline, "adversarial": adversarial, "acak": acak, "kata": kata_khas,
+         "fold": fold, "bocor": bocor, "asosiasi": asosiasi}
 
 
 def main(path):

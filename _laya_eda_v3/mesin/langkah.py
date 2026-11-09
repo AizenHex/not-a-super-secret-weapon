@@ -4,7 +4,7 @@ memakai `T["nama"]` (tabel lain) dan fungsi di bantu.py. Kode yang sama dijalank
 import re
 
 # tipe isian: kolom, kolom_banyak (kosong = semua kolom teks), tabel, tabel_banyak, teks, teks_panjang,
-# pilihan (daftar), angka, cek
+# pilihan (daftar), angka, cek, kolom_opsional ("-" = tidak dipakai)
 PERLU_PY = re.compile(r"\(\?<?[=!]|\\[1-9]|\(\?P=|\\g<")  # lookaround/backreference: mesin regex polars tidak bisa
 
 PRESET_REGEX = {
@@ -128,6 +128,11 @@ def gen_isi_kosong(p):
     if cara == "nilai tetap":
         _wajib(p, "nilai")
         e = f"pl.col(c).fill_null(lit_sebagai({lit(p['nilai'])}, df.schema[c]))"
+    elif cara.endswith(" per grup"):
+        if p.get("grup") in (None, "", "-"):
+            raise ValueError("isian 'grup' belum diisi")
+        return (f"for c in {_kol(p)}:\n"
+                f"    df = isi_per_grup(df, LATIH, c, {lit(p['grup'])}, \"{cara.removesuffix(' per grup')}\")")
     elif cara in ("median", "rata-rata", "modus"):
         e = f'pl.col(c).fill_null(statistik(LATIH[c], "{cara}"))'
     else:
@@ -238,6 +243,67 @@ def gen_outlier(p):
             f"for c in {kol}]))")
 
 
+def _opsi(p, k):
+    return None if p.get(k) in (None, "", "-") else p[k]
+
+
+def gen_rentang(p):
+    _wajib(p, "kolom")
+    ambil = p.get("ambil") or "tengah"
+    akhir = "c" if p.get("simpan") == "ganti kolom" else 'c + "_angka"'
+    return f'df = df.with_columns([angka_rentang(pl.col(c), "{ambil}").alias({akhir}) for c in {lits(p["kolom"])}])'
+
+
+ENCODE = {"one-hot (kolom 0/1 per nilai)": "one_hot(df, LATIH, c, {maks})",
+          "ordinal (0, 1, 2 …)": "encode_ordinal(df, LATIH, c, {urutan})",
+          "frekuensi (porsi di latih)": "encode_frekuensi(df, LATIH, c)",
+          "target OOF (rata-rata label)": "encode_target(df, LATIH, c, {label})"}
+
+
+def gen_encode(p):
+    _wajib(p, "kolom", "cara")
+    if p["cara"].startswith("target") and not _opsi(p, "label"):
+        raise ValueError("target encoding butuh kolom label")
+    f = ENCODE[p["cara"]].format(maks=int(p.get("maks") or 20), urutan=lits(baris(p.get("urutan"))) if baris(
+        p.get("urutan")) else "None", label=lit(p.get("label") or ""))
+    return f"for c in {lits(p['kolom'])}:\n    df = {f}"
+
+
+def gen_langka(p):
+    _wajib(p, "kolom")
+    return (f"for c in {lits(p['kolom'])}:\n"
+            f"    df = gabung_langka(df, LATIH, c, {int(p.get('minimal') or 10)}, {lit(p.get('nama') or 'lainnya')})")
+
+
+def gen_penanda_kosong(p):
+    kol = lits(p["kolom"]) if p.get("kolom") else "[c for c in LATIH.columns if LATIH[c].null_count()]"
+    return f'df = df.with_columns([pl.col(c).is_null().cast(pl.Int8).alias(c + "_kosong") for c in {kol}])'
+
+
+BAGIAN_TGL = ["tahun", "bulan", "hari", "hari_minggu", "akhir_pekan"]
+
+
+def gen_tanggal(p):
+    _wajib(p, "kolom")
+    bag = [b for b in BAGIAN_TGL if p.get(b)]
+    acuan = _opsi(p, "acuan")
+    if not bag and not acuan:
+        raise ValueError("pilih minimal satu bagian tanggal atau kolom acuan")
+    kode = (f"for c in {lits(p['kolom'])}:\n"
+            f"    df = fitur_tanggal(df, c, {lits(bag)}, {lit(acuan) if acuan else 'None'})")
+    return kode + (f"\ndf = df.drop({lits(p['kolom'])})" if p.get("buang") else "")
+
+
+def gen_skala(p):
+    _wajib(p, "cara")
+    kol = lits(p["kolom"]) if p.get("kolom") else "[c for c, t in df.schema.items() if t.is_numeric()]"
+    return f"for c in {kol}:\n    df = skala(df, LATIH, c, {lit(p['cara'])})"
+
+
+def gen_mirip(p):
+    return f"for c in {_kol(p)}:\n    df = satukan_mirip(df, LATIH, c)"
+
+
 def gen_kode(p):
     _wajib(p, "isi")
     return str(p["isi"])
@@ -259,8 +325,11 @@ JENIS = {
         ("kolom", "kolom_banyak", "Kolom (kosong = semua kolom teks)"), ("nilai", "teks_panjang", "Nilai (satu per baris; teks kosong selalu ikut)")]},
     "isi_kosong": {"judul": "Isi nilai kosong", "gen": gen_isi_kosong, "isian": [
         ("kolom", "kolom_banyak", "Kolom"),
-        ("cara", ("pilihan", ["median", "rata-rata", "modus", "nilai tetap", "isi dari atas", "isi dari bawah"]), "Cara"),
-        ("nilai", "teks", "Nilai tetap")]},
+        ("cara", ("pilihan", ["median", "rata-rata", "modus", "median per grup", "rata-rata per grup",
+                              "modus per grup", "nilai tetap", "isi dari atas", "isi dari bawah"]), "Cara"),
+        ("grup", "kolom_opsional", "Kolom grup (cara per grup)"), ("nilai", "teks", "Nilai tetap")]},
+    "penanda_kosong": {"judul": "Tambah kolom penanda kosong (c_kosong = 1/0)", "gen": gen_penanda_kosong, "isian": [
+        ("kolom", "kolom_banyak", "Kolom (kosong = semua kolom yang punya null di latih)")]},
     "ganti_nilai": {"judul": "Ganti nilai (peta)", "gen": gen_ganti_nilai, "isian": [
         ("kolom", "kolom_banyak", "Kolom"), ("peta", "teks_panjang", "lama => baru (satu per baris)")]},
     "ganti_nama": {"judul": "Ganti nama kolom", "gen": gen_ganti_nama, "isian": [
@@ -291,11 +360,33 @@ JENIS = {
         ("cara", ("pilihan", ["IQR", "z", "MAD", "persentil"]), "Cara hitung batas"),
         ("faktor", "teks", "Faktor (kosong = bawaan: IQR 1,5 · z 3 · MAD 3,5 · persentil 1)"),
         ("aksi", ("pilihan", ["potong ke batas (winsorize)", "jadikan kosong", "buang baris"]), "Nilai di luar batas")]},
+    "rentang": {"judul": "Teks rentang → angka (Rp 1 jt s.d. 2 jt)", "gen": gen_rentang, "isian": [
+        ("kolom", "kolom_banyak", "Kolom"), ("ambil", ("pilihan", ["tengah", "bawah", "atas"]), "Ambil nilai"),
+        ("simpan", ("pilihan", ["kolom baru (c_angka)", "ganti kolom"]), "Simpan ke")]},
+    "encode": {"judul": "Encoding kategori (one-hot / ordinal / frekuensi / target OOF)", "gen": gen_encode, "isian": [
+        ("kolom", "kolom_banyak", "Kolom"), ("cara", ("pilihan", list(ENCODE)), "Cara"),
+        ("label", "kolom_opsional", "Kolom label (target OOF)"), ("maks", "angka", "One-hot: maks nilai tersering"),
+        ("urutan", "teks_panjang", "Ordinal: urutan nilai, satu per baris (kosong = abjad)")]},
+    "langka": {"judul": "Gabung kategori langka jadi 'lainnya'", "gen": gen_langka, "isian": [
+        ("kolom", "kolom_banyak", "Kolom"), ("minimal", "angka", "Minimal muncul di latih"),
+        ("nama", "teks", "Ganti dengan")]},
+    "mirip": {"judul": "Satukan nilai mirip (beda huruf besar, tanda baca, urutan kata)", "gen": gen_mirip, "isian": [
+        ("kolom", "kolom_banyak", "Kolom (kosong = semua kolom teks)")]},
+    "tanggal": {"judul": "Fitur tanggal (tahun, bulan, hari, selisih hari)", "gen": gen_tanggal, "isian": [
+        ("kolom", "kolom_banyak", "Kolom tanggal"), ("tahun", "cek", "Tahun"), ("bulan", "cek", "Bulan"),
+        ("hari", "cek", "Tanggal (1-31)"), ("hari_minggu", "cek", "Hari dalam minggu (1 = Senin)"),
+        ("akhir_pekan", "cek", "Akhir pekan (1/0)"), ("acuan", "kolom_opsional", "Selisih hari dengan kolom"),
+        ("buang", "cek", "Buang kolom tanggal asal")]},
+    "skala": {"judul": "Skala angka (standar / robust / min-max / log1p)", "gen": gen_skala, "isian": [
+        ("kolom", "kolom_banyak", "Kolom (kosong = semua kolom angka)"),
+        ("cara", ("pilihan", ["standar", "robust", "min-max", "log1p"]), "Cara")]},
     "sql": {"judul": "Query SQL (tabel bernama df)", "gen": gen_sql, "isian": [("isi", "teks_panjang", "SQL")]},
     "kode": {"judul": "Kode polars bebas", "gen": gen_kode, "isian": [("isi", "teks_panjang", "Kode (ubah df)")]},
 }
 BAWAAN = {"rapikan_teks": {"nfkc": True, "kecil": True, "spasi": True}, "jadi_kosong": {"nilai": NIL_BAWAAN},
-          "sql": {"isi": "SELECT * FROM df"}, "kode": {"isi": "df = df"}, "regex_ambil": {"grup": 1}}
+          "sql": {"isi": "SELECT * FROM df"}, "kode": {"isi": "df = df"}, "regex_ambil": {"grup": 1},
+          "encode": {"maks": 20}, "langka": {"minimal": 10, "nama": "lainnya"},
+          "tanggal": {"tahun": True, "bulan": True, "hari_minggu": True}}
 
 
 def buat(jenis, param):

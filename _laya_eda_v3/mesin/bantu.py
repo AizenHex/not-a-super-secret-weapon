@@ -171,3 +171,150 @@ def jalankan_resep(T, latih, pasangan, langkah):
             ps = {p: f(v, sebelum) for p, v in ps.items()}
     T[latih] = df
     T.update(ps)
+
+
+# ---------- teks rentang, encoding, skala (dihitung dari LATIH, dipakai sama ke test) ----------
+_KALI = {"miliar": 1e9, "milyar": 1e9, "juta": 1e6, "jt": 1e6, "ribu": 1e3, "rb": 1e3}
+_ANGKA = _re.compile(r"(\d[\d.,]*)(?:\s*(miliar|milyar|juta|jt|ribu|rb)\b)?")
+
+
+def _angka_id(t):
+    """'1.000.000' -> 1e6, '2,5' -> 2.5, '1.5' -> 1.5: pemisah yang diikuti tepat 3 digit = ribuan."""
+    t = t.rstrip(".,")
+    if "," in t and "." in t:  # pemisah terakhir = desimal
+        des = "," if t.rfind(",") > t.rfind(".") else "."
+        t = t.replace("." if des == "," else ",", "").replace(des, ".")
+    else:
+        for sep in ".,":
+            if sep in t:
+                b = t.split(sep)
+                t = "".join(b) if all(len(x) == 3 for x in b[1:]) else "".join(b[:-1]) + "." + b[-1]
+    return float(t)
+
+
+def rentang(s):
+    """'Rp 1 jt s.d. 2 jt' -> (1e6, 2e6); 'lebih dari 5 jt' -> (5e6, 5e6); 'kurang dari 1 jt' -> (0, 1e6)."""
+    if s is None:
+        return None
+    t = s.lower()
+    pasang = _ANGKA.findall(t)
+    if not pasang:
+        return None
+    kali = [_KALI.get(k, 0) for _, k in pasang]
+    nil = []
+    for i, (a, _) in enumerate(pasang):  # '1 - 2 juta': pengali yang hilang diambil dari angka sesudahnya
+        k = kali[i] or next((x for x in kali[i:] if x), 1)
+        nil.append(_angka_id(a) * k)
+    if len(nil) == 1 and _re.search(r"kurang dari|di ?bawah|<|maks", t):
+        return 0.0, nil[0]
+    return min(nil), max(nil)
+
+
+def angka_rentang(e, ambil="tengah"):
+    """Teks rentang -> angka: bawah, tengah, atau atas rentang. Tidak ada angka -> null."""
+    i = {"bawah": 0, "atas": 1}.get(ambil)
+
+    def f(s):
+        r = rentang(s)
+        return None if r is None else (r[0] + r[1]) / 2 if i is None else r[i]
+
+    return e.cast(pl.String).map_elements(f, return_dtype=pl.Float64)
+
+
+def _join_kiri(df, t, kunci):
+    return df.join(t, on=kunci, how="left", nulls_equal=True, maintain_order="left")
+
+
+def one_hot(df, LATIH, c, maks=20):
+    """Kolom 0/1 per nilai tersering di latih (maks `maks`); nilai lain = semua 0. Kolom asal dibuang."""
+    v = LATIH[c].drop_nulls().value_counts(sort=True).head(maks)[c].to_list()
+    return df.with_columns([(pl.col(c) == x).fill_null(False).cast(pl.Int8).alias(f"{c}_{_re.sub(r'\W+', '_', str(x))}")
+                            for x in v]).drop(c)
+
+
+def encode_ordinal(df, LATIH, c, urutan=None):
+    """Nilai -> 0, 1, 2 ... menurut `urutan` (kosong = urut abjad nilai latih). Nilai tak dikenal -> null."""
+    u = urutan or sorted(LATIH[c].drop_nulls().cast(pl.String).unique().to_list())
+    return df.with_columns(pl.col(c).cast(pl.String).replace_strict(u, list(range(len(u))), default=None,
+                                                                    return_dtype=pl.Int32).alias(c))
+
+
+def encode_frekuensi(df, LATIH, c):
+    """Kolom `c_frek` = porsi nilai itu di latih (0 kalau tidak ada di latih)."""
+    t = LATIH[c].value_counts(normalize=True).rename({"proportion": f"{c}_frek"})
+    return _join_kiri(df, t, c).with_columns(pl.col(f"{c}_frek").fill_null(0.0))
+
+
+def encode_target(df, LATIH, c, label, k=5, m=10.0, seed=42):
+    """Kolom `c_te` = rata-rata label per nilai, dihaluskan ke rata-rata umum (m baris semu). Untuk data latih
+    dihitung out-of-fold (baris tidak melihat labelnya sendiri); untuk test pakai seluruh latih.
+    shortcut: label harus angka/biner (rata-rata); kelas banyak tak berurut -> one-hot/frekuensi saja."""
+    y = pl.col(label).cast(pl.Float64)
+    g = LATIH[label].cast(pl.Float64).mean()
+    agg = [y.is_not_null().sum().alias("_n"), y.sum().alias("_s")]
+    if df is LATIH:
+        d = df.with_columns(_lip=pl.int_range(pl.len()).shuffle(seed=seed) % k)
+        d = _join_kiri(d, d.group_by(c).agg(agg), c)
+        d = _join_kiri(d, d.group_by([c, "_lip"]).agg([a.name.suffix("2") for a in agg]), [c, "_lip"])
+        v = (pl.col("_s") - pl.col("_s2") + m * g) / (pl.col("_n") - pl.col("_n2") + m)
+        return d.with_columns(v.alias(f"{c}_te")).drop(["_lip", "_n", "_s", "_n2", "_s2"])
+    d = _join_kiri(df, LATIH.group_by(c).agg(agg), c)
+    v = (pl.col("_s").fill_null(0) + m * g) / (pl.col("_n").fill_null(0) + m)
+    return d.with_columns(v.alias(f"{c}_te")).drop(["_n", "_s"])
+
+
+def gabung_langka(df, LATIH, c, minimal=10, nama="lainnya"):
+    """Nilai yang muncul < `minimal` kali di latih (dan nilai baru di test) -> `nama`."""
+    sering = LATIH[c].value_counts().filter(pl.col("count") >= minimal)[c].cast(pl.String)
+    e = pl.col(c).cast(pl.String)
+    return df.with_columns(pl.when(e.is_in(sering.implode()) | e.is_null()).then(e).otherwise(pl.lit(nama)).alias(c))
+
+
+def isi_per_grup(df, LATIH, c, grup, cara="median"):
+    """Isi null `c` dengan median/rata-rata/modus per grup dari latih; grup tak dikenal -> statistik seluruh latih."""
+    e = {"median": pl.col(c).median(), "rata-rata": pl.col(c).mean(), "modus": pl.col(c).mode().sort().first()}[cara]
+    d = _join_kiri(df, LATIH.group_by(grup).agg(e.alias("_isi")), grup)
+    return d.with_columns(pl.col(c).fill_null(pl.col("_isi")).fill_null(statistik(LATIH[c], cara))).drop("_isi")
+
+
+def fitur_tanggal(df, c, bagian=("tahun", "bulan", "hari", "hari_minggu"), acuan=None):
+    """Kolom `c_tahun`, `c_bulan`, ... (hari_minggu 1 = Senin); `acuan` -> selisih hari c - acuan."""
+    def tgl(k):
+        return pl.col(k) if df.schema[k].is_temporal() else tanggal_campur(pl.col(k))
+    t = tgl(c)
+    e = {"tahun": t.dt.year(), "bulan": t.dt.month(), "hari": t.dt.day(), "hari_minggu": t.dt.weekday(),
+         "akhir_pekan": (t.dt.weekday() >= 6).cast(pl.Int8)}
+    out = [e[b].alias(f"{c}_{b}") for b in bagian]
+    if acuan:
+        out.append((t - tgl(acuan)).dt.total_days().alias(f"{c}_minus_{acuan}_hari"))
+    return df.with_columns(out)
+
+
+def skala(df, LATIH, c, cara="standar"):
+    """standar: (x - rata2)/sd · robust: (x - median)/IQR · min-max: ke 0..1 · log1p: tanda(x)·log(1+|x|).
+    Statistik dari latih."""
+    if not LATIH.schema[c].is_numeric():
+        raise TypeError(f"skala butuh kolom angka; '{c}' bertipe {LATIH.schema[c]}. Ubah tipe dulu")
+    x = pl.col(c).cast(pl.Float64)
+    if cara == "log1p":
+        return df.with_columns((x.sign() * x.abs().log1p()).alias(c))
+    s = LATIH[c].cast(pl.Float64).drop_nulls()
+    if not s.len():
+        raise ValueError(f"'{c}' di data latih kosong semua; tidak ada statistik skala")
+    a, b ={"standar": lambda: (s.mean(), s.std()), "robust": lambda: (s.median(), s.quantile(0.75) - s.quantile(0.25)),
+            "min-max": lambda: (s.min(), s.max() - s.min())}[cara]()
+    return df.with_columns(((x - (a or 0.0)) / (b or 1.0)).alias(c))
+
+
+def sidik(e):
+    """Sidik nilai untuk klaster mirip (gaya OpenRefine): huruf kecil, tanda baca dibuang, kata diurutkan unik."""
+    return (e.cast(pl.String).str.to_lowercase().str.extract_all(r"[^\W_]+").list.unique().list.sort()
+            .list.join(" "))
+
+
+def satukan_mirip(df, LATIH, c):
+    """Nilai dengan sidik sama ('KERAMIK, tanah' / 'tanah keramik') diganti nilai tersering kelompoknya di latih."""
+    v = LATIH.group_by(c).len().drop_nulls().with_columns(_k=sidik(pl.col(c))).filter(pl.col("_k") != "")
+    v = v.sort(["len", c], descending=[True, False]).group_by("_k", maintain_order=True).agg(pl.col(c).first().alias("_w"))
+    d = df.with_columns(_k=sidik(pl.col(c)))
+    return _join_kiri(d, v, "_k").with_columns(pl.coalesce("_w", pl.col(c).cast(pl.String)).alias(c)).drop(["_k", "_w"])

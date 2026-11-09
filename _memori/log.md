@@ -2,6 +2,111 @@
 
 Terbaru di atas. Format di [`README.md`](README.md).
 
+## 2026-11-09 claude-opus-5-5 - model lokal OpenCode + notebook embedding Ollama
+- Pemicu: pengguna pasang OpenCode + Ollama di laptop (RTX 5060 **8 GB**, bukan 6 GB seperti log 11-07), minta model
+  terbaru yang muat dan model embedding, lalu notebook pemakaian embedding.
+- Dicek di HF/ollama.com: Qwen3.8-Flash-Next = 125B total/6B aktif (tidak muat 32 GB RAM); Qwen3.8-27B dense
+  (lambat offload); Qwen-AgentWorld-35B-A3B = simulator lingkungan, bukan coder. Pilihan: `qwen3.6:35b-a3b-q4_K_M`
+  (24 GB). Ternary-Bonsai-27B (prism-ml) ditolak: ±8,4 GB di 4k ctx, butuh fork llama.cpp, agentic coding lemah.
+- Dikerjakan: `contoh/text/embedding_ollama.ipynb` (pola `klasifikasi_embedding`, encoder lewat `/api/embed`,
+  cache `.npy` di OUTPUT_FOLDER, alt 0.6b/4b/8b + TEXT_PREFIX instruksi). Lint OK; belum dijalankan (Ollama kosong).
+- Dikoreksi pengguna: -
+- Berikutnya: pengguna `ollama pull`, Run All notebook, catat skor.
+
+## 2026-11-08 claude-opus-5-5 - Laya v3: semua fitur VISI 8b (P0-P2) [selesai, exe di-build]
+- Pemicu: pengguna "lanjutin sampai selesai semua fitur ya" (daftar celah preprocessing VISI 8b).
+- Dikerjakan: langkah resep baru `rentang` (teks "Rp 1 jt s.d. 2 jt" -> bawah/tengah/atas), `encode` (one-hot maks N,
+  ordinal, frekuensi, target OOF), `langka` (-> "lainnya", ambang dari train), `penanda_kosong`, `tanggal` (tahun/bulan/
+  hari/hari-minggu/akhir pekan/selisih hari), `skala` (standar/robust/min-max/log1p, statistik train), `mirip` (sidik
+  kata ala OpenRefine); isi kosong median/rata-rata/modus per grup. Temuan: `cek_rentang`, train-test `skema` (kolom
+  hilang/tipe/rentang) + `drift` (PSI/KS). Tugas venv: `fold` (fold.csv), `bocor` (1 kolom vs label), `asosiasi`
+  (|Spearman|/Cramer V + pola kosong bersama), tombol baris "Cek data". Ctrl+Z/Ctrl+Y resep; hasil model memuat tabel
+  "Banding versi resep" (+/- langkah antar run). `uji.py` ditambah `uji_cek_baru` + 8 langkah + 3 tugas: lulus semua
+  (langkah 384 jalan / 102 gagal dengan pesan / 16 cek nilai). Tangkap layar UKT tema terang dan gelap diperiksa.
+- Temuan UKT 2024: bocor menandai Riwayat Beasiswa (kelas 0 F1 0,998; mungkin aturan bisnis sah), asosiasi Kota~Lokasi
+  0,995 dan Cicilan~Total Hutang 0,94; LightGBM macro-F1 0,418 -> 0,419 setelah rentang + target encoding Program Studi.
+- Batas yang diketahui: klaster mirip hanya sidik (tanpa singkatan "Kab." vs "Kabupaten"); target encoding menganggap
+  label angka; riwayat run + versi resep tidak tersimpan antar sesi; cek bocor UKT 24 s (97 s saat CPU dipakai uji).
+- Dikoreksi pengguna: -
+- Berikutnya: pengguna mencoba exe dengan klik nyata.
+
+## 2026-11-07 claude-sonnet-5-5 - riset model coder lokal untuk lomba
+- Dikerjakan: riset web model coder lokal untuk laptop RTX 5060 6 GB + RAM 32 GB (tanpa perubahan kode).
+  Temuan: Qwen3.8 baru ada 27B dense (Agu 2026, terlalu lambat dengan offload) dan 2.4T MoE; belum ada Qwen3.8
+  coder/MoE kecil resmi. Kandidat: Qwen3.6-35B-A3B (MoE, 3B aktif, Apr 2026, Apache) dengan `--n-cpu-moe`,
+  cadangan Qwen3 8B / Qwen2.5-Coder 7B penuh di VRAM. Angka kecepatan dari satu tes laptop 8 GB, belum diukur di mesin pengguna.
+- Dikoreksi pengguna: AI boleh dipakai untuk hal tak terduga (sebelumnya aku anggap "tanpa AI"). Masuk `aturan.md`.
+- Berikutnya: ukur tok/s di laptop dan PC panitia (RTX 3070 8 GB); putuskan model + simpan GGUF di flashdisk.
+
+## 2026-11-07 claude-opus-5-5 - figur GDOC what we found (di luar repo)
+- Dikerjakan: `_src/f06_what_we_found.py` → `gambar09_what_we_found` dari output notebook saja: (a) overfit setelah
+  epoch 2 (val loss 0,699 → 0,950, F1 +0,022), (b) F1 val Positif 0,81 / Negatif 0,62 / Netral 0,61, (c) uji: 31,8%
+  baris kontennya ada di latih, keyakinan 0,97 vs 0,87 konten baru; prediksi = label latih 95,1%, 352 beda (bisa
+  lookup). Prediksi uji: Negatif 13,8% vs 15,6% label latih.
+- Dikoreksi pengguna: jangan inferensi ulang model (limit); pakai output notebook. Masuk `aturan.md`.
+  `_src/val_pred.py` (inferensi ulang val) sudah ditulis tapi dihentikan, belum pernah selesai jalan.
+- Berikutnya: -
+
+## 2026-11-07 claude-opus-5-5 - figur GDOC: pipeline kolom dipakai, mojibake, intro berita (di luar repo)
+- Dikerjakan: `gambar01_pipeline_sentimen` kini menulis train.csv 18 kolom / test.csv 17 kolom, catatan "pakai
+  konten_berita → sentimen_berita, 16 kolom lain tidak dipakai" dan "pakai id, konten_berita"; submission "id, label".
+  `gambar07` ditambah baris mojibake "‚Äú" (20,1% konten unik; 19,0% masih tersisa setelah bersihkan(), karena
+  lower() mengubahnya jadi "‚äú" yang tidak dibuang regex/punctuation). Baru `_src/f05_intro_berita.py` →
+  `gambar08_intro_kolase` (3×3 kartu berita asli, 7×7 in persegi, padanan kolase foto vignette di slide),
+  `gambar08b_kartu_latih` dan `gambar08c_kartu_uji` (label "?") 3,2×3,2 in.
+- Dikoreksi pengguna: pipeline kurang lengkap, tidak menyebut hanya konten_berita yang dipakai. Masuk `aturan.md`.
+- Berikutnya: beberapa label di kolase tampak tidak sesuai nada judul (tol → Negatif, kematian COVID → Positif);
+  belum diperiksa apakah ini derau label.
+
+## 2026-11-07 claude-opus-5-5 - figur GDOC kesimpulan data (di luar repo)
+- Dikerjakan: `GDOC/outputs/figures/_src/f04_kesimpulan_data.py` → `gambar07_kesimpulan_data`: tabel-batang empat
+  sifat data + artinya. Kotor (konten unik: "Baca juga:" 94,0%, dateline 50,6%, tanda Antara 44,1%, Gambas:Video
+  18,7%; 18 re.sub bersihkan() membuang 25,1% karakter), Panjang (99,8% > 128 token, outlier IQR > 1.072 token 5,9%),
+  Berulang (22,3% / 31,8%, 0 konflik), Timpang (Negatif 15,6%). Semua angka dihitung ulang di skrip.
+- Dikoreksi pengguna: -
+- Berikutnya: "split acak berisiko bocor" masih risiko, belum dibuktikan eksperimen.
+
+## 2026-11-07 claude-opus-5-5 - figur GDOC what we see tambahan (di luar repo)
+- Dikerjakan: `GDOC/outputs/figures/_src/f03_what_we_see_lanjut.py` → `gambar04_what_we_see_kata` (kata khas per
+  kelas, weighted log-odds Monroe 2008, stopword Sastrawi dibuang, cache `kata_khas_tanpa_stopword.csv`),
+  `gambar05_what_we_see_kategori` (bar 100% per kategori dan sumber; Transportasi 29% Negatif, Okezone 64% Positif),
+  `gambar06_what_we_see_latih_vs_uji` (bulan/sumber/sentimen_kutipan latih vs uji, selisih maks 0,9 poin; tanggal
+  sama 2021-01..06 → uji bukan data masa depan). Cek mengikuti kriteria plot PaperBanana (tanpa judul di gambar,
+  label langsung, tanpa angka berulang berlebihan, tanpa palet bawaan).
+- Galat: `pct_axis` style.py mengharapkan nilai 0–100, bukan pecahan (sumbu tampil 0% semua).
+- Dikoreksi pengguna: -
+- Berikutnya: pengguna memilih figur untuk slide; belum dicek tampil di PPT.
+
+## 2026-11-07 claude-opus-5-5 - figur GDOC: pipeline dirapikan + what we see (di luar repo)
+- Dikerjakan: `gambar01_pipeline_sentimen` dirombak (13×5,4, huruf 18/14,5, jalur contoh dihapus, keterangan
+  dipangkas ke satu baris "lr 3e-5 · 4 epoch · patience 2"). Baru: `_src/f02_what_we_see.py` →
+  `gambar02_what_we_see_data` (satu baris train.csv 9 dari 18 kolom + sebaran label 52/32/16%) dan
+  `gambar03_what_we_see_temuan` (median 514 token, 99,8% konten > 128 token; sentimen_kutipan vs label, kolom ada di
+  test; 22,3% baris latih konten ulangan, 31,8% baris uji kontennya ada di latih, 0 konflik label). Panjang token
+  dari tokenizer `pretrained/indobert` atas 41.083 konten mentah unik (`_src/ntok_train.csv`); notebook menulis
+  median 462,5 dari 2.000 baris pertama, beda sumber sampel.
+- Dikoreksi pengguna: detail jelek ("sabar 2", keterangan terlalu banyak/besar, contoh bersihkan tidak perlu);
+  lupa baca memori: figur jangan menyamping (13×5,4). Masuk `aturan.md` bagian Figur.
+- Berikutnya: pengguna memilih figur untuk slide. Temuan konten berulang = split acak bocor (val F1 bisa terlalu
+  optimistis) dan 31,8% uji bisa dijawab lookup; belum dibuktikan dengan eksperimen.
+
+## 2026-11-07 claude-opus-5-5 - figur pipeline sentimen GDOC (di luar repo)
+- Dikerjakan: `Z:/GEMASTIK/GDOC/outputs/figures/_src/f01_pipeline_sentimen.py` → `gambar01_pipeline_sentimen.{png,pdf}`
+  untuk `GDOC/train.ipynb` (IndoBERT, sentimen_berita 3 kelas). Gaya sama dengan pipeline vignette v3 (impor
+  `style.py` Vignate-2). Angka dari output notebook + hitung ulang `data/train.csv`; `bersihkan()` dieksekusi dari sel
+  notebook untuk contoh sebelum/sesudah. Sastrawi diimpor notebook tapi tidak dipakai, jadi tidak digambar.
+- Dikoreksi pengguna: -
+- Berikutnya: -
+
+## 2026-11-07 claude-opus-5-5 - figur pipeline vignette v3 (di Vignate-2, bukan repo ini)
+- Dikerjakan: `Z:/GEMASTIK/Vignate-2/outputs/figures/_src/v2/f01b_pipeline.py` → `gambar01_pipeline_v3.{png,pdf}`.
+  Isi dan angka sama persis dengan `gambar01_pipeline` (f01 tidak diubah); gaya dipangkas (skill impeccable,
+  "anti slop"): palet pastel 6 warna dibuang; proses = kotak putih garis tipis, model = garis tebal + judul tebal,
+  artefak = persegi abu, keluaran akhir = satu-satunya warna jenuh (merah). Labeling GUI + 48 crop digabung jadi
+  satu kotak; kotak kalibrasi diletakkan tepat di bawah targetnya agar umpan ORI_MAP/ENHANCE lurus vertikal.
+- Dikoreksi pengguna: -
+- Berikutnya: pengguna menilai v3 vs gambar01 lama untuk slide "what we did".
+
 ## 2026-11-07 claude-opus-5-5 - Laya v3: perbaikan UI/UX + outlier + validasi + baseline tabular [selesai, exe di-build]
 - Pemicu: pengguna marah (2 screenshot): UI membingungkan, tidak fokus ke visualisasi/UX, "deteksi outlier gak ada, split
   gak ada", fitur v2 tidak dibawa, langkah tidak jelas; minta skill impeccable. Tambahan: pikirkan fitur preprocessing

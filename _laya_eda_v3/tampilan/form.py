@@ -70,6 +70,11 @@ class FormLangkah(QDialog):
                 it.setCheckState(Qt.Checked if c in pilih else Qt.Unchecked)
                 w.addItem(it)
             return w
+        if tipe == "kolom_opsional":
+            w = QComboBox()
+            w.addItems(["-"] + list(kolom))
+            w.setCurrentText(str(nilai or "-"))
+            return w
         if tipe in ("kolom", "tabel") or isinstance(tipe, tuple):
             w = QComboBox(editable=tipe != "tabel" and not isinstance(tipe, tuple))
             w.addItems(tipe[1] if isinstance(tipe, tuple) else kolom if tipe == "kolom" else tabel)

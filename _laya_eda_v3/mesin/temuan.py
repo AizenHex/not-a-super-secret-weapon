@@ -4,6 +4,7 @@ cari dan sampel (B2, B3). Tanpa Qt.
 Tiap temuan = dict: tingkat (2 penting, 1 perhatian, 0 info), grup, judul, rincian, `saring` (kode ekspresi polars
 untuk melihat barisnya) dan `langkah` ((jenis, param) usulan langkah resep) bila ada. Satu cek yang gagal menjadi
 temuan "cek gagal", tidak menjatuhkan yang lain."""
+import math
 import re
 import traceback
 
@@ -331,7 +332,7 @@ def cek_ejaan(df):
         if df[c].dtype != pl.String:
             continue
         v = df[c].drop_nulls().value_counts(sort=True)
-        v = v.with_columns(k=pl.col(c).str.to_lowercase().str.replace_all(r"[^\w]+", "").str.strip_chars())
+        v = v.with_columns(k=bantu.sidik(pl.col(c))).filter(pl.col("k") != "")  # urutan kata & tanda baca diabaikan
         g = v.group_by("k", maintain_order=True).agg(pl.col(c), pl.col("count")).filter(pl.col(c).list.len() > 1)
         if not g.height:
             continue
@@ -494,10 +495,36 @@ def cek_label(df, label):
     return out
 
 
+KATA_RENTANG = r"s\.?d\.?|sampai|hingga|\d\s*[-–]\s*\d|lebih dari|kurang dari|di ?atas|di ?bawah|[<>]|juta|jt|ribu|rb\b|miliar"
+
+
+def cek_rentang(df):
+    """Kolom teks berisi rentang angka ('Rp 1.000.000 s.d. Rp 2.000.000', 'lebih dari 5 jt'): model melihatnya
+    sebagai kategori tanpa urutan; langkah `rentang` mengubahnya jadi angka."""
+    out = []
+    for c, t in df.schema.items():
+        if t != pl.String:
+            continue
+        u = df[c].drop_nulls().unique()
+        if not 2 <= u.len() <= 200:
+            continue
+        rt = u.filter(u.str.to_lowercase().str.contains(KATA_RENTANG) & u.str.contains(r"\d"))
+        if rt.len() < 0.8 * u.len():
+            continue
+        contoh = [(v, bantu.rentang(v)) for v in rt.head(4).to_list()]
+        out.append(T(1, "integritas", f"{c}: teks rentang angka ({u.len()} nilai), bisa jadi angka",
+                     "\n".join(f"{v!r} → {angka_pendek(r[0])} s.d. {angka_pendek(r[1])}" for v, r in contoh)
+                     + "\nSebagai teks, urutan nilainya hilang (model pohon memecahnya acak). Langkah ini menambah "
+                     "kolom angka (nilai tengah rentang); 'lebih dari X' = X, 'kurang dari X' = 0 s.d. X.",
+                     None, ("rentang", {"kolom": [c], "ambil": "tengah", "simpan": "kolom baru (c_angka)"})))
+    return out
+
+
 def temuan(df, label=None):
     """C2 + C4 + label untuk satu tabel."""
     out = []
     for f in (lambda: cek_duplikat(df, label), lambda: cek_kolom(df), lambda: cek_ejaan(df), lambda: cek_teks(df),
+              lambda: cek_rentang(df),
               lambda: cek_penanda(df, label), lambda: cek_outlier(df, label), lambda: cek_label(df, label)):
         try:
             out += f()
@@ -557,9 +584,90 @@ def banding(latih, uji, label=None, nama_uji="test"):
                 out.append(T(0, "train-test", f"{c}: train {ra[0]} s.d. {ra[1]}, {nama_uji} {rb_[0]} s.d. {rb_[1]}",
                              "Rentang tumpang tindih: split acak, bukan per waktu; validasi acak wajar." if acak else
                              "Test sesudah train: validasi harus per waktu (train awal → validasi akhir)."))
+        out += skema(latih, uji, label, nama_uji) + drift(latih, uji, label, nama_uji)
     except Exception as e:
         out.append(T(1, "cek gagal", f"Banding train-test gagal: {type(e).__name__}: {e}", traceback.format_exc()))
     return urut(out)
+
+
+def skema(latih, uji, label=None, nama_uji="test"):
+    """Aturan skema test: kolom fitur hilang/lebih, tipe beda, angka test di luar rentang train."""
+    out = []
+    hilang = [c for c in latih.columns if c not in uji.columns and c != label]
+    if hilang:
+        out.append(T(2, "train-test", f"{len(hilang)} kolom train tidak ada di {nama_uji}: {', '.join(hilang[:8])}",
+                     "Model yang memakai kolom ini gagal saat prediksi test. Buang dari fitur, atau cek nama kolom "
+                     "(spasi/huruf besar) dan ganti nama."))
+    lebih = [c for c in uji.columns if c not in latih.columns]
+    if lebih:
+        out.append(T(0, "train-test", f"{len(lebih)} kolom hanya ada di {nama_uji}: {', '.join(lebih[:8])}"))
+    beda = [f"{c}: train {latih.schema[c]}, {nama_uji} {uji.schema[c]}" for c in latih.columns
+            if c in uji.columns and latih.schema[c] != uji.schema[c]
+            and not (latih.schema[c].is_numeric() and uji.schema[c].is_numeric()) and uji.schema[c] != pl.Null]
+    if beda:
+        out.append(T(1, "train-test", f"Tipe kolom beda di {len(beda)} kolom", "\n".join(beda[:12]) +
+                     "\nBiasanya test punya satu nilai teks ('-', 'NA') di kolom angka. Samakan dengan langkah resep."))
+    luar = []
+    for c in kolom_angka(latih, label):
+        if c in uji.columns and uji.schema[c].is_numeric() and uji[c].drop_nulls().len():
+            lo, hi = latih[c].min(), latih[c].max()
+            n = int((~uji[c].drop_nulls().is_between(lo, hi)).sum())
+            if n:
+                luar.append((n, f"{c}: {rb(n)} baris ({persen(n, uji.height)}) di luar {angka_pendek(lo)} s.d. "
+                                f"{angka_pendek(hi)}"))
+    if luar:
+        luar.sort(reverse=True)
+        out.append(T(0, "train-test", f"Nilai {nama_uji} di luar rentang train di {len(luar)} kolom",
+                     "\n".join(b for _, b in luar[:12]) + "\nModel pohon memperlakukannya sama dengan nilai ujung "
+                     "train (tidak bisa ekstrapolasi)."))
+    return out
+
+
+def _psi(pa, pb):
+    """Population Stability Index dari dua dict porsi per ember."""
+    e = 1e-4
+    return sum((pb.get(k, 0) - pa.get(k, 0)) * math.log((pb.get(k, 0) + e) / (pa.get(k, 0) + e))
+               for k in set(pa) | set(pb))
+
+
+def _porsi(s):
+    v = s.value_counts(normalize=True)
+    return dict(zip(v[v.columns[0]].to_list(), v["proportion"].to_list()))
+
+
+def drift(latih, uji, label=None, nama_uji="test"):
+    """Pergeseran sebaran per kolom: PSI (ember desil train / nilai kategori) + KS (angka). PSI > 0,25 = besar."""
+    baris = []
+    for c in latih.columns:
+        if c == label or c not in uji.columns or c in kolom_id(latih) or bersarang(latih.schema[c]):
+            continue
+        a, b = latih[c].drop_nulls(), uji[c].drop_nulls()
+        if not a.len() or not b.len():
+            continue
+        ks = None
+        if a.dtype.is_numeric() and b.dtype.is_numeric() and a.n_unique() > 10:
+            a, b = a.cast(pl.Float64).sort(), b.cast(pl.Float64).sort()
+            tepi = pl.Series([a.quantile(q / 10) for q in range(1, 10)]).unique().sort()
+            psi = _psi(_porsi(tepi.search_sorted(a, side="right")), _porsi(tepi.search_sorted(b, side="right")))
+            v = pl.concat([a, b]).unique().sort()
+            ks = float(((a.search_sorted(v, side="right") / a.len()) - (b.search_sorted(v, side="right") / b.len()))
+                       .abs().max())
+        elif a.n_unique() <= 2000:
+            psi = _psi(_porsi(a.cast(pl.String)), _porsi(b.cast(pl.String)))
+        else:
+            continue
+        if psi >= 0.1:
+            baris.append((psi, f"{c}: PSI {psi:.2f}".replace(".", ",") + (f" · KS {ks:.2f}".replace(".", ",")
+                                                                         if ks is not None else "")))
+    if not baris:
+        return []
+    baris.sort(reverse=True)
+    besar = baris[0][0] >= 0.25
+    return [T(1 if besar else 0, "train-test", f"Sebaran bergeser train vs {nama_uji} di {len(baris)} kolom "
+              f"(PSI terbesar {baris[0][0]:.2f})".replace(".", ","),
+              "\n".join(b for _, b in baris[:15]) + "\nPSI < 0,1 stabil, 0,1 s.d. 0,25 sedang, > 0,25 besar. KS = jarak "
+              "terbesar antar sebaran kumulatif (0 sama, 1 terpisah). Kolom yang bergeser besar bisa membuat skor "
+              "validasi tidak mewakili test: coba buang kolomnya, atau cek dengan tugas Adversarial di tab Model.")]
 
 
 def _rentang_tanggal(s):

@@ -1,11 +1,11 @@
 # Status repo
 
-Terakhir diperbarui: 2026-11-07.
+Terakhir diperbarui: 2026-11-08.
 
 ## Tujuan
 
 Arsenal offline untuk final GEMASTIK XIX Penambangan Data: setup 2026-11-10, pengerjaan
-2026-11-11 13.00–18.00 (5 jam, luring, tanpa internet dan tanpa AI), presentasi 2026-11-12.
+2026-11-11 13.00–18.00 (5 jam, luring, tanpa internet; AI boleh hanya untuk bantu kode hal tak terduga, koreksi pengguna 2026-11-07), presentasi 2026-11-12.
 Pengguna berangkat 2026-11-09. Prioritas: [`../RENCANA_TEKS.md`](../RENCANA_TEKS.md) (teks, rinci) dan [`../RENCANA_LOMBA.md`](../RENCANA_LOMBA.md) (bobot nilai, pohon lama).
 
 **Info panitia (pengguna, 2026-11-06): data final 2026 (tuan rumah BINUS) dipastikan TEKS.** Bentuk
@@ -89,9 +89,8 @@ F1 makro val 0,427; kelas ke-2 F1 0).
   laptop 32 thread; PC panitia 20 thread belum diukur. Exe uji di scratchpad lulus (`--uji` menjalankan tugas kata
   sungguhan lewat python venv); `dist\Laya` di-build ulang 2026-11-07 00.44: `--uji` GDOC 0 gagal, python ditemukan otomatis dari `.venv` repo, tugas kata exit 0. Belum dicoba pengguna dengan klik nyata. **2026-11-07 siang: perbaikan UI/UX setelah keluhan pengguna**: bilah alur
   5 langkah, warna ikut tema, hasil model lebar, langkah outlier + temuan penanda/outlier, kontrol validasi (6 cara),
-  Baseline tabular (LightGBM); exe di-build ulang 11.10 (`--uji` 0 gagal). Celah fitur berprioritas di VISI 8b.
-  **Ditunda atas permintaan pengguna ("nanti")**: jenis langkah resep lebih lengkap (one-hot encoding dan sejenisnya,
-  D11 di VISI). PySide6 6.12.0 +
+  Baseline tabular (LightGBM); exe di-build ulang 11.10 (`--uji` 0 gagal). Celah fitur berprioritas di VISI 8b. **2026-11-08: semua butir VISI 8b selesai** (rentang, encode, langka, penanda kosong, tanggal, skala, nilai mirip, isi per grup, fold.csv, cek bocor, asosiasi, drift/skema, undo/redo, banding versi resep); `uji.py` lulus; exe di-build ulang 2026-11-08.
+  Jenis langkah encoding (D11 di VISI, dulu ditunda) sudah dibuat 2026-11-08. PySide6 6.12.0 +
   pyinstaller 6.22.3 terpasang di `../.venv`; `requirements.txt` + polars/PySide6_Essentials/pyinstaller. Semua
   belum di-commit.
 - Temuan data GDOC (berguna untuk latihan, diukur 2026-11-06): 32% baris test punya `konten_berita` persis sama
@@ -123,6 +122,10 @@ F1 makro val 0,427; kelas ke-2 F1 0).
   (di luar repo, bukan git); catatan lengkap `Z:/GEMASTIK/Vignate-2/HANDOFF.md`.
 
 ## Pekerjaan terbuka
+
+- `contoh/text/embedding_ollama.ipynb` (2026-11-09, belum di-commit): lint OK, **belum Run All** (Ollama belum
+  punya model). Setelah `ollama pull qwen3-embedding:0.6b`, jalankan lalu masukkan skor ke KATALOG/PANDUAN.
+  Asisten kode laptop (pengguna, Ollama): `qwen3.6:35b-a3b-q4_K_M` + `qwen3-embedding:4b`/`0.6b`, RTX 5060 8 GB.
 
 Teks (utama sejak 2026-11-06): butir T1–T13 di `RENCANA_TEKS.md` bagian 4, mulai T1 (lingkungan + uji Run All).
 T8 selesai 2026-11-06 (`contoh/text/teks_tabular.ipynb`; sisa: `e5_base` belum diukur; uji muat di `ensemble_oof` sudah lulus 2026-11-07;

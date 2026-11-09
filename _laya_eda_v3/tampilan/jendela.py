@@ -165,6 +165,9 @@ class Jendela(QMainWindow):
         self._aksi(m, "Tabel turunan baru…", lambda: self.ubah_turunan(None))
         self._aksi(m, "Ubah kode tabel turunan…", lambda: self.ubah_turunan(self.aktif))
         m = self.menuBar().addMenu("&Resep")
+        self._aksi(m, "Urungkan perubahan resep", lambda: self.urungkan(1), "Ctrl+Z")
+        self._aksi(m, "Ulangi perubahan resep", lambda: self.urungkan(-1), "Ctrl+Y")
+        m.addSeparator()
         self._aksi(m, "Tabel pasangan (ikut resep ini)…", self.atur_pasangan)
         self._aksi(m, "Ekspor ke .py / .ipynb…", self.ekspor, "Ctrl+E")
         self._aksi(m, "Simpan tabel bersih (parquet + csv)…", self.simpan_bersih, "Ctrl+S")
@@ -458,6 +461,8 @@ class Jendela(QMainWindow):
         self.resep.clear()
         self.aktif, self.hasil_aktif = None, None
         self.mesin = resep.Mesin({}, {})  # cache tahap lama dibuang: file bisa sudah berubah
+        self._riwayat_resep = {1: [], -1: []}  # 1 = bisa diurungkan, -1 = bisa diulangi
+        self._resep_kini = copy.deepcopy(p.get("resep", {}))
         self.setWindowTitle(f"Laya — {p['folder']}")
         if not prj.folder_ada(p):
             QMessageBox.warning(self, "Folder data tidak ada", f"Folder {p['folder']} tidak ditemukan.\n"
@@ -578,6 +583,26 @@ class Jendela(QMainWindow):
         return self.proyek.setdefault("resep", {}).setdefault(pem, {"langkah": [], "pasangan": []})
 
     def _ubah_resep(self, baris):
+        u = self._riwayat_resep
+        u[1] = (u[1] + [self._resep_kini])[-50:]
+        u[-1].clear()
+        self._resep_kini = copy.deepcopy(self.proyek.get("resep", {}))
+        self._resep_berubah(baris)
+
+    def urungkan(self, arah):
+        """arah 1 = urungkan, -1 = ulangi. Yang dicatat: seluruh resep semua tabel sebelum tiap perubahan."""
+        u = getattr(self, "_riwayat_resep", None)
+        if not self.proyek or not u or not u[arah]:
+            return self.statusBar().showMessage("Tidak ada perubahan resep untuk " +
+                                                ("diurungkan" if arah == 1 else "diulangi"), 3000)
+        u[-arah].append(self._resep_kini)
+        self._resep_kini = u[arah].pop()
+        self.proyek["resep"] = copy.deepcopy(self._resep_kini)
+        self.statusBar().showMessage(("Diurungkan" if arah == 1 else "Diulangi") +
+                                     f" ({len(u[1])} lagi bisa diurungkan)", 3000)
+        self._resep_berubah(None)
+
+    def _resep_berubah(self, baris):
         self.simpan()
         self._perbarui_alur()
         self.buka_tabel(self.aktif, baris)

@@ -172,6 +172,17 @@ def _param_matriks(c):
     yield "agregasi", {"kolom": [c], "isi": "pecahan: mean, max\nteks: n_unique"}
     yield "sql", {"isi": f'SELECT "{c}", COUNT(*) AS n FROM df GROUP BY "{c}"'}
     yield "kode", {"isi": f'df = df.with_columns(pl.col("{c}").alias("salin"))'}
+    for cara in ["median per grup", "modus per grup"]:
+        yield "isi_kosong", {"kolom": [c], "cara": cara, "grup": "benar"}
+    yield "penanda_kosong", {"kolom": [c]}
+    yield "rentang", {"kolom": [c], "ambil": "tengah"}
+    for cara in langkah.ENCODE:
+        yield "encode", {"kolom": [c], "cara": cara, "label": "bulat", "maks": 5, "urutan": ""}
+    yield "langka", {"kolom": [c], "minimal": 2, "nama": "lainnya"}
+    yield "mirip", {"kolom": [c]}
+    yield "tanggal", {"kolom": [c], "tahun": True, "hari_minggu": True, "acuan": "tgl", "buang": True}
+    for cara in ["standar", "robust", "min-max", "log1p"]:
+        yield "skala", {"kolom": [c], "cara": cara}
 
 
 def uji_langkah():
@@ -200,7 +211,17 @@ def uji_langkah():
            ("isi_kosong", {"kolom": ["bulat"], "cara": "nilai tetap", "nilai": "0"}, lambda d: d["bulat"].to_list() == [1, 2, 0, 2]),
            ("buang_duplikat", {"kolom": ["bulat"], "simpan": "buang semua salinan"}, lambda d: d["bulat"].to_list() == [1, None]),
            ("list_teks", {"kolom": ["daftar_teks"]}, lambda d: d["daftar_teks"].to_list() == [["x", "y"], [], None, None]),
-           ("ubah_tipe", {"kolom": ["daftar_teks"], "tipe": "angka"}, lambda d: d["daftar_teks"].null_count() == 4)]
+           ("ubah_tipe", {"kolom": ["daftar_teks"], "tipe": "angka"}, lambda d: d["daftar_teks"].null_count() == 4),
+           ("isi_kosong", {"kolom": ["pecahan"], "cara": "median per grup", "grup": "benar"},
+            lambda d: d["pecahan"].to_list() == [1.5, 1.5, 2.5, 1.5]),
+           ("penanda_kosong", {"kolom": []}, lambda d: d["bulat_kosong"].to_list() == [0, 0, 1, 0]),
+           ("encode", {"kolom": ["benar"], "cara": "frekuensi (porsi di latih)"},
+            lambda d: d["benar_frek"].to_list() == [0.5, 0.25, 0.25, 0.5]),
+           ("encode", {"kolom": ["teks"], "cara": "one-hot (kolom 0/1 per nilai)", "maks": 2},
+            lambda d: "teks" not in d.columns and d.select(pl.col("^teks_.*$")).width == 2),
+           ("langka", {"kolom": ["bulat"], "minimal": 2}, lambda d: d["bulat"].to_list() == ["lainnya", "2", None, "2"]),
+           ("tanggal", {"kolom": ["tgl"], "bulan": True}, lambda d: d["tgl_bulan"].to_list() == [1, None, 3, 1]),
+           ("skala", {"kolom": ["pecahan"], "cara": "min-max"}, lambda d: d["pecahan"].to_list() == [0.0, None, 1.0, 0.0])]
     for jenis, p, f in cek:
         m.proyek["resep"]["m"] = {"langkah": [langkah.buat(jenis, p)], "pasangan": []}
         h = m.hasil("m")
@@ -212,10 +233,11 @@ def uji_langkah():
 def buat_data_resep(d):
     d = Path(d)
     (d / "train.csv").write_text(
-        "id,teks,kota,angka,label\n"
-        "1,Halo   DUNIA https://x.co,BDG,10,pos\n2,-,JKT,,neg\n3,Ｆｕｌｌ width,BDG,30,pos\n"
-        "4,Halo   DUNIA https://x.co,BDG,10,pos\n5,keren bangettt,SBY,NA,neg\n", encoding="utf-8")
-    (d / "test.csv").write_text("id,teks,kota,angka\n10,HALO lagi,JKT,\n11,-,MDN,5\n", encoding="utf-8")
+        "id,teks,kota,angka,label,gaji\n"
+        "1,Halo   DUNIA https://x.co,BDG,10,pos,Rp 1.000.000 s.d. Rp 2.000.000\n2,-,JKT,,neg,lebih dari Rp 5.000.000\n"
+        "3,Ｆｕｌｌ width,BDG,30,pos,\n4,Halo   DUNIA https://x.co,BDG,10,pos,1-2 juta\n"
+        "5,keren bangettt,SBY,NA,neg,\"kurang dari Rp 1.000.000,-\"\n", encoding="utf-8")
+    (d / "test.csv").write_text("id,teks,kota,angka,gaji\n10,HALO lagi,JKT,,2 jt\n11,-,MDN,5,\n", encoding="utf-8")
     (d / "kota.csv").write_text("kota,pulau\nBDG,Jawa\nJKT,Jawa\nSBY,Jawa\nMDN,Sumatra\n", encoding="utf-8")
 
 
@@ -233,6 +255,14 @@ def proyek_resep(d):
         L("join", {"tabel": "kota.csv", "kiri": ["kota"], "cara": "left", "validasi": "m:1"}),
         L("ganti_nilai", {"kolom": ["label"], "peta": "pos => 1\nneg => 0"}),
         L("kode", {"isi": 'df = df.with_columns(panjang=pl.col("teks").str.len_chars())'}),
+        L("encode", {"kolom": ["kota"], "cara": "target OOF (rata-rata label)", "label": "label"}),
+        L("encode", {"kolom": ["kota"], "cara": "frekuensi (porsi di latih)"}),
+        L("langka", {"kolom": ["kota"], "minimal": 2}),
+        L("rentang", {"kolom": ["gaji"], "ambil": "tengah"}),
+        L("penanda_kosong", {"kolom": []}),
+        L("skala", {"kolom": ["angka"], "cara": "robust"}),
+        L("mirip", {"kolom": ["teks"]}),
+        L("encode", {"kolom": ["kota"], "cara": "one-hot (kolom 0/1 per nilai)", "maks": 5}),
     ]}}
     p["resep"]["train.csv"]["langkah"][8]["hanya_latih"] = True  # test tidak punya label
     p["turunan"] = {"gabung": 'df = pl.concat([T["train.csv"], T["test.csv"]], how="diagonal_relaxed")'}
@@ -251,8 +281,10 @@ def uji_ekspor():
         tr, te = m.hasil("train.csv"), m.hasil("test.csv")
         assert not tr.galat and not te.galat, (tr.galat, te.galat)
         assert tr.akhir.height == 4 and te.akhir.height == 2, (tr.akhir, te.akhir)
-        assert te.akhir["angka"].to_list() == [10.0, 5.0], te.akhir  # median latih (10,30,10), bukan dari test
+        assert te.akhir["angka"].to_list() == [0.0, -5.0], te.akhir  # median latih 10; robust: IQR latih 0 -> dibagi 1
         assert "label" not in te.akhir.columns and te.akhir["pulau"].to_list() == ["Jawa", "Sumatra"]
+        assert tr.akhir["gaji_angka"].to_list() == [1.5e6, 5e6, None, 5e5], tr.akhir["gaji_angka"]
+        assert te.akhir["kota_te"].null_count() == 0 and te.akhir["kota_lainnya"].to_list() == [1, 1], te.akhir
         assert tr.akhir["teks"][3] == "keren banget", tr.akhir
         g = m.hasil("gabung")
         assert not g.galat and g.akhir.height == 6
@@ -458,16 +490,51 @@ def uji_tugas():
         print(f"  tabular macro-F1 {tb['macro_f1']:.3f} ({tb['validasi']}), holdout {th['macro_f1']:.3f}, "
               f"penting {[p[0] for p in tb['penting']]}")
         assert tb["macro_f1"] > 0.9 and th["macro_f1"] > 0.85 and {p[0] for p in tb["penting"][:2]} == {"x", "kota"}
+        # cek data: kolom bocor (= label) harus tertangkap, x2 = 2x berasosiasi 1, kosong bersama terbaca
+        tab.with_columns(bocor=pl.col("label"), x2=pl.col("x") * 2,
+                         k1=pl.when(pl.col("id") % 7 == 0).then(None).otherwise(pl.col("x")),
+                         k2=pl.when(pl.col("id") % 7 == 0).then(None).otherwise(pl.col("kota"))) \
+            .write_parquet(Path(d) / "cek.parquet")
+        fo = jalankan_tugas(d, "fold", Path(d) / "cek.parquet", seed=42, fold=5, teks=[])
+        f = pl.read_csv(fo["path"])
+        assert f.columns == ["id", "fold"] and f.height == 400 and sorted(f["fold"].unique()) == [0, 1, 2, 3, 4]
+        bo = jalankan_tugas(d, "bocor", Path(d) / "cek.parquet", seed=42, fold=5, teks=[])
+        assert bo["kolom"][0]["kolom"] == "bocor" and bo["kolom"][0]["skor"] > 0.99, bo["kolom"][:2]
+        aso = jalankan_tugas(d, "asosiasi", Path(d) / "cek.parquet", seed=42, fold=5, teks=[])
+        top = aso["pasangan"][0]
+        assert top[0] > 0.99 and {top[1], top[2]} & {"x", "x2", "k1", "bocor", "label"}, aso["pasangan"][:3]
+        assert aso["kosong"]["kolom"] == ["k1", "k2"] and aso["kosong"]["matriks"][0][1] > 0.99
+        print(f"  cek data: fold.csv {f.height} baris, bocor teratas {bo['kolom'][0]['kolom']}, "
+              f"asosiasi teratas {top[1]}~{top[2]} {top[0]:.2f}")
         from mesin import venv
         from tampilan import pahami
-        for jenis, h in (("baseline", b), ("acak", a), ("kata", k), ("adversarial", v2), ("tabular", tb)):
+        for jenis, h in (("baseline", b), ("acak", a), ("kata", k), ("adversarial", v2), ("tabular", tb),
+                         ("fold", fo), ("bocor", bo), ("asosiasi", aso)):
             r = {"jenis": jenis, "ket": "uji", "status": "ok", "hasil": h}
             assert pahami.JUDUL[jenis] in pahami.html_hasil(r) and pahami.ringkas_hasil(r)
+        r1 = {"jenis": "tabular", "status": "ok", "hasil": tb, "jam": "10.00", "resep": ["a"]}
+        r2 = {"jenis": "tabular", "status": "ok", "hasil": th, "jam": "10.05", "resep": ["a", "b"]}
+        assert "+ b" in pahami.html_banding(r1, [r1, r2]) and pahami.html_banding(r1, [r1]) == ""
         assert Path(venv.cari_python(Path(d))).is_file() and venv.skrip_tugas().is_file()
-    print("tugas: baseline, label curiga, label acak, kata khas, adversarial lulus")
+    print("tugas: baseline, label curiga, label acak, kata khas, adversarial, fold, bocor, asosiasi lulus")
+
+
+def uji_cek_baru():
+    """Temuan rentang, sidik nilai mirip, skema + drift train vs test."""
+    df = pl.DataFrame({"gaji": ["Rp 1 jt s.d. 2 jt", "lebih dari 5 jt", "kurang dari 1 jt", "2 - 3 juta"] * 5,
+                       "atap": ["Genteng, tanah", "tanah genteng", "seng", "SENG"] * 5, "x": list(range(20))})
+    t = temuan.temuan(df)
+    assert any(x["langkah"] and x["langkah"][0] == "rentang" for x in t), [x["judul"] for x in t]
+    assert any("atap" in x["judul"] and "beda-beda" in x["judul"] for x in t)
+    uji_ = df.drop("x").with_columns(gaji=pl.lit("lebih dari 5 jt"), atap=pl.lit(1))
+    j = [x["judul"] for x in temuan.banding(df.with_columns(pl.col("x").cast(pl.Float64)), uji_)]
+    assert any("tidak ada di test" in x for x in j) and any("Tipe kolom beda" in x for x in j), j
+    assert any("Sebaran bergeser" in x for x in j), j
+    print("cek baru: rentang, nilai mirip, skema, drift lulus")
 
 
 if __name__ == "__main__":
+    uji_cek_baru()
     uji_submisi()
     uji_tugas()
     uji_korpus()
