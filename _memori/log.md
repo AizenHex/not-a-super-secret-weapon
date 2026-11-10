@@ -2,6 +2,29 @@
 
 Terbaru di atas. Format di [`README.md`](README.md).
 
+## 2026-11-10 claude-fable-5-2 - final-pipeline di luar repo + PETUNJUK_AKHIR (LaTeX)
+- Pemicu: pengguna: "aku butuh pipeline lengkap buat besok, tebak aja. buat folder baru yang namanya
+  final-pipeline di luar repo. aku juga butuh file latex petunjuk akhir. stylenya kayak laporan mikon ... lebih
+  visual", lalu memberi contoh `C:/Users/EYZARIM/Downloads/main.pdf` dan "kreasiin juga".
+- Dikerjakan: `Z:/GEMASTIK/Vignate-GEMASTIK/final-pipeline/` (sejajar repo, BUKAN git): `1_eda`, `2_praproses`,
+  `3_baseline`, `4_finetune`, `5_ensemble`, `6_topik`, `6b_topik_bertopic`, `7_laporan_model` (.ipynb, dibangkitkan
+  `_alat/buat_ulang.py` dari `contoh/text`), `konfig.py` (satu tempat nilai soal), `jupyter.bat`, `8_ekspor.bat`,
+  `demo/` (SmSA) + `kamus/` (kamus alay) supaya tidak butuh `data_latihan`, `PETUNJUK_AKHIR.tex/.pdf` (5 halaman,
+  kotak gambar berpita abu-abu seperti laporan mikon + linimasa 5 jam, peta alur, kartu per notebook, pohon pilih
+  model, 3 submission, NDA, tabel macet, daftar cek). Tebakan: klasifikasi teks 1 kolom, F1 makro, + topic modeling.
+- Uji (laptop, SmSA, Run All berurutan lewat nbclient): semua LULUS. eda 23 s, praproses 60 s, baseline 24 s
+  (F1 OOF 0,860), finetune 186 s dengan EPOCHS = 1 hanya di salinan uji (F1 OOF 0,927; 3 epoch bawaan TIDAK
+  diuji di folder ini), ensemble 5 s (putusan: tunggal ft_indobert), topik 302 s, bertopic 80 s, laporan 7 s.
+  Validator ketiga notebook model `MASALAH: 0`. `8_ekspor.bat` lewat cmd: 49 disalin, 13 ditolak
+  (train_bersih, topik_dokumen, .npy, sample demo). PDF kulihat per halaman.
+- Efek samping: `../outputs/bawa_pulang` (ekspor demo lama) tertimpa ekspor demo baru; `../outputs/final` berisi
+  hasil demo.
+- Belum: metrik selain F1 makro, data banyak kolom teks, CSV ber-`;`, `SAMPLE_PANITIA` diisi file nyata,
+  `jupyter.bat` diklik, PC panitia. `6b` ditambal (stopword Sastrawi, simpan ke OUTPUT_FOLDER, tanpa
+  Representative_Docs) dan hanya diuji sekali.
+- Dikoreksi pengguna: -
+- Berikutnya: pengguna menyalin `final-pipeline` ke PC panitia (tidak ikut `git clone`).
+
 ## 2026-11-10 claude-fable-5-2 - rencana R1-R5: topik_lengkap + dokumentasi aman NDA [berjalan]
 - Pemicu: pengguna minta notebook topic modeling "sangat lengkap" dan EDA lengkap untuk PPT yang dibuat AI tanpa
   akses data (NDA). Jawaban panitia lewat pengguna: yang boleh keluar hanya luaran notebook (PNG, tabel ringkas);

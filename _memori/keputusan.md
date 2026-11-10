@@ -2,6 +2,13 @@
 
 Terbaru di atas. Format: `- YYYY-MM-DD: <keputusan>. Alasan: <...>.`
 
+- 2026-11-10: `../final-pipeline` = salinan bernomor notebook `contoh/text` yang dibangkitkan skrip
+  (`final-pipeline/_alat/buat_ulang.py`), bukan notebook yang ditulis ulang; nilai soal di satu `konfig.py` yang
+  di-`exec` di akhir sel Konfigurasi. Alasan: kode yang sudah teruji tidak disentuh (hanya path, ekor konfigurasi,
+  sel demo dibuang), dan saat lomba cukup mengubah satu file, bukan tujuh sel. `exec`, bukan `import`, supaya
+  ubahan konfig terbaca tanpa cache modul. Hasil ke `../outputs/final` (bukan `outputs/text`) agar OOF lama tidak
+  tercampur.
+
 - 2026-11-10: T5 di katalog = LazarusNLP/IndoNanoT5-base, bukan google/mt5-small. Alasan: mt5-small tanpa
   tokenizer.json, butuh `sentencepiece` (tidak di venv; aturan tanya dulu sebelum pip); IndoNanoT5 punya
   tokenizer.json dan berbahasa Indonesia.
