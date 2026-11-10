@@ -146,6 +146,12 @@ F1 makro val 0,427; kelas ke-2 F1 0).
 
 ## Pekerjaan terbuka
 
+- Dokumentasi presentasi aman NDA (2026-11-10, di-push): `topik_lengkap`, `laporan_model`, saklar `AMAN_NDA` di
+  `eda_lengkap`/`eda_presentasi`, `ekspor_hasil.bat` → `../outputs/bawa_pulang/` + MANIFEST. Semua lint 0 dan lulus
+  Run All demo. Belum: gladi menyusun slide hanya dari `bawa_pulang/` (R5), `ekspor_hasil.bat` lewat cmd.
+  Aturan baru: selalu commit + push; agen paling tinggi Opus (bawaan Sonnet high). Catatan serah terima lokal:
+  `HANDOFF.md` (diabaikan git).
+
 - Cek terakhir 2026-11-10 (rinci di log): model 48/48 terunduh (21 GB), venv = requirements (+ jiwer/kmodes/ruptures),
   PANDUAN/KATALOG sudah memuat semua notebook teks, semua di-push. Sisa: angka "9 GB / 18 model" di
   `download_model.bat`/`unduh_model.py`/README usang; `data_latihan` (junction ke `Z:/GEMASTIK-DATABASE`) harus disalin

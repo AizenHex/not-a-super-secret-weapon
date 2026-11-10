@@ -26,7 +26,21 @@ Terbaru di atas. Format di [`README.md`](README.md).
   sesi (Fable), jadi tidak boleh dipakai selama sesi ini berjalan di Fable.
 - Lanjutan: pengguna memilih agen Sonnet high dan minta handoff sekarang + selalu push (masuk `aturan.md`).
   `HANDOFF.md` di root repo ditulis; dua agen Sonnet dijalankan (uji R1 + R2; R3). Keadaan ini di-commit + push.
-- Berikutnya: periksa hasil dua agen, R5, push lagi.
+- Agen Sonnet (uji R1 + R2) selesai, tanpa mengubah file: Run All LULUS `topik_lengkap` 150 s (LDA `n_jobs=1`),
+  `eda_lengkap` 32 s (demo baju), `eda_presentasi` 10 s. Cek NDA: 15 teks sampel + prefiks 40 karakter semua teks
+  demo (± 20.800 kunci) tidak ditemukan di output notebook maupun CSV/MD luaran; file contoh teks tidak ditulis;
+  sel terakhir ketiganya mencetak fakta/temuan. PNG kedua EDA tidak dilihat.
+- Sesudah itu peta 2D `topik_lengkap` diganti urutan warna (tab20 warna tua dulu; warna pucat tak terbaca); lint 0,
+  sel itu TIDAK dijalankan ulang.
+- Agen Sonnet R3 selesai: `contoh/text/laporan_model.ipynb` (38 sel, lint 0, Run All SmSA tanpa GPU). 10 grafik +
+  `fakta_model.md`: percobaan, skor OOF dihitung ulang, laporan per kelas, confusion matrix, pasangan tertukar,
+  akurasi per kuartil panjang, kurva keandalan + ECE, kesepakatan model, rata-rata vs tunggal, sebaran prediksi
+  test. Demo: ft_indobert F1 makro 0,930 (terpilih), tfidf_svc 0,860, tfidf_logreg 0,853; rata-rata sederhana 3
+  model 0,910 (lebih rendah dari tunggal terbaik); ECE 0,053. OOF soal lain di folder yang sama dilewati (bentuk
+  tidak cocok). Confusion matrix kulihat sendiri. Belum dijalankan: banyak kelas, TEST_CSV None, FINAL_MODEL diisi.
+- `HANDOFF.md` ternyata diabaikan `.gitignore` (baris 22 `handoff.md`), jadi hanya ada di laptop ini, tidak di
+  GitHub; isinya sejalan dengan entri ini + `status.md`. Tidak dipaksa masuk (aturan abai milik pengguna).
+- Di-commit + push. Sisa: R5 gladi, `ekspor_hasil.bat` lewat cmd, sisa cek repo (angka 9 GB, tautan mati PANDUAN).
 
 ## 2026-11-10 claude-fable-5-2 - konfirmasi panitia: klasifikasi teks + topic modeling
 - Pemicu: pengguna meneruskan konfirmasi panitia (topik, larangan zero/few-shot tanpa fine-tune, 3 submission di
