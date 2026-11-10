@@ -2,6 +2,15 @@
 
 Terbaru di atas. Format: `- YYYY-MM-DD: <keputusan>. Alasan: <...>.`
 
+- 2026-11-10: PaddleOCR dipasang lewat `requirements_paddle.txt` dengan `--no-deps` (paddlepaddle 3.3.1 CPU,
+  paddlex 3.7.2, paddleocr 3.7.0, opencv-contrib-python 5.0.0.93 = versi opencv-python), dependensi lain di
+  requirements.txt; model PP-OCRv6_medium det/rec + PP-LCNet doc_ori dari HF ke `pretrained/`. Alasan: paddlex
+  mematok numpy<2.4 dan PyYAML==6.0.2, pemasangan biasa menurunkan numpy 2.5.3 seluruh venv dan membuat
+  `pip install -r` gagal resolve; diuji jalan dengan numpy 2.5.3. opencv-contrib 4.10 bawaan paddlex
+  ditolak karena menimpa cv2 milik opencv-python 5.0. paddlex hanya mengecek NAMA paket opencv-contrib.
+  Versi CPU (bukan paddlepaddle-gpu) supaya tidak bentrok CUDA torch; Windows wajib `enable_mkldnn=False`
+  (oneDNN error ConvertPirAttribute2RuntimeAttribute).
+
 - 2026-11-10: metode niche dipilih yang belum ada di repo dan jalan di CPU: metaheuristik bobot (hill negatif,
   annealing, evolusi diferensial, genetik, Optuna), FWLS, gzip/BM25-kNN, null importance/Boruta/SA/GA, co/tri-
   training, kNN OOF + mini OpenFE, RuleFit. AWP/R-Drop/distilasi tidak dibuat. Alasan: hill Caruana, Nelder-Mead,

@@ -24,9 +24,11 @@ echo [2/3] Memasang library ...
 if exist "..\env\wheelhouse" (
     echo Wheelhouse offline ditemukan: pasang tanpa internet.
     "%PY%" -m pip install --no-index --find-links "..\env\wheelhouse" -r requirements.txt
+    "%PY%" -m pip install --no-index --find-links "..\env\wheelhouse" --no-deps -r requirements_paddle.txt
 ) else (
     "%PY%" -m pip install --upgrade pip
     "%PY%" -m pip install -r requirements.txt
+    "%PY%" -m pip install --no-deps -r requirements_paddle.txt
 )
 
 rem sukses atau gagal ditentukan oleh cek import, bukan pesan pip

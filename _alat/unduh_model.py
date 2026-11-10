@@ -43,6 +43,9 @@ HF = {
     "vilt_vqa": "dandelin/vilt-b32-finetuned-vqa",
     "trocr_cetak": "microsoft/trocr-small-printed",
     "trocr_tangan": "microsoft/trocr-small-handwritten",
+    "paddleocr_det": "PaddlePaddle/PP-OCRv6_medium_det",   # PaddleOCR: deteksi baris teks
+    "paddleocr_rec": "PaddlePaddle/PP-OCRv6_medium_rec",   # PaddleOCR: baca teks (Latin + CJK)
+    "paddleocr_ori": "PaddlePaddle/PP-LCNet_x1_0_doc_ori",  # PaddleOCR: orientasi 0/90/180/270
     "plat_yolo11": "carlravel/indonesian-plate-detector-yolo11",
     "chronos_2": "amazon/chronos-2",
     "chronos_bolt_small": "amazon/chronos-bolt-small",

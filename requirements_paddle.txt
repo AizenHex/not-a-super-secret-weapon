@@ -1,0 +1,8 @@
+# PaddleOCR. Dipasang setup.bat dengan --no-deps SESUDAH requirements.txt, karena paddlex
+# mematok numpy<2.4 dan PyYAML==6.0.2 (bentrok dengan numpy 2.5.3). Diuji jalan dengan numpy 2.5.3.
+# Dependensinya yang aman ada di requirements.txt bagian "PaddleOCR".
+# opencv-contrib versi SAMA dengan opencv-python: paddlex hanya mengecek nama paketnya.
+paddlepaddle==3.3.1          # CPU; di Windows WAJIB PaddleOCR(enable_mkldnn=False)
+paddlex==3.7.2
+paddleocr==3.7.0
+opencv-contrib-python==5.0.0.93

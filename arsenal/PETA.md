@@ -78,6 +78,7 @@ Bagian bernomor; tiap file diawali tabel "ingin → bagian". Bagian 0 = data con
 | latih detektor kotak, mAP, prediksi (4 rotasi), kotak terbaik | `vision/deteksi/deteksi_yolo` | 1–6 |
 | potong kotak, mendatarkan, mempertajam, deskew, 4 titik | `vision/ocr/potong_perbaiki` | 1–5 |
 | baca teks (EasyOCR offline), pilih rotasi, regex field, CER | `vision/ocr/ocr` | 1–6 |
+| baca teks dengan PaddleOCR (struk/dokumen, lebih akurat, CPU) | `vision/ocr/ocr` | 2b |
 | gambar terbalik/menyamping → CNN tebak orientasi | `vision/ocr/orientasi_cnn` | semua |
 | latih OCR sendiri dari teks sintetis (CNN + Transformer + CTC) | `vision/ocr/ocr_cnn_transformer` | semua |
 | aksara non-Latin (Jawa) dengan label buatan sendiri (CVAT) | `vision/ocr/karakter_label_sendiri` | semua |

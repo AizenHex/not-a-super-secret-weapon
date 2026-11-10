@@ -2,6 +2,22 @@
 
 Terbaru di atas. Format di [`README.md`](README.md).
 
+## 2026-11-10 claude-opus-5-5 - PaddleOCR offline
+- Pemicu: pengguna: "tambahin ocr, kalo belum ada, tambahin paddleOCR".
+- Dikerjakan: OCR sudah ada (EasyOCR, TrOCR, `ocr_end_to_end_v2` sudah memanggil PaddleOCR tapi paketnya
+  belum terpasang). Dipasang ke `../.venv`; `requirements_paddle.txt` baru + 14 dependensi di requirements.txt +
+  setup.bat (online dan wheelhouse) memasangnya `--no-deps`. `unduh_model.py`: paddleocr_det/_rec/_ori (HF
+  PaddlePaddle/PP-OCRv6_medium_*, PP-LCNet_x1_0_doc_ori; 60+74+7 MB), sudah diunduh. `vision/ocr/ocr.ipynb`
+  sel 2b `read_paddle` (kontrak sama dengan read_easyocr); `ocr_end_to_end_v2` memuat model dari
+  `PADDLE_FOLDER` + enable_mkldnn=False (sel dipecah, lint 0). PETA baris 2b.
+- Uji: struk demo 3/3 terbaca benar (skor 0,99, ± 5 detik/gambar CPU), offline tanpa ~/.paddlex, gambar
+  abu-abu OK, orientasi 0/90/180 benar. Notebook belum Run All (ocr.ipynb butuh `crops`; v2 butuh yolo_2cls.pt).
+- Verifikasi (diminta pengguna): unduh_model.py ke folder kosong mengunduh nusabert + 3 paddleocr (runs/
+  dilewati), PaddleOCR membaca model hasil unduhan itu; venv baru: `pip install --dry-run -r requirements.txt`
+  resolve 291 paket (numpy 2.5.3, torch cu128) dan `--no-deps -r requirements_paddle.txt` hanya 4 paket.
+- Dikoreksi pengguna: -
+- Berikutnya: wheelhouse (bila dibuat ulang) perlu ikut mengunduh requirements_paddle.txt.
+
 ## 2026-11-10 claude-opus-5-5 - word cloud per kelas di eda_presentasi
 - Pemicu: pengguna: "Tambahin fitur word cloud".
 - Dikerjakan: `contoh/text/eda_presentasi.ipynb` bagian baru 3b: word cloud per kelas (maks 6, grid 3

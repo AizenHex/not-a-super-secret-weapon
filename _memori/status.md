@@ -51,8 +51,8 @@ F1 makro val 0,427; kelas ke-2 F1 0).
 - `arsenal/pipeline/ocr_end_to_end_v2.ipynb` (2026-10-30): notebook vignette patokan (YOLOv8n 2 kelas +
   orientasi Paddle + PaddleOCR → submission), ditulis ulang ke gaya repo: lint 0 masalah, semua hasil
   ke `WORK_FOLDER` (default `../../../outputs/pipeline/ocr_end_to_end_v2`). Bagian 0–2 (termasuk GUI
-  label) diuji pada `Vignate-GEMASTIK/data`; bagian 3–6 **belum diuji** (PaddleOCR belum dipasang,
-  `yolo_2cls.pt` tidak ada di laptop).
+  label) diuji pada `Vignate-GEMASTIK/data`; bagian 3–6 **belum diuji** (`yolo_2cls.pt` tidak ada di laptop). PaddleOCR terpasang 2026-11-10,
+  model dari `pretrained/paddleocr_det|_rec|_ori`; `get_paddle`/`get_ori` diuji di luar notebook.
 - Di luar repo (2026-10-30): salinan repo lama (`PythonProject`, `Sen-3`..`Sen-6`, `Sentiment-2`, ±35 GB)
   dan file lepas di root `Vignate-GEMASTIK` dipindah ke `Z:/GEMASTIK/_arsip/`, tidak dihapus.
 - `_laya_eda/` (Laya v1) dihapus pengguna (commit 3a375ec "laya v1 removed", 2026-11-06); yang dipakai
@@ -172,5 +172,4 @@ Daftar lama di bawah (vision-sentris) turun prioritas; validator (2), zip (3), l
 6. Pembaca dataset Hugging Face parquet.
 7. Deret waktu ke arsenal.
 8. Log percobaan + latihan 5 jam pakai stopwatch.
-- Tambahan: uji bagian 3–6 `pipeline/ocr_end_to_end_v2` setelah PaddleOCR dipasang (pengguna yang
-  memutuskan kapan). Kalau pengguna setuju, hapus `pretrained/`/data dobel di `Z:/GEMASTIK/_arsip/`.
+- Tambahan: uji bagian 3–6 `pipeline/ocr_end_to_end_v2` (PaddleOCR sudah terpasang, butuh `yolo_2cls.pt`). Kalau pengguna setuju, hapus `pretrained/`/data dobel di `Z:/GEMASTIK/_arsip/`.

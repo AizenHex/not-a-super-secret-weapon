@@ -106,6 +106,22 @@ absl-py==2.5.1               # dipakai rouge_score
 sacrebleu==2.6.0             # BLEU / chrF
 portalocker==4.4.1           # dipakai sacrebleu
 
+# PaddleOCR: dependensi (paketnya sendiri di requirements_paddle.txt, dipasang --no-deps)
+aiohttp==3.14.5
+opt-einsum==3.3.0
+aistudio-sdk==0.3.9
+chardet==7.7.0
+modelscope==1.40.3
+prettytable==3.18.0
+py-cpuinfo==9.0.0
+ruamel.yaml==0.19.1
+ujson==6.1.0
+imagesize==2.0.1
+pyclipper==1.4.0
+pypdfium2==5.14.0
+python-bidi==0.6.12
+colorlog==6.12.0
+
 # Jupyter
 jupyterlab==4.6.4
 ipykernel==7.4.0
