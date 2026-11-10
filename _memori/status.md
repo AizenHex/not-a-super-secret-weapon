@@ -123,6 +123,9 @@ F1 makro val 0,427; kelas ke-2 F1 0).
 
 ## Pekerjaan terbuka
 
+- Perbaikan review jalur runbook (2026-11-10, di-push bersama `run_baseline.bat` untuk cek PC lomba): 12 notebook `contoh/text/` (penjaga sample demo,
+  NUM_COLS ⊂ kolom test, opsi grup teks kembar, peringatan validator, path pseudo-label). Hari lomba:
+  kosongkan `outputs/text/oof` di PC panitia sebelum mulai.
 - NusaBERT-base (2026-11-10, belum di-commit): `pretrained/nusabert` + alternatif di finetune_oof; belum diuji skor.
 - Qwen3-Embedding-0.6B (2026-11-09, belum di-commit): `_alat/unduh_model.py` + folder `pretrained/qwen3_emb`,
   alternatif ber-`#` di `contoh/text/klasifikasi_embedding.ipynb` (sentence-transformers, tanpa Ollama). SmSA

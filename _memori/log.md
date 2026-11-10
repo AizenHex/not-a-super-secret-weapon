@@ -2,6 +2,34 @@
 
 Terbaru di atas. Format di [`README.md`](README.md).
 
+## 2026-11-10 claude-opus-5-5 - run_baseline.bat + push
+- Pemicu: pengguna: "buatin run baseline.bat biar gampang cek. setelah itu push".
+- Dikerjakan: `run_baseline.bat` (root repo, CRLF): cari_python → nvidia-smi + torch.cuda → cek
+  `../data_latihan/text/sentiment/smsa_train.csv` → nbconvert Run All `contoh/text/baseline_oof` ke
+  `../outputs/text/baseline_oof/baseline_oof_hasil.ipynb` → SUKSES hanya bila tanpa galat dan `MASALAH: 0`.
+  README langkah 2 menyebutnya.
+- Uji: di laptop SUKSES (RTX 5060, driver 617.42, torch cu128, MASALAH: 0). Jalur gagal tidak diuji.
+- Dikoreksi pengguna: -
+
+## 2026-11-10 claude-opus-5-5 - perbaikan 5 temuan review jalur runbook
+- Pemicu: pengguna menempel laporan review (Fable) atas baseline_oof, finetune_oof, ensemble_oof,
+  stacking_teks_tabular. Kelima temuan kucek dulu di kode, semua benar.
+- Dikerjakan (12 notebook `contoh/text/`, edit JSON, format asli dipertahankan):
+  1. Sel sample demo tidak lagi menimpa `SAMPLE_CSV` di luar OUTPUT_FOLDER (penjaga seperti baseline_oof) di
+     stacking_teks_tabular(+_regresi), teks_tabular, klasifikasi_hierarkis, multi_target, ordinal_teks,
+     pasca_prediksi, regresi_hitungan, data_besar_teks.
+  2. `NUM_COLS` hanya kolom yang juga ada di test (stacking_teks_tabular(+_regresi), teks_tabular).
+  3. baseline_oof/finetune_oof: baris `# groups = pd.factorize(teks)[0]` untuk StratifiedGroupKFold (teks
+     kembar satu lipatan). Pilihan saat lomba: kalau test juga memuat kembar train, split biasa lebih mirip LB.
+  4. Validator 3 notebook OOF mencetak PERINGATAN bila SAMPLE_CSV masih file demo (tidak dihitung masalah).
+  5. finetune_oof: contoh path PSEUDO_CSV ke `outputs/text/ensemble_oof/pseudo_label.csv`.
+- Uji: lint semua contoh/text 0 masalah; Run All baseline_oof + stacking_teks_tabular di data demo (CPU). Keduanya
+  0 galat, MASALAH: 0, peringatan sample demo muncul, kolom angka stacking tetap age + positive_feedback_count.
+- Ikut diperbaiki: baseline_oof gagal Run All lewat nbconvert sejak HEAD (metadata `codemirror_mode: null`/
+  `version: null` tidak valid nbformat); kunci null dibuang. Notebook lain di repo semuanya valid.
+- Catatan lomba dari review: SELECT_BEST=False untuk angka slide; kosongkan `outputs/text/oof` di PC panitia.
+- Dikoreksi pengguna: -
+
 ## 2026-11-10 claude-opus-5-5 - PaddleOCR offline
 - Pemicu: pengguna: "tambahin ocr, kalo belum ada, tambahin paddleOCR".
 - Dikerjakan: OCR sudah ada (EasyOCR, TrOCR, `ocr_end_to_end_v2` sudah memanggil PaddleOCR tapi paketnya

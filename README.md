@@ -40,6 +40,8 @@ Urut dari yang paling penting. Centang satu per satu.
 1. [ ] **Salin repo + `pretrained/`** ke path pendek (`C:/GEMASTIK/`). Path panjang membuat
    pemasangan library gagal ("Long Path").
 2. [ ] **`../setup.bat`** → harus berakhir `OK. GPU: True` lalu `SUKSES`. Python 3.13 64-bit.
+   Lalu `run_baseline.bat`: info GPU/driver + Run All `contoh/text/baseline_oof` di data demo
+   (butuh `../data_latihan`), harus berakhir `SUKSES ... MASALAH: 0`.
 3. [ ] **Model**: `pretrained/` belum ikut? `download_model.bat` (bisa dijalankan ulang, yang
    sudah ada dilewati). Isi: 18 model Hugging Face (MiniLM, IndoBERT, mDeBERTa NLI/QA, CLIP,
    TrOCR, Qwen 0.5B, Whisper, Chronos, ...), 9 backbone torchvision, YOLOv8n (deteksi/seg/pose),
