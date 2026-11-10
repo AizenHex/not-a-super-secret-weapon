@@ -18,8 +18,9 @@ Terbaru di atas. Format di [`README.md`](README.md).
   yang kubuat di luar repo dihapus.
 - Belum: figma-console-mcp belum terpasang di sesi ini (wizard `npx figma-console-mcp-cli` interaktif, butuh
   token Figma, harus dijalankan pengguna); impor SVG ke Figma belum dicoba; data dengan > 8 topik / banyak kelas
-  / multilabel belum diuji; `.bat` belum diklik. EDA hanya punya 2 CSV, jadi panjang teks dan kata khas belum
+  / multilabel belum diuji. `.bat` lulus lewat cmd. EDA hanya punya 2 CSV, jadi panjang teks dan kata khas belum
   ada versi figur barunya.
+- Git: commit lokal 29e63dc; `git push` ditolak sistem izin sesi, pengguna perlu push sendiri.
 - Berikutnya: pengguna pasang MCP Figma, lalu kerangka slide (kartu, pipeline) di Figma + tempel SVG.
 
 ## 2026-11-10 claude-fable-5-2 - final-pipeline di luar repo + PETUNJUK_AKHIR (LaTeX)
