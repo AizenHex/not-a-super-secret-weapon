@@ -40,6 +40,13 @@ Koreksi terbaru pengguna di chat menang atas isi file ini; setelah itu perbarui 
   hal tak terduga, bukan "tanpa AI" mutlak. Arsenal tetap utama; asisten kode lokal hanya penambal. Dasarnya
   ucapan pengguna di chat, belum ada kutipan guidebook.
 
+- **Semua file yang dibuat agen harus di dalam repo `not-a-super-secret-weapon`** (pengguna, 2026-11-10: "repo ku
+  sekarang di not super secret, jangan sampe kamu buat aku bingung dengan kerja dan ngebuat file di luar repo
+  ini"). Jangan membuat folder/file baru di luar repo (termasuk `../outputs/...`) kecuali itu keluaran notebook
+  yang memang sudah diatur ke `HASIL`/`OUTPUT_FOLDER`. Hasil alat baru ditaruh di dalam repo dan didaftarkan di
+  `.gitignore` bila tidak perlu di-commit. Tafsiran agen: aturan lama "output notebook ke `../../outputs`" tetap
+  berlaku untuk notebook yang sudah ada; tanya pengguna bila ia ingin itu ikut dipindah.
+
 ## Kode
 
 - Notebook untuk lomba/submission memuat model dari folder lokal `../../../pretrained/<nama>` (sentence-transformers/

@@ -2,6 +2,12 @@
 
 Terbaru di atas. Format: `- YYYY-MM-DD: <keputusan>. Alasan: <...>.`
 
+- 2026-11-10: figur PPT dibagi dua: chart data = Python (`final-pipeline/9_figur_ppt.py`, satu skrip `.py`, bukan
+  notebook) yang hanya membaca CSV agregat dan menulis PNG + SVG; kerangka slide, kartu, dan diagram pipeline =
+  Figma. Alasan: chart harus bisa dibuat ulang dalam detik saat data lomba masuk dan tidak boleh memuat angka
+  ketikan tangan; SVG dengan `svg.fonttype = none` tetap bisa diedit di Figma; skrip membaca `bawa_pulang`
+  sehingga bisa jalan di laptop tanpa data per baris. Grid putus-putus mengikuti `aturan.md` bagian Figur (skill
+  dataviz menyarankan garis utuh; aturan pengguna menang). Palet 8 warna lolos `validate_palette.js`.
 - 2026-11-10: `final-pipeline/` (root repo) = salinan bernomor notebook `contoh/text` yang dibangkitkan skrip
   (`final-pipeline/_alat/buat_ulang.py`), bukan notebook yang ditulis ulang; nilai soal di satu `konfig.py` yang
   di-`exec` di akhir sel Konfigurasi. Alasan: kode yang sudah teruji tidak disentuh (hanya path, ekor konfigurasi,

@@ -146,6 +146,11 @@ F1 makro val 0,427; kelas ke-2 F1 0).
 
 ## Pekerjaan terbuka
 
+- **Figur PPT gaya paper (2026-11-10 malam): `final-pipeline/9_figur_ppt.py`** (+ `.bat`). 10 figur PNG + SVG ke
+  `final-pipeline/figur_ppt/` (di dalam repo, diabaikan git) dari CSV hasil pipeline; bisa dijalankan di laptop
+  pada `../../outputs/bawa_pulang`. Lint 0, jalan di data demo. Belum: MCP Figma (pengguna harus menjalankan
+  `npx figma-console-mcp-cli` sendiri), impor SVG ke Figma, data > 8 topik / multilabel.
+
 - **Jalur lomba siap pakai (2026-11-10 malam): `final-pipeline/`** di root repo (awalnya di luar repo, dipindah
   masuk atas permintaan pengguna; path `../../pretrained`, `../../outputs/final`). Notebook `1_eda` .. `7_laporan_model` + `6b_topik_bertopic` = salinan
   `contoh/text` yang membaca `konfig.py`; `8_ekspor.bat`; `PETUNJUK_AKHIR.pdf`. Hasil ke `../outputs/final`.

@@ -2,6 +2,26 @@
 
 Terbaru di atas. Format di [`README.md`](README.md).
 
+## 2026-11-10 claude-fable-5-2 - figur gaya paper untuk PPT (9_figur_ppt.py)
+- Pemicu: pengguna minta visualisasi PPT final "kayak paper-paper", contoh format `Downloads/VIGNETTE.pdf` (5 bagian
+  Why It Matters .. What's Next), tata letak di Figma lewat `npx figma-console-mcp-cli`, chart dari Python supaya
+  mudah diganti datanya.
+- Dikerjakan: `final-pipeline/9_figur_ppt.py` + `9_figur_ppt.bat`, font Be Vietnam Pro di
+  `final-pipeline/_alat/fonts/` (OFL). Membaca CSV `eda/`, `laporan/`, `topik/`, `ensemble/` dari `HASIL` di
+  konfig.py (atau folder di argumen, mis. `../../outputs/bawa_pulang`), menulis 10 figur 13x5,4 in ke
+  `final-pipeline/figur_ppt/` sebagai PNG + SVG (teks SVG tetap teks, bisa diedit di Figma). Figur: 01_data,
+  02_model, 03_kelas, 04_salah, 05_keandalan, 06_sebaran_test, 07_topik_pilih, 08_topik_kata, 09_topik_kelas,
+  10_topik_peta. CSV yang tidak ada = figur dilewati. Lint 0; jalan di `outputs/final` (10 figur) dan
+  `outputs/bawa_pulang` (10 figur); semua PNG demo kulihat.
+- Dikoreksi pengguna: "repo ku sekarang di not super secret, jangan sampe kamu buat aku bingung dengan kerja dan
+  ngebuat file di luar repo ini." Hasil figur dipindah dari `outputs/.../figur_ppt` ke dalam repo; dua folder
+  yang kubuat di luar repo dihapus.
+- Belum: figma-console-mcp belum terpasang di sesi ini (wizard `npx figma-console-mcp-cli` interaktif, butuh
+  token Figma, harus dijalankan pengguna); impor SVG ke Figma belum dicoba; data dengan > 8 topik / banyak kelas
+  / multilabel belum diuji; `.bat` belum diklik. EDA hanya punya 2 CSV, jadi panjang teks dan kata khas belum
+  ada versi figur barunya.
+- Berikutnya: pengguna pasang MCP Figma, lalu kerangka slide (kartu, pipeline) di Figma + tempel SVG.
+
 ## 2026-11-10 claude-fable-5-2 - final-pipeline di luar repo + PETUNJUK_AKHIR (LaTeX)
 - Pemicu: pengguna: "aku butuh pipeline lengkap buat besok, tebak aja. buat folder baru yang namanya
   final-pipeline di luar repo. aku juga butuh file latex petunjuk akhir. stylenya kayak laporan mikon ... lebih
