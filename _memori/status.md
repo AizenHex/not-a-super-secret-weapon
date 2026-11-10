@@ -151,6 +151,9 @@ F1 makro val 0,427; kelas ke-2 F1 0).
   `contoh/text` yang membaca `konfig.py`; `8_ekspor.bat`; `PETUNJUK_AKHIR.pdf`. Hasil ke `../outputs/final`.
   Run All berurutan lulus di SmSA (finetune hanya 1 epoch). Bangun ulang dari repo: `python _alat/buat_ulang.py`
   di folder itu (menimpa notebook). Belum diuji: metrik lain, banyak kolom teks, sample panitia nyata.
+  **Multilabel** (2026-11-10 malam): isi `LABEL_COLS` di `konfig.py`, lalu `3m_baseline_multilabel` →
+  `4m_finetune_multilabel` → `5m_ensemble_multilabel` (3m dan 5m kode baru, sumber `final-pipeline/_alat/*.py`);
+  `6_topik` menambah "topik x label". Lulus Run All di demo CASA. Commit lokal belum di-push (izin ditolak).
 
 - Dokumentasi presentasi aman NDA (2026-11-10, di-push): `topik_lengkap`, `laporan_model`, saklar `AMAN_NDA` di
   `eda_lengkap`/`eda_presentasi`, `ekspor_hasil.bat` → `../outputs/bawa_pulang/` + MANIFEST. Semua lint 0 dan lulus

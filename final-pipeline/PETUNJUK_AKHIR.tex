@@ -73,8 +73,8 @@
 \begin{tcolorbox}[enhanced,colback=biru,colframe=biru,arc=3pt,left=12pt,right=12pt,top=10pt,bottom=10pt]
   {\color{white}{\LARGE\bfseries Petunjuk Akhir: final-pipeline}\\[3pt]
   {\large GEMASTIK XIX Penambangan Data \textbullet\ Rabu, 11 November 2026 \textbullet\ 13.00--18.00}\\[6pt]
-  \small Tebakan soal: \textbf{klasifikasi teks} (skor di Kaggle) dan \textbf{topic modeling}
-  (dipresentasikan). Delapan langkah bernomor, satu file konfigurasi.}
+  \small Tebakan soal: \textbf{klasifikasi teks} (skor di Kaggle), single label atau multilabel, dan
+  \textbf{topic modeling} (dipresentasikan). Langkah bernomor, satu file konfigurasi.}
 \end{tcolorbox}
 
 \begin{gambar}{Lima jam dalam satu garis (rencana, bukan aturan panitia)}
@@ -152,6 +152,7 @@ C:/GEMASTIK/\\
 \quad\quad \textbf{final-pipeline/}\quad\ket{\rmfamily folder ini}\\
 \quad\quad\quad konfig.py\\
 \quad\quad\quad 1\_eda.ipynb \dots\ 7\_laporan\_model.ipynb\\
+\quad\quad\quad 3m\_, 4m\_, 5m\_ \dots\ \ket{\rmfamily multilabel}\\
 \quad\quad\quad 8\_ekspor.bat, jupyter.bat\\
 \quad\quad\quad demo/, kamus/\\
 \quad pretrained/\quad\ket{\rmfamily model (\f{download_model.bat})}\\
@@ -306,6 +307,102 @@ Ubah & Baris \f{set "HASIL=..."} bila \f{HASIL} di \f{konfig.py} diganti.\\
 Lihat & \f{MANIFEST.md}: daftar yang disalin, yang ditolak, dan alasannya.
 \end{isi}
 \end{nb}
+
+% ================= multilabel =================
+\section{Kalau soalnya multilabel}
+
+Multilabel berarti satu teks boleh punya beberapa label sekaligus, dan target berupa beberapa
+kolom 0/1. Notebook 3, 4, 5, dan 7 \textbf{tidak} bisa dipakai untuk itu. Gantinya tiga notebook
+berakhiran \f{m}; EDA, praproses, dan topic modeling tetap notebook yang sama.
+
+\begin{gambar}{Jalur single label dan jalur multilabel}
+\begin{tikzpicture}
+  \node[kartu={biru}{2.2cm},anchor=north west] (a1) at (0,0) {\jdl{\f{1_eda}}\nodepart{two}sama};
+  \node[kartu={hijau}{2.2cm},anchor=north west] (a2) at (2.9,0) {\jdl{\f{2_praproses}}\nodepart{two}sama};
+  \node[kartu={abu}{2.6cm},anchor=north west] (s3) at (6.0,0.95)
+    {\jdl{\f{3_baseline}}\nodepart{two}satu kelas per teks};
+  \node[kartu={abu}{2.6cm},anchor=north west] (s4) at (9.3,0.95)
+    {\jdl{\f{4_finetune}}\nodepart{two}softmax};
+  \node[kartu={abu}{2.6cm},anchor=north west] (s5) at (12.6,0.95)
+    {\jdl{\f{5_ensemble} + \f{7}}\nodepart{two}gabung, laporan};
+  \node[kartu={kuning}{2.6cm},anchor=north west] (m3) at (6.0,-0.95)
+    {\jdl{\f{3m_baseline}}\nodepart{two}TF-IDF, satu model per label};
+  \node[kartu={jingga}{2.6cm},anchor=north west] (m4) at (9.3,-0.95)
+    {\jdl{\f{4m_finetune}}\nodepart{two}sigmoid + BCE, ambang per label};
+  \node[kartu={ungu}{2.6cm},anchor=north west] (m5) at (12.6,-0.95)
+    {\jdl{\f{5m_ensemble}}\nodepart{two}gabung + laporan per label};
+  \node[kartu={hijau!70!black}{2.2cm},anchor=north west] (a6) at (2.9,-2.6)
+    {\jdl{\f{6_topik}}\nodepart{two}sama, + topik $\times$ label};
+  \draw[ar] (a1.east)--(a2.west);
+  \draw[ar] (a2.east)--(s3.west) node[pos=0.55,above,sloped,font=\tiny] {single};
+  \draw[ar] (a2.east)--(m3.west) node[pos=0.55,below,sloped,font=\tiny] {multilabel};
+  \draw[ar] (s3.east)--(s4.west); \draw[ar] (s4.east)--(s5.west);
+  \draw[ar] (m3.east)--(m4.west); \draw[ar] (m4.east)--(m5.west);
+  \draw[ar] (a2.south)--(a6.north);
+\end{tikzpicture}
+\end{gambar}
+
+\begin{tcolorbox}[enhanced,colback=black!3,colframe=black!25,boxrule=0.5pt,arc=2pt,
+  left=8pt,right=8pt,top=5pt,bottom=5pt,fontupper=\small\ttfamily]
+\textcolor{jingga}{LABEL\_COLS} = ["harga", "layanan", "kualitas"]\hfill\pil{jingga}{wajib untuk multilabel}\\
+\textcolor{hijau}{TARGET} = "harga"\hfill\pil{abu}{satu label terpenting}
+\end{tcolorbox}
+
+\begin{itemize}
+  \item \textbf{\f{LABEL_COLS}} adalah daftar kolom label 0/1 di train. Selama isinya \f{None},
+  notebook \f{m} berhenti dengan pesan galat.
+  \item \textbf{\f{TARGET}} tetap dibutuhkan \f{1_eda}, \f{2_praproses}, dan grafik ``topik
+  $\times$ kelas'', yang hanya mengerti satu kolom kelas. Isi dengan satu label terpenting; kalau
+  tidak diisi, dipakai label pertama.
+  \item \textbf{Hasil} masuk \f{baseline_multilabel/}, \f{finetune_multilabel/},
+  \f{ensemble_multilabel/}, dan OOF ke \f{oof_multilabel/}. \f{8_ekspor.bat} sudah mengambilnya.
+  \item \textbf{\f{6_topik}} menambah grafik \f{06b_topik_x_label.png}: porsi teks berlabel di tiap
+  topik beserta lift-nya, plus kalimatnya di \f{fakta_topik.md}.
+  \item \textbf{Mencoba dulu:} di bagian bawah \f{konfig.py} ada empat baris ber-\texttt{\#} untuk
+  data demo CASA (6 label).
+\end{itemize}
+
+\begin{nb}{kuning}{\f{3m_baseline_multilabel}}{demo CASA 5 s, F1 makro OOF 0,862}
+\begin{isi}
+Tujuan & Submission multilabel pertama dan OOF pertama, tanpa GPU.\\
+Ubah & \f{MODEL_NAME} tiap variasi; \f{MIN_ONE_LABEL = True} bila tiap teks pasti punya minimal
+satu label.\\
+Lihat & Tabel ambang per label dan \textbf{\f{MASALAH: 0}}. Baris \f{nilai label selain 0/1}
+harus 0.
+\end{isi}
+\end{nb}
+
+\begin{nb}{jingga}{\f{4m_finetune_multilabel}}{demo CASA 150 s (5 epoch, 5 fold), F1 makro OOF 0,924}
+\begin{isi}
+Tujuan & Skor tertinggi: satu logit per label, loss BCE, ambang per label dari OOF.\\
+Ubah & \f{PRETRAINED} + \f{MODEL_NAME}; \f{POS_WEIGHT = True} untuk label langka; \f{EPOCHS}
+(bawaan 5, untuk data kecil; data besar cukup 3).\\
+Awas & Hanya memakai kolom teks pertama di \f{TEXT_COLS}. Lipatannya sama dengan \f{3m}
+(\f{KFold} seed 42), jadi jangan ubah \f{SPLIT_SEED}.
+\end{isi}
+\end{nb}
+
+\begin{nb}{ungu}{\f{5m_ensemble_multilabel}}{demo CASA 9 s}
+\begin{isi}
+Tujuan & Menggabung OOF \f{3m} dan \f{4m}, menulis submission akhir, sekaligus laporan untuk
+slide.\\
+Lihat & Sel ``Putusan''. Rata-rata dipakai hanya bila skor jujur naik sekurangnya \f{MIN_GAIN};
+di demo yang dipilih model tunggal \f{ml_indobert} (0,919 lawan rata-rata 0,913).\\
+Luaran & \f{submission.csv}, \f{fakta_multilabel.md}, skor per label, jumlah label per teks,
+label yang muncul bersama.
+\end{isi}
+\end{nb}
+
+\begin{awas}[kuning]
+\textbf{Label ditulis dalam satu kolom} (misalnya \f{"harga, layanan"})? Notebook \f{m} butuh
+kolom 0/1. Pecah dulu di sel baru paling atas \f{2_praproses}, sesudah sel ``Baca data'', lalu isi
+\f{LABEL_COLS} dengan nama kolom yang muncul:\par\smallskip
+{\ttfamily\small pecah = train["label"].str.replace(" ", "").str.get\_dummies(sep=",")\\
+train = pd.concat([train, pecah], axis=1)\\
+print(pecah.columns.tolist())}\par\smallskip
+Potongan ini tidak ikut diuji dalam rantai; cek hasil \f{print}-nya sebelum lanjut. Format
+submission multilabel juga bisa berbeda dari kolom 0/1 (ikuti sample panitia).
+\end{awas}
 
 % ================= 4 =================
 \section{Jam terakhir: tiga submission}

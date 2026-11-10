@@ -29,10 +29,10 @@ TFIDF_BERAT = False                           # True = 3_baseline memakai kolom 
 SCORING = "f1_macro"                          # metrik sel ukur 2_praproses
 
 # Coba jalur multilabel di data demo CASA (ulasan mobil, 6 label): pakai empat baris ini
-TRAIN_MENTAH = "demo/casa_train.csv"
-TEST_MENTAH = "demo/casa_test.csv"
-LABEL_COLS = ["fuel", "machine", "others", "part", "price", "service"]
-HASIL = "../../outputs/final_multilabel"
+# TRAIN_MENTAH = "demo/casa_train.csv"
+# TEST_MENTAH = "demo/casa_test.csv"
+# LABEL_COLS = ["fuel", "machine", "others", "part", "price", "service"]
+# HASIL = "../../outputs/final_multilabel"
 
 # Soal multilabel: 1_eda, 2_praproses, dan "topik x kelas" butuh SATU kolom kelas. Bila TARGET bukan
 # salah satu LABEL_COLS, dipakai label pertama (ganti TARGET ke label yang paling penting).

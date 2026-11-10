@@ -28,8 +28,21 @@ Terbaru di atas. Format di [`README.md`](README.md).
   LULUS dari lokasi baru (`MASALAH: 0`); 4, 6, 6b tidak diulang (hanya dicek `../../pretrained/indobert` dan
   `minilm` ada); `8_ekspor.bat` tidak diulang sesudah pindah. `_alat/lint.py` tidak berlaku untuk folder ini
   (sel Konfigurasi 37 baris karena ekor konfig).
+- MULTILABEL ditambah (pengguna: "siapkan buat multilabel juga yang ada di pipeline final ... ada topic modeling
+  juga"): `konfig.py` + `LABEL_COLS` (None = single label; bila diisi dan TARGET bukan salah satunya, TARGET =
+  label pertama untuk EDA/praproses/topik x kelas); `3m_baseline_multilabel` dan `5m_ensemble_multilabel`
+  (KODE BARU, sumber `final-pipeline/_alat/*.py` → py2nb), `4m_finetune_multilabel` (salinan
+  `finetune_multilabel` + ekor konfig), `6_topik` + sel sisipan "Topik x label" (`06b_topik_x_label`), demo CASA
+  di `demo/`, `8_ekspor.bat` + 3 folder, PETUNJUK + bagian 4 (7 halaman). OOF multilabel di `oof_multilabel/`.
+  Uji CASA (809 teks, 6 label, `HASIL = ../../outputs/final_multilabel`): 1_eda 9 s, 2_praproses 24 s, 3m 5 s
+  (F1 makro OOF 0,862), 4m 150 s (0,924; 5 epoch), 5m 9 s (jujur: indobert 0,919, rata-rata 0,913, tfidf 0,856;
+  dipilih tunggal), 6_topik 89 s; validator ketiganya `MASALAH: 0`; grafik topik x label kulihat. `konfig.py`
+  dikembalikan ke SmSA sesudah uji. Belum: `6_topik` single label sesudah sel sisipan (sel itu hanya `print` bila
+  LABEL_COLS None), label satu kolom ber-koma (potongan `get_dummies` di petunjuk hanya dicek terpisah), format
+  submission multilabel selain kolom 0/1, label sangat langka, `6b` di data multilabel.
+- Push ke origin DITOLAK izin otomatis dua kali; commit lokal saja, pengguna diminta push sendiri.
 - Dikoreksi pengguna: -
-- Berikutnya: di PC panitia cukup `git pull`.
+- Berikutnya: pengguna `git push origin new-gen`; di PC panitia `git pull`.
 
 ## 2026-11-10 claude-fable-5-2 - rencana R1-R5: topik_lengkap + dokumentasi aman NDA [berjalan]
 - Pemicu: pengguna minta notebook topic modeling "sangat lengkap" dan EDA lengkap untuk PPT yang dibuat AI tanpa
