@@ -2,6 +2,41 @@
 
 Terbaru di atas. Format di [`README.md`](README.md).
 
+## 2026-11-10 claude-fable-5-2 - rencana R1-R5: topik_lengkap + dokumentasi aman NDA [berjalan]
+- Pemicu: pengguna minta notebook topic modeling "sangat lengkap" dan EDA lengkap untuk PPT yang dibuat AI tanpa
+  akses data (NDA). Jawaban panitia lewat pengguna: yang boleh keluar hanya luaran notebook (PNG, tabel ringkas);
+  apa pun yang memungkinkan merekonstruksi data dilarang (termasuk file per baris); klasifikasi dan topic modeling
+  keduanya dipresentasikan. Pengguna minta fork paralel (waktu ± 1 jam) dan file handoff sesudah selesai.
+- R1 selesai: `contoh/text/topik_lengkap.ipynb` (52 sel, lint 0). NMF / LDA / embedding+UMAP+KMeans+c-TF-IDF di
+  satu kosakata; tiap metode x jumlah topik dinilai NPMI, keragaman, kestabilan antar seed; pilih otomatis (bisa
+  dipaksa); nama topik, ukuran, kata teratas, awan kata, kemiripan topik, topik x kelas (lift, NMI, F1 dari topik
+  saja), train vs test, tren bulan, peta 2D; `AMAN_NDA`; `fakta_topik.md` dicetak di sel terakhir. Run All SmSA
+  (train+test 6.408 teks) 7 menit, 6 di antaranya LDA `n_jobs=-1` (55 s per K); diganti `n_jobs=1` (5 s per fit
+  diukur terpisah), Run All ulang sedang berjalan. Hasil demo: NMF 6 topik NPMI 0,188; LDA terbaik 0,043;
+  embedding 0,083. Dua grafik dilihat (kata teratas, topik x kelas).
+- R2 (saklar `AMAN_NDA` di eda_lengkap/eda_presentasi), R3 (`laporan_model.ipynb`), R4 (`ekspor_hasil.bat` +
+  `_alat/ekspor_hasil.py`) dikerjakan tiga fork paralel; hasilnya BELUM kuperiksa saat entri ini ditulis.
+- `contoh/PANDUAN.md`: + baris topik_lengkap, laporan_model, ekspor_hasil.bat.
+- DIHENTIKAN pengguna ("stop semuanya"): fork R2 dan R3 serta Run All ulang topik_lengkap dimatikan. Keadaan saat
+  berhenti: R4 selesai (uji skrip: 117 file disalin, 85 ditolak; `.bat` belum dijalankan lewat cmd). R2: kedua
+  notebook EDA sudah diedit dan lint 0, tetapi Run All sesudah edit TERPUTUS, jadi belum terbukti jalan dan belum
+  dicek bebas teks mentah. R3: `laporan_model.ipynb` BELUM ada (baris PANDUAN-nya sudah telanjur ditulis).
+  topik_lengkap: lint 0; versi `n_jobs=1` belum pernah Run All sampai selesai (versi `n_jobs=-1` lulus).
+- Dikoreksi pengguna: agen/fork jangan memakai Fable, paling tinggi Opus (masuk `aturan.md`). Fork mewarisi model
+  sesi (Fable), jadi tidak boleh dipakai selama sesi ini berjalan di Fable.
+- Lanjutan: pengguna memilih agen Sonnet high dan minta handoff sekarang + selalu push (masuk `aturan.md`).
+  `HANDOFF.md` di root repo ditulis; dua agen Sonnet dijalankan (uji R1 + R2; R3). Keadaan ini di-commit + push.
+- Berikutnya: periksa hasil dua agen, R5, push lagi.
+
+## 2026-11-10 claude-fable-5-2 - konfirmasi panitia: klasifikasi teks + topic modeling
+- Pemicu: pengguna meneruskan konfirmasi panitia (topik, larangan zero/few-shot tanpa fine-tune, 3 submission di
+  1 jam terakhir, boleh salin model/screenshot ke laptop). Dicatat di `status.md` bagian Tujuan.
+- Dikerjakan: cek notebook topik yang ada (`topik` LDA/NMF, `topik_bertopic`, `topik_dinamis`, arsenal
+  `pengelompokan/topik`); bertopic 0.17.3 bisa di-import, gensim tidak ada. Celah: koherensi, keragaman, pilih K,
+  topik x kelas. Tidak ada kode diubah.
+- Dikoreksi pengguna: -
+- Berikutnya: menunggu pengguna: buat notebook topic modeling lengkap atau tidak.
+
 ## 2026-11-10 claude-fable-5-2 - tindak lanjut cek: library, PANDUAN/KATALOG, commit + push
 - Pemicu: pengguna memilih butir 1, 4, 5 dari hasil cek, "pake agent haiku aja".
 - Dikerjakan (dua subagen Haiku, hasil kuperiksa lewat diff): `jiwer` 4.0.0, `kmodes` 0.12.2, `ruptures` 1.1.10

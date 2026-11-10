@@ -111,6 +111,7 @@ metode + skor demo per notebook: [KATALOG.md](KATALOG.md). Tanda ⭐ = lebih bai
 | Objek mudah dipisah warna/terang, tanpa label | `vision/citra_klasik` (HSV, morfologi, connected components) | — |
 | Keputusan terbaik di bawah batasan (produksi, lokasi, anggaran) | `tabular/optimasi` (LP, MIP, Monte Carlo) | — |
 | Teks tanpa label, topik bermakna | `text/topik_bertopic` (lebih baik dari LDA di demo) | Baca manual |
+| Topic modeling untuk lomba: pilih metode + jumlah topik, dokumentasi slide | `text/topik_lengkap` (NMF / LDA / embedding+KMeans, koherensi NPMI, topik x kelas, `fakta_topik.md`) | NPMI + keragaman + kestabilan |
 | Citra satelit/udara: kotak objek, nilai angka per petak, perubahan dua waktu | `satelit/deteksi_objek`, `satelit/regresi`, `satelit/deteksi_perubahan` | Split per wilayah |
 | Data per wilayah (peta, koordinat, poligon) | `geo/klasifikasi_wilayah` (fitur tetangga); titik panas → `geo/hotspot` (Moran, LISA) | Split per wilayah |
 | Log aplikasi/server per sesi | `log/klasifikasi_sesi`; tanpa label → `log/anomali_log` | Stratified per sesi |
@@ -162,6 +163,8 @@ Kapan tiap metode niche layak dipakai, untuk data seperti apa, dan hasil demonya
 | Model B benar-benar lebih baik dari A? (bootstrap, per lipatan, McNemar) | `text/uji_beda_model` (dua OOF) |
 | Jelaskan tebakan teks per kata (contoh benar/salah/ragu) | `text/penjelasan_teks` |
 | Bahan PPT teks tanpa akses data (gambar + angka tersimpan) | `text/eda_presentasi` |
+| Bahan PPT hasil model dari OOF (per kelas, confusion matrix, kesalahan, ragam model) | `text/laporan_model` |
+| Kumpulkan luaran yang boleh dibawa keluar (PNG, tabel ringkas, fakta) + manifest | `ekspor_hasil.bat` di root repo |
 | Di mana model salah? | `tabular/analisis_kesalahan`, `text/analisis_kesalahan`, `vision/analisis_kesalahan`, `timeseries/analisis_kesalahan` |
 | Grafik untuk slide | `visualisasi/` (16 notebook); pilih jenis grafik lewat [visualisasi/PILIH_GRAFIK.md](visualisasi/PILIH_GRAFIK.md) |
 

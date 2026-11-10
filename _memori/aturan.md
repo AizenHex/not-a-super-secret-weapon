@@ -27,6 +27,12 @@ Koreksi terbaru pengguna di chat menang atas isi file ini; setelah itu perbarui 
 - Sesi pekerja (Prompt B, satu butir `RENCANA_TEKS.md` per sesi) dan subagent baca memakai Sonnet effort high,
   bukan Opus; Opus hanya untuk perencana. Saat membuat sesi, isi `model` secara eksplisit (kalau kosong, sesi
   mewarisi Opus). Pengguna: "pakai sonnet high bisa itu, tapi kenapa malah pake opus high?" (2026-11-06)
+- Agen/subagent/sesi pekerja tidak boleh memakai Fable; paling tinggi Opus (bawaan tetap Sonnet high). `subagent_type:
+  "fork"` mewarisi model sesi, jadi jangan dipakai bila sesi utama berjalan di Fable: pakai agen biasa dengan
+  `model` diisi eksplisit. Pengguna: "stop semuanya, agent jangan ada yang fable. mentok opus" (2026-11-10)
+- Sejak 2026-11-10: tiap selesai satu bagian kerja, commit + push ke `origin/new-gen` tanpa menunggu diminta
+  (menggantikan "commit/push hanya kalau diminta"), supaya sesi/langganan lain bisa melanjutkan dari repo.
+  Pengguna: "inget juga untuk selalu push repo" (2026-11-10)
 - Peta metode wajib memuat metode ML standar, niche, dan SOTA (mis. hill climbing) serta model kecil;
   LLM one/zero-shot bukan fokus. Pengguna: "metode ML dan model kecil, bukan model one shot kayak LLM"
   (2026-11-06)

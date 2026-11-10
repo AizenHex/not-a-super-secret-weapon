@@ -8,6 +8,16 @@ Arsenal offline untuk final GEMASTIK XIX Penambangan Data: setup 2026-11-10, pen
 2026-11-11 13.00–18.00 (5 jam, luring, tanpa internet; AI boleh hanya untuk bantu kode hal tak terduga, koreksi pengguna 2026-11-07), presentasi 2026-11-12.
 Pengguna berangkat 2026-11-09. Prioritas: [`../RENCANA_TEKS.md`](../RENCANA_TEKS.md) (teks, rinci) dan [`../RENCANA_LOMBA.md`](../RENCANA_LOMBA.md) (bobot nilai, pohon lama).
 
+**Konfirmasi panitia (pengguna, 2026-11-10): topik final = KLASIFIKASI TEKS + TOPIC MODELING.** Zero-shot dan
+few-shot DILARANG kecuali modelnya di-fine-tune sendiri (jangan pakai `zero_shot_nli`, `llm_prompt`, `rag_llm`,
+`arsenal/teks/zero_shot` sebagai prediksi; backbone yang sama boleh bila di-fine-tune). Submission ke Kaggle hanya
+**3 kali, di 1 jam terakhir** (internet baru ada saat itu): tidak ada umpan balik leaderboard selama 4 jam pertama,
+jadi keputusan model sepenuhnya dari CV lokal + validator. Boleh menyalin model dan screenshot ke laptop untuk
+menyiapkan presentasi. Belum diketahui: bagaimana topic modeling dinilai (leaderboard atau hanya presentasi).
+Celah repo untuk topic modeling (dicek 2026-11-10): `topik`, `topik_bertopic`, `topik_dinamis` hanya menilai dengan
+NMI/ARI terhadap label; belum ada koherensi (NPMI/c_v), keragaman topik, pemilihan K, topik x kelas. `gensim` tidak
+terpasang.
+
 **Info panitia (pengguna, 2026-11-06): data final 2026 (tuan rumah BINUS) dipastikan TEKS.** Bentuk
 spesifik dan jebakannya belum diketahui. Pengguna minta repo dikembangkan agar siap untuk soal ML teks apa
 pun; prioritas di bawah (deteksi, RLE, dll.) perlu disusun ulang ke teks, menunggu persetujuan rencana.
