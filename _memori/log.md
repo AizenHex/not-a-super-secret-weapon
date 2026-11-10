@@ -2,6 +2,133 @@
 
 Terbaru di atas. Format di [`README.md`](README.md).
 
+## 2026-11-10 claude-opus-5-5 - word cloud per kelas di eda_presentasi
+- Pemicu: pengguna: "Tambahin fitur word cloud".
+- Dikerjakan: `contoh/text/eda_presentasi.ipynb` bagian baru 3b: word cloud per kelas (maks 6, grid 3
+  kolom), ukuran kata = z log-odds bagian 3 (kata khas, bukan frekuensi), warna = warna kelas
+  (ListedColormap, tanpa lambda karena lint). Simpan `03b_wordcloud.png/.csv` lewat save_figure, otomatis
+  masuk fakta.md. Lint 0, nbconvert --execute jalan, gambar SmSA dicek (negative: tidak/marah/indosat,
+  neutral: pilkada/demokrat, positive: makanan/bandung).
+- Catatan: word cloud global sudah ada di `contoh/visualisasi/teks.ipynb` (tidak diubah).
+- Dikoreksi pengguna: -
+- Berikutnya: commit bila diminta.
+
+## 2026-11-10 claude-opus-5-5 - NusaBERT (bahasa daerah)
+- Pemicu: pengguna: "Tambahkan nusa x librarynya" lalu "NusaEX juga mungkin ya, bahasa lokal gitu".
+- Dikerjakan: `_alat/unduh_model.py` + `"nusabert": "LazarusNLP/NusaBERT-base"` (SKIP_EXTRA `runs/*`);
+  diunduh ke `pretrained/nusabert` (443 MB, 110 jt param, tes muat AutoModelForSequenceClassification OK).
+  `finetune_oof.ipynb` dapat baris alternatif `# PRETRAINED = ".../nusabert"`, lint 0. Belum di-finetune.
+- Catatan: "NusaEX" tidak ada di HF; dataset NusaX-senti sudah ada di `data_latihan/text/nusax`
+  (`_alat/unduh_data_tambahan.py`, dipakai `bahasa_daerah.ipynb`). NusaX-MT (terjemahan) tidak ditambah.
+- Dikoreksi pengguna: -
+- Berikutnya: uji NusaBERT di NusaX lewat finetune_oof bila ada waktu; commit bila diminta.
+
+## 2026-11-10 claude-opus-5-5 - PANDUAN_METODE versi PDF
+- Pemicu: pengguna: "buat jadi pdf aja biar gampang aku baca. stylenya kayak laporan mikrokontroler ku".
+- Dikerjakan: `contoh/PANDUAN_METODE.tex` → `.pdf` (7 halaman). Gaya ditiru dari
+  `Z:/PERKULIAHAN/S32026 MIKROKONTROLER DAN PLC/Fase Arduino/Pertemuan 06 - ESP32/` (preambule.tex,
+  laporan.tex): extarticle 14pt A4, margin 3/2,5 cm, lmodern, judul bab tebal bernomor, booktabs + caption
+  "Tabel n:", daftar rapat, tanpa em dash. Tabel 1 pakai xltabular agar bisa pindah halaman. Sisa .aux/.log/.out
+  dihapus.
+- Dikoreksi pengguna: -
+- Berikutnya: kalau md berubah, samakan .tex lalu bangun ulang (pdflatex dua kali).
+
+## 2026-11-10 claude-opus-5-5 - PANDUAN_METODE untuk 7 notebook metode niche
+- Pemicu: pengguna: "sekalian buatin panduan pakainya.. disaat gimana yang paling bagus dengan data yang
+  kayak gimana."
+- Dikerjakan: `contoh/PANDUAN_METODE.md` (aturan main, tabel pilih cepat, kartu per notebook: bagus untuk /
+  jangan dipakai / cara baca / demo / yang diganti, alur gabungan, urutan saat waktu sempit). Tautan dari
+  PANDUAN.md bagian "Setelah model jadi". Waktu jalan diambil dari cap waktu sel nbconvert (22–98 detik).
+- Temuan + perbaikan: `co_training_teks` membaca target kosong sebagai kelas "nan" → baris train bertarget
+  kosong kini dipindah ke kolam tak berlabel (lint 0, jalan ulang sekali, skor demo sama; jalur NaN belum
+  diuji dengan data ber-NaN). Batas baris/kelas di panduan = perkiraan, ditulis begitu.
+- Dikoreksi pengguna: -
+- Berikutnya: KATALOG, commit bila diminta.
+
+## 2026-11-10 claude-opus-5-5 - 7 notebook metode niche
+- Pemicu: pengguna: "kalo kebaruan metode itu sendiri gimana? atau nichenya? metode maksudku kayak hill
+  cliimbing dsbnya".
+- Dikerjakan (`contoh/text/`, lint 0, sekali jalan di demo, belum di-commit): `bobot_ensemble_metaheuristik`
+  (Caruana, hill negatif Deotte, simulated annealing, differential evolution, GA, Optuna; skor jujur lipatan
+  luar), `pengklasifikasi_alternatif` (gzip-NCD kNN, BM25, Rocchio, ComplementNB, PA, random Fourier features +
+  tabel keragaman), `seleksi_fitur_metaheuristik` (null importance, Boruta manual, permutasi, SA/GA atas masker),
+  `co_training_teks` (self-, co-, tri-training), `fitur_otomatis_tetangga` (fitur kNN OOF + OpenFE mini),
+  `stacking_fwls` (Sill 2009), `rulefit_aturan` (Friedman & Popescu). PANDUAN 6 baris + baris label sedikit,
+  RENCANA_TEKS 2 baris, aturan.md, keputusan.md.
+- Hasil demo: hill negatif menang jujur tapi tidak di test (emot kecil); gzip-kNN lemah (0,365), tidak ada
+  alternatif yang menaikkan test; seleksi fitur membuang semua kolom acak tapi holdout tidak naik ("semua"
+  dipertahankan); co-training satu-satunya semi-supervised yang menang (OOF 0,569 vs 0,548, test 0,578 vs
+  0,557), self/tri-training merugikan; fitur kNN +0,008 AUC, fitur otomatis +0,002; FWLS jujur 0,493 < stacking
+  LR 0,496 (test 0,490 vs 0,509), LR dipilih; RuleFit sedikit di bawah LightGBM/L1 (untuk penjelasan).
+  OOF demo `oof_alt_*` + 6 baris percobaan.csv dihapus.
+- Dikoreksi pengguna: arsenal juga butuh metode niche, bukan hanya bentuk soal → aturan.md.
+- Berikutnya: KATALOG, commit bila diminta; AWP/R-Drop/distilasi butuh GPU.
+
+## 2026-11-10 claude-opus-5-5 - 9 notebook niche teks sekaligus
+- Pemicu: pengguna: "bisa dikerjakan semuanya langsung ... jangan di test seintens ini", "kok aku kecewa tiap turn
+  cuma nambah 1".
+- Dikerjakan (`contoh/text/`, semua lint 0, tiap notebook dijalankan sekali di demo, belum di-commit):
+  `fuzzy_kategori` (rapidfuzz: rapikan kategori kotor, cocokkan ke acuan, teks hampir kembar train↔test → CSV +
+  train/test_fuzzy.csv), `multi_target` (terpisah/rantai/label gabungan/rata-rata, terbaik per target),
+  `ordinal_teks` (datar, Frank & Hall kumulatif, regresi/harapan + ambang koordinat), `regresi_hitungan` (log1p,
+  poisson, tweedie, hurdle), `interval_prediksi` (conformal global/ternormalisasi/per kelompok di atas OOF regresi),
+  `data_besar_teks` (HashingVectorizer + SGD partial_fit per potongan, validasi hash id), `uji_beda_model`
+  (bootstrap berpasangan, per lipatan, McNemar), `graf_label_teks` (LabelSpreading graf kNN SVD),
+  `geser_distribusi` (AUC adversarial, kata pembeda, bobot p/(1−p), validasi mirip test). PANDUAN + RENCANA_TEKS.
+- Hasil demo: ordinal QWK OOF datar 0,690 → gabung+ambang 0,789 (test 0,692 → 0,796); multi_target baju rating
+  label gabungan 0,444 vs 0,438, recommended rantai test 0,859 vs 0,843; hitungan RMSLE log1p 0,825 vs rata-rata
+  1,030 (poisson/hurdle terbaik di deviance); interval cakupan 0,90 tepat, per kelompok cakupan terburuk 0,90 vs
+  global 0,73; fuzzy pulihkan 100% kategori dirusak; label spreading emot 0,560 < SGD 0,679 (rata-rata test
+  0,688 > 0,665); geser demo (test hanya Dresses) AUC 0,83, bobot merusak (test 0,435 vs 0,486, ESS 3510/17614),
+  validasi mirip test ikut memilih tanpa bobot. Fuzzy `LOOKUP_SCORE` 80 → 90 (80 cocokkan "not red" → "Trend"),
+  tidak dijalankan ulang. Keluaran uji di outputs/ dibiarkan, OOF demo + baris percobaan dihapus.
+- Dikoreksi pengguna: uji terlalu intens, satu notebook per turn terlalu sedikit → aturan.md (Kode).
+- Berikutnya: KATALOG untuk notebook baru, commit bila diminta.
+
+## 2026-11-09 claude-opus-5-5 - klasifikasi_hierarkis (label bertingkat)
+- Pemicu: pengguna memilih "Klasifikasi hierarkis" sebagai notebook niche berikutnya.
+- Dikerjakan: `contoh/text/klasifikasi_hierarkis.ipynb` (35 sel, lint 0): simpul = jalur penuh, model per tingkat +
+  model lokal per induk (TF-IDF + SGD log-loss), 5 cara (datar, konsisten per tingkat, top-down keras, rantai,
+  gabung), F1 hierarkis + "salah tapi saudara", donat pohon, matriks bingung berurutan pohon, OOF kelas TARGET.
+  Demo baju: department_name > class_name. Baris di PANDUAN + tabel RENCANA_TEKS.
+- Uji baju (1 menit): F1 makro OOF datar 0,426 → gabung datar+rantai 0,437 (konsisten per tingkat 0,435); test
+  0,473 → 0,481–0,483. Tebak tiap tingkat sendiri: 8,5% jalur tidak sah. LogReg C4 bawaan awal = 14 menit; bench
+  satu lipatan: SGD α1e-5 5 dtk F1 0,465 vs LogReg 117 dtk 0,457 → SGD jadi bawaan (LogReg saga jadi alt).
+  Varian 3 tingkat (+division_name): top-down keras turun 0,411 vs datar 0,426, 38% jalur tak sah (division =
+  lini ukuran, bukan induk) → dicatat di markdown. Skor tabel diselaraskan dgn submission (peluang dijumlah per
+  kelas, beda bila satu nama kelas ada di dua jalur).
+- Dikoreksi pengguna: -
+- Berikutnya: kandidat niche lain (fuzzy matching/record linkage, multi-target), KATALOG.
+
+## 2026-11-09 claude-opus-5-5 - notebook teks+tabel niche (stacking, pasca prediksi, penjelasan)
+- Pemicu: pengguna: "fokus ke pembuatan notebook ... berbagai metode, bahkan yang niche"; data = teks, kemungkinan
+  besar tabular. Topik Qwen dan review dihentikan pengguna ("lupakan mereka").
+- Dikerjakan (semua lint 0, `contoh/text/`, belum di-commit):
+  `stacking_teks_tabular` (OOF LogReg/NB TF-IDF + fitur tetangga embedding + statistik teks → LightGBM, ablasi +
+  porsi kelompok fitur): baju F1 0,468 OOF / 0,482 test vs `teks_tabular` 0,399; SmSA 0,885 vs LogReg 0,859.
+  `stacking_teks_tabular_regresi` (OOF Ridge + LogReg kelas-bin kuantil + nilai harapan bin + target tetangga
+  TF-IDF → LGBMRegressor, `LOG_TARGET`, KFold sama dgn `finetune_regresi`): baju rating RMSE 0,655 OOF / 0,638
+  test (rata-rata 1,11; Ridge saja 0,714), 5 menit CPU; yelp teks saja + log 0,814 / 0,817 (rata-rata 1,41).
+  `pasca_prediksi` (temperature scaling, prior test EM Saerens + BBSE, uji bootstrap pergeseran → `USE_PRIOR`,
+  conformal LAC global vs per kelas): SmSA EM naik F1 test +0,028. `penjelasan_teks` (oklusi log-odds per kata,
+  kata pembalik serakah, HTML berwarna, peringkat kata penentu per kelas). `finetune_oof`: alt `VERBAL_COLS`
+  (kolom tabel ditulis "kolom: nilai | " di depan teks; belum diuji GPU).
+- Baris baru di `contoh/PANDUAN.md` (+ `eda_presentasi`) dan tabel bentuk soal `RENCANA_TEKS.md`.
+- Dikoreksi pengguna: -
+- Berikutnya: lihat status (kandidat: klasifikasi hierarkis, fuzzy matching/record linkage, legenda `08_waktu`).
+
+## 2026-11-09 claude-opus-5-5 - eda_presentasi (bahan PPT tanpa data)
+- Pemicu: pengguna minta arsenal/contoh/visualisasi lebih lengkap + niche; saat bikin PPT data tidak bisa diakses.
+- Dikerjakan: `contoh/text/eda_presentasi.ipynb` (42 sel, lint 0): kolom, kelas, panjang (token opsional), kata khas
+  log-odds Monroe, ciri teks regex, kosakata baru test, kembar + hampir kembar (char TF-IDF) + uji keandalan lookup,
+  adversarial validation, waktu, contoh teks; tiap grafik PNG 200 dpi + CSV, `fakta.md` untuk AI online.
+  Uji: SmSA 20 dtk (lookup cos≥0,9 setuju 51,5%), HS biner (99,5%), Inggris bertanggal 472 "kelas" → MAX_CLASSES.
+- Pengguna bertanya apakah Qwen3.6 lokal bisa diberi tugas visualisasi; sisa rencana dijeda menunggu jawabannya.
+  Diperjelas: Qwen dipakai saat live coding 5 jam. Temuan: `AGENTS.md` repo (dimuat otomatis oleh OpenCode)
+  menyuruh baca/tulis `_memori/` → boros untuk Qwen 32k. Usulan file aturan lomba khusus Qwen (status).
+- Dikoreksi pengguna: -
+- Berikutnya: perbaiki legenda `08_waktu`, lalu sisa rencana sesuai keputusan pengguna (lihat status).
+
 ## 2026-11-09 claude-opus-5-5 - model lokal OpenCode + notebook embedding Ollama
 - Pemicu: pengguna pasang OpenCode + Ollama di laptop (RTX 5060 **8 GB**, bukan 6 GB seperti log 11-07), minta model
   terbaru yang muat dan model embedding, lalu notebook pemakaian embedding.
@@ -12,6 +139,20 @@ Terbaru di atas. Format di [`README.md`](README.md).
   cache `.npy` di OUTPUT_FOLDER, alt 0.6b/4b/8b + TEXT_PREFIX instruksi). Lint OK; belum dijalankan (Ollama kosong).
 - Dikoreksi pengguna: -
 - Berikutnya: pengguna `ollama pull`, Run All notebook, catat skor.
+- Lanjutan: pengguna minta "lakukan seluruh instalasi" → pull 3 model, `setx OLLAMA_CONTEXT_LENGTH 32768` +
+  `OLLAMA_MAX_LOADED_MODELS 2`, `~/.config/opencode/opencode.json` (provider ollama, Qwen3.6, ctx 32k). Ollama
+  menyala saat mode hemat → hanya CPU (log `total_vram="0 B"`); perlu restart setelah pull.
+- Fork "pencari" (permintaan pengguna) menulis `RISET_TEKS_PENCARI.md`: 0 notebook teks memanggil `savefig`
+  (dicek ulang: 0), padahal saat bikin PPT data tidak bisa diakses. Usulan: nbconvert `--to markdown/html` ke
+  OUTPUT_FOLDER, `eda_presentasi.ipynb`, `laporan_model.ipynb`, celah metode (near-duplicate, EM Saerens, AWP/R-Drop).
+- Dikoreksi pengguna: notebook submission jangan memuat model lewat Ollama (masuk `aturan.md`). Qwen3-Embedding-0.6B
+  dipindah ke jalur pretrained + sentence-transformers (alt di `klasifikasi_embedding`), notebook Ollama dihapus.
+  Uji GPU: qwen+instruksi+SVC 0.8935 vs MiniLM 0.8609. `contoh/text/eda_presentasi.ipynb` muncul 20:10, bukan buatanku.
+- Instalasi selesai: Ollama di-restart → CUDA RTX 5060. App Ollama memaksa ctx 16384 walau env 32768, jadi dibuat
+  `qwen3.6-32k` (Modelfile num_ctx 32768) dan OpenCode diarahkan ke situ. 35 tok/s, tool call OK. OpenCode belum dibuka.
+- OpenCode "diam": Ollama tidak men-stream argumen tool call, jadi tulis file panjang (5.8k token) tampak macet.
+  Ditambah qwen3.5 4b/9b/0.8b (+ varian -32k, terdaftar di opencode.json). Ukur (32k ctx): 4b 41 tok/s 100% GPU,
+  9b 24 tok/s 24% CPU, 0.8b 131 tok/s; qwen3.6-32k 33 tok/s tetap terbaik kecepatan×mutu. Qwen3.6 kecil tidak ada.
 
 ## 2026-11-08 claude-opus-5-5 - Laya v3: semua fitur VISI 8b (P0-P2) [selesai, exe di-build]
 - Pemicu: pengguna "lanjutin sampai selesai semua fitur ya" (daftar celah preprocessing VISI 8b).

@@ -2,6 +2,30 @@
 
 Terbaru di atas. Format: `- YYYY-MM-DD: <keputusan>. Alasan: <...>.`
 
+- 2026-11-10: metode niche dipilih yang belum ada di repo dan jalan di CPU: metaheuristik bobot (hill negatif,
+  annealing, evolusi diferensial, genetik, Optuna), FWLS, gzip/BM25-kNN, null importance/Boruta/SA/GA, co/tri-
+  training, kNN OOF + mini OpenFE, RuleFit. AWP/R-Drop/distilasi tidak dibuat. Alasan: hill Caruana, Nelder-Mead,
+  rank, NB-SVM, FGM/SWA/LLRD, EM Saerens, cleanlab sudah ada; AWP/R-Drop butuh GPU untuk diuji. Semua tanpa paket
+  baru (Boruta, BM25, OpenFE ditulis manual; `rank_bm25` lambat O(korpus) per kueri). gzip-kNN dibatasi
+  `NCD_POOL` 500 karena ±20 µs per pasangan.
+
+- 2026-11-10: fuzzy matching dibuat sebagai `fuzzy_kategori` (rapikan kategori, cocok ke acuan, hampir kembar),
+  bukan record linkage dua tabel. Alasan: `contoh/multitabel/entity_resolution` sudah mencakup linkage.
+  `interval_prediksi` dan `uji_beda_model` bekerja di atas file OOF, tanpa melatih ulang. Alasan: berlaku untuk
+  model apa pun yang sudah menulis OOF, cepat dipakai menjelang presentasi.
+
+- 2026-11-09: `klasifikasi_hierarkis` memakai SGDClassifier log-loss (α 1e-5) sebagai model dasar, LogReg jadi alt.
+  Alasan: banyak model (per tingkat + per induk × 5 lipatan); LogReg C4 = 14 menit di baju, SGD 1 menit dengan F1
+  satu lipatan lebih tinggi (0,465 vs 0,457). Simpul = jalur penuh supaya nama anak yang sama di dua induk aman.
+
+- 2026-11-09: teks + kolom tabel digabung lewat stacking (OOF model teks + fitur tetangga → LightGBM) dan alt
+  `VERBAL_COLS` di `finetune_oof`, bukan jaringan fusi (BERT + MLP tabel). Alasan: CPU-only cukup, memakai lipatan
+  dan format OOF yang sama, terbukti di baju (0,468 vs SVD 0,399); fusi butuh kode training baru + GPU.
+- 2026-11-09: `pasca_prediksi` menyimpan `oof_pasca/test_pasca.npy` di OUTPUT_FOLDER, bukan OOF_FOLDER. Alasan:
+  isinya turunan blend; kalau masuk OOF_FOLDER, `ensemble_oof` akan menggabungkannya lagi dengan sumbernya.
+- 2026-11-09: regresi teks+tabel memakai fitur kelas-bin (LogReg pada bin kuantil target) di samping Ridge.
+  Alasan: menangkap bentuk sebaran target (rating 1 vs 5); di baju nilai harapan bin 0,684 < Ridge 0,714.
+
 - 2026-11-08: Laya v3 target encoding OOF di langkah resep: fungsi tahu sedang di train lewat `df is LATIH` (train
   dijalankan `f(df, df)`), maka nilai train dihitung out-of-fold (k=5, smoothing m=10) dan test memakai rata-rata seluruh
   train. Alasan: tidak perlu jalur khusus di mesin resep; ekspor .py berperilaku sama.

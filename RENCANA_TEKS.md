@@ -793,9 +793,17 @@ Bentuk soal → notebook (✅ ada, T = dibuat butir):
 | bentuk | baseline (≤ 45 menit) | lanjutan GPU | gabung |
 |---|---|---|---|
 | klasifikasi satu/banyak kolom teks | `baseline_oof` (T2) | `finetune_oof` (T5) | `ensemble_oof` (T6) |
-| teks + kolom tabel | `teks_tabular` (T8) | `finetune_oof` pada kolom teks | `ensemble_oof` |
+| teks + kolom tabel | `stacking_teks_tabular` ✅ (> `teks_tabular`) | `finetune_oof` + `VERBAL_COLS` | `ensemble_oof` |
+| label bertingkat (kategori > sub) | `klasifikasi_hierarkis` ✅ | `finetune_oof` pada daun | `ensemble_oof` |
 | multilabel | `multilabel` / `ujaran_kebencian` ✅ | `finetune_multilabel` (T9) | rata-rata proba + ambang per label (T9) |
-| regresi / ordinal / esai | `regresi_teks` ✅ | `finetune_regresi` (T10) | `ensemble_oof` metrik RMSE/QWK (T6 alt) |
+| regresi / ordinal / esai | `regresi_teks`; ada kolom tabel: `stacking_teks_tabular_regresi` ✅ | `finetune_regresi` (T10) | `ensemble_oof` metrik RMSE/QWK (T6 alt) |
+| ordinal (QWK) | `ordinal_teks` ✅ (kumulatif + ambang) | `finetune_regresi` | `ensemble_oof` → ambang ulang |
+| target jumlah (banyak nol) | `regresi_hitungan` ✅ | – | interval: `interval_prediksi` ✅ |
+| beberapa kolom target | `multi_target` ✅ | `finetune_oof` per target | per target |
+| kategori kotor / teks hampir kembar | `fuzzy_kategori` ✅ (lalu notebook lain) | – | – |
+| data terlalu besar untuk RAM | `data_besar_teks` ✅ (hashing + SGD) | – | – |
+| label sedikit + teks tanpa label | `co_training_teks` ✅, `graf_label_teks` ✅ | `semi_supervised_teks` | `ensemble_oof` |
+| metode lintas bentuk (fitur, seleksi, ensemble) | `fitur_otomatis_tetangga`, `seleksi_fitur_metaheuristik`, `rulefit_aturan` ✅ | `pengklasifikasi_alternatif` ✅ | `bobot_ensemble_metaheuristik`, `stacking_fwls` ✅ |
 | pasangan (NLI, parafrase) | `pasangan_teks` ✅ | `finetune_oof` alt TEXT_B (T5) | `ensemble_oof` |
 | NER / POS | `ner`, `pos_tagging` (CRF) ✅ | arsenal `teks/ner` #10–#16 BERT (T11c) | – |
 | ABSA | `absa` ✅ | – | – |

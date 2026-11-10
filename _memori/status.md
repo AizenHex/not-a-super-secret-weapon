@@ -1,6 +1,6 @@
 # Status repo
 
-Terakhir diperbarui: 2026-11-08.
+Terakhir diperbarui: 2026-11-10.
 
 ## Tujuan
 
@@ -123,9 +123,38 @@ F1 makro val 0,427; kelas ke-2 F1 0).
 
 ## Pekerjaan terbuka
 
-- `contoh/text/embedding_ollama.ipynb` (2026-11-09, belum di-commit): lint OK, **belum Run All** (Ollama belum
-  punya model). Setelah `ollama pull qwen3-embedding:0.6b`, jalankan lalu masukkan skor ke KATALOG/PANDUAN.
-  Asisten kode laptop (pengguna, Ollama): `qwen3.6:35b-a3b-q4_K_M` + `qwen3-embedding:4b`/`0.6b`, RTX 5060 8 GB.
+- NusaBERT-base (2026-11-10, belum di-commit): `pretrained/nusabert` + alternatif di finetune_oof; belum diuji skor.
+- Qwen3-Embedding-0.6B (2026-11-09, belum di-commit): `_alat/unduh_model.py` + folder `pretrained/qwen3_emb`,
+  alternatif ber-`#` di `contoh/text/klasifikasi_embedding.ipynb` (sentence-transformers, tanpa Ollama). SmSA
+  (skrip uji, split sama): + instruksi `TEXT_PREFIX` + SVC C3 **0.8935** (tanpa instruksi 0.8656; MiniLM SVC
+  0.8609); scaler+LogReg merusak qwen (0.80). Notebook belum Run All ulang; KATALOG belum diisi.
+  `embedding_ollama.ipynb` dihapus (penghapusan ter-stage, file itu ada di commit 7533908).
+  Asisten kode laptop (OpenCode Desktop + Ollama, terpasang 2026-11-09): model `qwen3.6-32k` (Modelfile dari
+  `qwen3.6:35b-a3b-q4_K_M` + num_ctx 32768, karena app Ollama memaksa 16384), 35 tok/s, 77% CPU/23% GPU, tool call
+  lewat /v1 lulus. Config `~/.config/opencode/opencode.json`. Ollama harus dibuka saat GPU aktif (bukan mode hemat).
+- `contoh/text/eda_presentasi.ipynb` (2026-11-09, belum di-commit, lint 0): 10 grafik EDA → PNG+CSV +
+  `fakta.md` di OUTPUT_FOLDER untuk bikin PPT tanpa data. Lolos SmSA/HS/teks bertanggal multilabel. Sisa: legenda
+  `08_waktu` (12 kelas) menutupi garis. Sisa rencana (dijeda, tunggu pengguna): `laporan_model.ipynb`, hook
+  autosave di `arsenal/umum/plot`, `_alat/ekspor_hasil.bat`, alt EM Saerens/lookup (ensemble_oof), R-Drop/AWP
+  (finetune_oof), baris PANDUAN.
+- Notebook teks+tabel baru (2026-11-09, belum di-commit, lint 0, sudah di PANDUAN): `stacking_teks_tabular`,
+  `stacking_teks_tabular_regresi`, `pasca_prediksi`, `penjelasan_teks`, alt `VERBAL_COLS` di `finetune_oof`
+  (belum diuji GPU). KATALOG belum diisi. Kandidat berikut: klasifikasi hierarkis (baju division > department >
+  class), fuzzy matching/record linkage (rapidfuzz), multi-target. `klasifikasi_hierarkis` selesai 2026-11-09
+  (lint 0, baju 1 menit, gabung datar+rantai 0,437 vs datar 0,426; di PANDUAN). 2026-11-10: + 9 notebook
+  (`fuzzy_kategori`, `multi_target`, `ordinal_teks`, `regresi_hitungan`, `interval_prediksi`, `data_besar_teks`,
+  `uji_beda_model`, `graf_label_teks`, `geser_distribusi`), lint 0, sekali jalan, di PANDUAN; belum di KATALOG,
+  belum di-commit. 2026-11-10 (metode niche): + 7 notebook `bobot_ensemble_metaheuristik`,
+  `pengklasifikasi_alternatif`, `seleksi_fitur_metaheuristik`, `co_training_teks`, `fitur_otomatis_tetangga`,
+  `stacking_fwls`, `rulefit_aturan`; lint 0, sekali jalan, di PANDUAN + RENCANA_TEKS; belum di KATALOG, belum
+  di-commit. Belum ada: AWP/R-Drop/distilasi (butuh GPU untuk uji). Panduan pakai ketujuhnya (kapan,
+  data apa, hasil demo, urutan saat waktu sempit): `contoh/PANDUAN_METODE.md`, ditautkan dari PANDUAN. Versi cetak `PANDUAN_METODE.pdf` (+ `.tex`, isi
+  harus disamakan manual kalau md berubah).
+- Qwen3.6 lewat OpenCode dipakai pengguna sepanjang 5 jam lomba (perbaiki kode, dll.; pengguna 2026-11-09).
+  Masalah: OpenCode memuat `AGENTS.md` repo otomatis (docs opencode, dicek), dan isinya menyuruh baca status +
+  aturan (±28 KB) lalu menulis memori tiap tugas → buang konteks 32k dan waktu. Usulan (belum dikerjakan):
+  file aturan lomba khusus Qwen lewat `instructions` opencode.json. Belum jelas Qwen jalan di laptop (tidak boleh
+  diberi data) atau PC panitia (rebutan VRAM dengan training).
 
 Teks (utama sejak 2026-11-06): butir T1–T13 di `RENCANA_TEKS.md` bagian 4, mulai T1 (lingkungan + uji Run All).
 T8 selesai 2026-11-06 (`contoh/text/teks_tabular.ipynb`; sisa: `e5_base` belum diukur; uji muat di `ensemble_oof` sudah lulus 2026-11-07;

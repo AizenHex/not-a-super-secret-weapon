@@ -1,0 +1,340 @@
+% Versi cetak contoh/PANDUAN_METODE.md (gaya laporan praktikum). Ubah md dulu, lalu samakan di sini.
+% Bangun: pdflatex PANDUAN_METODE.tex (dua kali), hapus .aux/.log/.out.
+\documentclass[14pt,a4paper]{extarticle}
+\usepackage[left=3cm,right=2.5cm,top=2.5cm,bottom=2.5cm]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[indonesian]{babel}
+\usepackage{lmodern}
+\usepackage{booktabs,tabularx,xltabular,array,enumitem,titlesec,caption,float}
+\usepackage{url}
+\usepackage[hidelinks]{hyperref}
+\setlength{\parindent}{1cm}
+\setlength{\parskip}{2pt}
+\setlength{\emergencystretch}{2em}
+\titleformat{\section}{\normalfont\bfseries}{\thesection.}{0.5em}{}
+\titleformat{\subsection}{\normalfont\bfseries}{\thesubsection}{0.5em}{}
+\titlespacing*{\section}{0pt}{8pt}{2pt}
+\titlespacing*{\subsection}{0pt}{6pt}{1pt}
+\setlist{leftmargin=*,itemsep=0pt,parsep=0pt,topsep=1pt}
+\captionsetup{font=small,labelfont=bf,skip=3pt}
+\setlength{\textfloatsep}{6pt}
+\setlength{\intextsep}{6pt}
+\setlength{\LTpre}{4pt}
+\setlength{\LTpost}{4pt}
+\newcolumntype{Y}{>{\raggedright\arraybackslash}X}
+\newcommand{\code}[1]{\texttt{\detokenize{#1}}}
+\urlstyle{tt}
+\makeatletter\def\UrlBreaks{\do\_\do/\do.}\makeatother
+\newcommand{\nb}[1]{\path{#1}}
+\newcommand{\lbl}[1]{\textbf{#1}}
+
+\begin{document}
+
+\begin{center}
+  {\bfseries PANDUAN METODE NICHE ARSENAL TEKS}\\
+  {\bfseries GEMASTIK XIX Penambangan Data}\\
+  {Kapan dipakai dan untuk data seperti apa}
+\end{center}
+
+Tujuh notebook di \nb{contoh/text/} pada panduan ini adalah lapis kedua. Notebook ini tidak
+menggantikan baseline dan baru dipakai setelah model dasar berjalan dan menulis OOF
+(\nb{klasifikasi_tfidf}, \nb{baseline_oof}, \nb{teks_tabular}, \nb{finetune_oof}). Peta soal ke
+notebook ada di \nb{contoh/PANDUAN.md}.
+
+\section{Aturan Main}
+Aturan berikut berlaku untuk ketujuh notebook.
+\begin{enumerate}
+  \item \lbl{Pakai hanya kalau skor jujur naik.} Tiap notebook mencetak skor jujur (lipatan luar
+  atau holdout) dan memilih cara paling sederhana yang selisihnya $\leq$ \nb{MIN_GAIN} dari yang
+  terbaik. Ikuti pilihan itu. Di demo, cara rumit sering menang di OOF lalu kalah di test.
+  \item \lbl{Semuanya untuk target kelas.} Target angka memakai \nb{ensemble_oof},
+  \nb{stacking_teks_tabular_regresi}, dan \nb{interval_prediksi}.
+  \item \lbl{Metrik harus ``makin besar makin baik''.} Untuk logloss, RMSE, dan MAE, tulis
+  \code{return -(...)}.
+  \item \lbl{Hapus sel bertanda \code{HAPUS saat lomba}.} Yang paling berbahaya adalah sel ``OOF
+  demo'' di \nb{bobot_ensemble_metaheuristik} dan \nb{stacking_fwls} yang berisi
+  \code{OOF_FOLDER = OUTPUT_FOLDER}. Kalau lupa dihapus, notebook melatih model demo dan membaca
+  OOF itu, bukan OOF milik sendiri.
+  \item Data demo kecil (emot 3,9 ribu baris, baju 17,6 ribu baris). Selisih $<$ 0,005 pada data
+  sekecil itu masih bisa berupa derau. Kemenangan penting dicek dengan \nb{uji_beda_model}.
+  \item Batas angka seperti ``$\geq\pm$5.000 baris'' atau ``kelas $\leq\pm$10'' adalah perkiraan,
+  bukan hasil uji. Skor jujur di notebook tetap yang menentukan.
+\end{enumerate}
+
+\section{Pilih Cepat}
+Tabel~\ref{tab:pilih} memetakan keadaan data atau model ke notebook yang dibuka.
+{\small
+\begin{xltabular}{\linewidth}{@{}Y>{\raggedright\arraybackslash}p{4.6cm}>{\raggedright\arraybackslash}p{3.4cm}@{}}
+\caption{Keadaan data dan notebook yang dibuka}\label{tab:pilih}\\
+\toprule
+Keadaan data / model & Buka & Syarat minimum\\
+\midrule
+\endfirsthead
+\toprule
+Keadaan data / model & Buka & Syarat minimum\\
+\midrule
+\endhead
+\bottomrule
+\endlastfoot
+$\geq$ 3 OOF, metrik berundak (F1 makro, akurasi, QWK), ingin bobot lebih baik dari rata-rata
+ & \nb{bobot_ensemble_metaheuristik} & file \code{oof_}/\code{test_} dari lipatan yang sama\\
+ \addlinespace[3pt]
+Kualitas anggota timpang, atau model unggul di jenis baris berbeda (teks pendek vs panjang, kolom
+kosong) & \nb{stacking_fwls} & $\geq$ 2 OOF dan kolom angka untuk ciri baris\\
+ \addlinespace[3pt]
+Ensemble mentok karena semua anggota TF-IDF + linear (korelasi $>$ 0,95)
+ & \nb{pengklasifikasi_alternatif} & teks\\
+ \addlinespace[3pt]
+Teks + tabel untuk LightGBM, tidak ada waktu merancang fitur & \nb{fitur_otomatis_tetangga}
+ & kolom angka/kategori\\
+ \addlinespace[3pt]
+Fitur buatan banyak ($>$ 30), curiga derau, perlu slide ``fitur penting''
+ & \nb{seleksi_fitur_metaheuristik} & target biner\\
+ \addlinespace[3pt]
+Label sedikit, teks tanpa label banyak & \nb{co_training_teks} (juga \nb{graf_label_teks},
+ \nb{semi_supervised_teks}) & teks $\geq$ beberapa kata\\
+ \addlinespace[3pt]
+Juri butuh penjelasan ``JIKA \dots\ MAKA'' & \nb{rulefit_aturan} & biner (multikelas: 1 lawan
+ sisa)\\
+\end{xltabular}}
+
+\section{Kartu per Notebook}
+Setiap kartu berisi data yang cocok, kapan notebook tidak dipakai, cara membaca hasil, hasil demo,
+dan bagian yang perlu diganti saat lomba.
+
+\subsection{Bobot Gabungan tanpa Turunan}
+Notebook: \nb{bobot_ensemble_metaheuristik}.
+\begin{itemize}
+  \item \lbl{Bagus untuk:} klasifikasi dengan metrik berundak (F1 makro, akurasi, QWK) yang
+  membuat Nelder-Mead/SLSQP macet; 4--8 model yang skornya berdekatan; train $\geq\pm$5.000 baris.
+  \item \lbl{Jangan dipakai kalau:} hanya 2 model (cukup rata-rata di \nb{ensemble_oof}); satu
+  model jauh lebih unggul (bobot lari ke satu model); metrik halus seperti logloss/AUC (cukup
+  Nelder-Mead di \nb{ensemble_oof}); data $<$ 2.000 baris (bobot cocok ke derau).
+  \item \lbl{Pilih cara:} lihat Tabel~\ref{tab:bobot}.
+  \item \lbl{Baca:} kolom \code{skor jujur}, bukan \code{skor OOF (optimis)}. Selisih keduanya
+  menunjukkan besar overfit bobot.
+  \item \lbl{Demo (emot, 5 model, 1 menit):} rata-rata 0,675 naik menjadi 0,685 (skor jujur hill
+  negatif). Di test justru hill biasa terbaik (0,674 vs 0,664). Untuk data $<$ 5.000 baris,
+  naikkan \nb{MIN_GAIN} ke 0,005.
+  \item \lbl{Ganti:} \nb{MODELS}, \nb{metric}, dan hapus sel OOF demo.
+  \item \lbl{Untuk juri:} ``F1 makro tidak bisa diturunkan, jadi bobot dicari dengan
+  metaheuristik dan dinilai di lipatan yang tidak dipakai mencari bobot.''
+\end{itemize}
+\begin{table}[H]\centering\small
+\caption{Pilihan cara mencari bobot}\label{tab:bobot}
+\begin{tabularx}{\linewidth}{@{}lY@{}}
+\toprule
+Cara & Pakai kalau\\
+\midrule
+Hill (Caruana) & bawaan; paling tahan overfit karena bobot berupa hitungan langkah\\
+Hill negatif & ada model yang salahnya bisa ``dikurangkan''; butuh data besar\\
+Annealing & hill macet di bobot yang sama\\
+Evolusi diferensial / genetik & lebih dari 6 model, ruang bobot besar\\
+Optuna & perlu jejak percobaan; hasilnya mirip evolusi\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Bobot yang Berubah Menurut Ciri Baris (FWLS)}
+Notebook: \nb{stacking_fwls}.
+\begin{itemize}
+  \item \lbl{Bagus untuk:} teks + kolom angka; panjang teks sangat beragam; ada kolom teks yang
+  sering kosong; anggota punya kekuatan berbeda (huruf, kata, judul saja, tabular). Train
+  $\geq\pm$5.000 baris karena koefisien FWLS berjumlah model $\times$ kelas $\times$ ciri.
+  \item \lbl{Jangan dipakai kalau:} anggota mirip semua; data kecil; tidak ada ciri baris yang
+  bermakna.
+  \item \lbl{Baca:} \nb{skor_per_panjang.png}. Garis model yang bersilangan antar kelompok panjang
+  berarti FWLS layak. Garis yang sejajar berarti stacking LR biasa sudah cukup.
+  \item \lbl{Demo (baju rating 5 kelas, 4 model, $\pm$1,5 menit):} hasil pada
+  Tabel~\ref{tab:fwls}. Rata-rata merusak karena model tabular lemah (0,159). Kalau anggota
+  timpang, stacking apa pun jauh di atas rata-rata. FWLS sendiri tidak menang di demo ini.
+  \item \lbl{Ganti:} \nb{MODELS}, \nb{TEXT_COLS}, \nb{META_COLS} (kolom yang menggambarkan
+  \textit{jenis} baris, bukan yang paling kuat menebak target), dan hapus sel OOF demo.
+\end{itemize}
+\begin{table}[H]\centering\small
+\caption{Hasil demo \code{stacking_fwls} (F1 makro)}\label{tab:fwls}
+\begin{tabularx}{\linewidth}{@{}Ycc@{}}
+\toprule
+Cara & Skor jujur & Skor test\\
+\midrule
+Model tunggal terbaik & 0,434 & 0,435\\
+Rata-rata & 0,357 & 0,359\\
+\textbf{Stacking LR (dipilih)} & \textbf{0,496} & \textbf{0,509}\\
+FWLS & 0,493 & 0,490\\
+LightGBM + ciri & 0,483 & 0,497\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Anggota Ensemble yang Salahnya Berbeda}
+Notebook: \nb{pengklasifikasi_alternatif}.
+\begin{itemize}
+  \item \lbl{Bagus untuk:} teks saja, ketika ensemble sudah ada tetapi semua anggotanya TF-IDF +
+  linear. Teks pendek penuh typo/alay cocok dengan gzip-kNN dan kernel RFF. Dokumen panjang yang
+  mirip pencarian cocok dengan BM25-kNN dan Rocchio. Kelas tidak seimbang cocok dengan Complement
+  NB.
+  \item \lbl{Jangan dipakai kalau:} sudah ada fine-tune transformer yang kuat (tambahan jarang
+  membantu); data $>$ 20 ribu baris untuk gzip (lambat).
+  \item \lbl{Baca:} kolom \code{+ patokan} adalah skor rata-rata model itu dengan patokan; ambil
+  yang di atas patokan. Kolom \code{korelasi} makin kecil berarti makin beragam. Kolom
+  \code{menyelamatkan} adalah porsi baris yang salah di patokan tetapi benar di model ini.
+  Keputusan akhir diambil di \nb{ensemble_oof} atau \nb{bobot_ensemble_metaheuristik}.
+  \item \lbl{Demo (emot, 1,5 menit):} sendirian semuanya kalah (gzip 0,365, terbaik
+  passive-aggressive 0,675 vs patokan 0,679). Dirata-rata dengan patokan, OOF naik (RFF 0,687,
+  Rocchio 0,684) tetapi test tidak. Perlakukan sebagai calon anggota, bukan model utama.
+  \item \lbl{Waktu:} gzip sebanding dengan baris $\times$ \nb{NCD_POOL} (3,9 ribu baris $\approx$ 1
+  menit, 20 ribu $\approx$ 5 menit). Kecilkan \nb{NCD_POOL} kalau lambat.
+  \item \lbl{Hasil:} \code{oof_alt_*.npy} di \nb{OOF_FOLDER}, langsung ditulis di \nb{MODELS}
+  notebook ensemble.
+\end{itemize}
+
+\subsection{Fitur Tetangga kNN dan OpenFE Mini}
+Notebook: \nb{fitur_otomatis_tetangga}.
+\begin{itemize}
+  \item \lbl{Bagus untuk:} teks + tabel untuk LightGBM, dengan kategori bernilai banyak dan kolom
+  angka yang bisa digabung (rasio, selisih terhadap rata-rata kelompok).
+  \item \lbl{Jangan dipakai kalau:} teks saja; sudah memakai \nb{stacking_teks_tabular} (sudah
+  punya fitur tetangga, jadi ambil kolom otomatisnya saja).
+  \item \lbl{Baca:} \nb{banding_fitur.csv} (dasar, + tetangga, + otomatis, + keduanya). Untung
+  fitur otomatis yang kecil itu normal.
+  \item \lbl{Demo (baju biner, 30 detik):} AUC 0,906 naik menjadi 0,914 dengan fitur tetangga dan
+  0,916 dengan keduanya. Fitur otomatis terbaik adalah \code{title_huruf/title_kata} (rata-rata
+  panjang kata judul).
+  \item \lbl{Pakai hasilnya:} \nb{fitur_baru_train.csv} dan \nb{fitur_baru_test.csv} (ada
+  \nb{ID_COL}, urutan baris sama dengan file asli), lalu \code{pd.concat} kolomnya ke notebook
+  LightGBM.
+  \item \lbl{Belum diuji:} multikelas (kodenya ada).
+\end{itemize}
+
+\subsection{Membuang Fitur Derau}
+Notebook: \nb{seleksi_fitur_metaheuristik}.
+\begin{itemize}
+  \item \lbl{Bagus untuk:} lebih dari 30 fitur buatan (SVD, statistik teks, encoding, agregat);
+  $\geq$ 5.000 baris; ingin model lebih ramping atau cepat; bahan slide ``fitur mana yang penting
+  dan bukti sisanya derau''.
+  \item \lbl{Jangan dipakai kalau:} fitur $<$ 20; ribuan kolom TF-IDF (terlalu lambat, pakai
+  chi\textsuperscript{2} atau L1); target multikelas atau angka (notebook ini biner saja); sisa
+  waktu $<$ 30 menit.
+  \item \lbl{Pilih cara:} lihat Tabel~\ref{tab:seleksi}.
+  \item \lbl{Demo (baju biner, 48 fitur termasuk 10 kolom acak, 1 menit):} semua cara membuang 10
+  kolom acak, tetapi holdout tidak naik (semua fitur 0,9066, permutasi 0,9067), sehingga notebook
+  tetap memilih semua fitur. LightGBM sudah tahan derau, jadi gunanya terutama untuk penjelasan
+  dan kecepatan.
+\end{itemize}
+\begin{table}[H]\centering\small
+\caption{Pilihan cara seleksi fitur}\label{tab:seleksi}
+\begin{tabularx}{\linewidth}{@{}lY@{}}
+\toprule
+Cara & Sifat\\
+\midrule
+Null importance & cepat; grafiknya bagus untuk slide\\
+Boruta & paling ketat (membuang paling banyak)\\
+Permutasi & paling lunak\\
+Annealing / genetik & mencari kombinasi; paling mahal, untuk 30--100 fitur\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Semi-supervised Dua Sudut Pandang}
+Notebook: \nb{co_training_teks}.
+\begin{itemize}
+  \item \lbl{Bagus untuk:} label ratusan sampai $\pm$2 ribu, teks tanpa label jauh lebih banyak
+  (test besar atau file tambahan), kelas $\leq\pm$10.
+  \item \lbl{Jangan dipakai kalau:} label sudah banyak ($>\pm$50\% data) karena untungnya hilang;
+  teks hanya 1--3 kata sehingga sudut pandang kata dan huruf tidak lagi saling melengkapi; test
+  bergeser dari train (cek \nb{geser_distribusi}) karena label palsu yang salah akan menumpuk.
+  \item \lbl{Pilih notebook:} lihat Tabel~\ref{tab:semi}.
+  \item \lbl{Demo (emot, 15\% label = 544 baris, 25 detik):} hasil pada Tabel~\ref{tab:cotrain}.
+  Ambang keyakinan sederhana mudah merusak; jumlah tetap per kelas lebih aman.
+  \item \lbl{Ganti:} \code{LABEL_SHARE = 1.0} saat lomba (0,15 hanya untuk demo). Baris train
+  bertarget kosong otomatis masuk kolam tak berlabel. File teks tambahan tanpa label diisi di
+  \nb{UNLABELED_CSV}.
+\end{itemize}
+\begin{table}[H]\centering\small
+\caption{Pilihan notebook semi-supervised}\label{tab:semi}
+\begin{tabularx}{\linewidth}{@{}lY@{}}
+\toprule
+Notebook & Cocok kalau\\
+\midrule
+\nb{co_training_teks} & ada dua sudut pandang (kata vs huruf, teks vs tabel)\\
+\nb{graf_label_teks} & teks membentuk kelompok/topik yang jelas, test besar\\
+\nb{semi_supervised_teks} & kelas banyak; pseudo-label N teratas per kelas\\
+\bottomrule
+\end{tabularx}
+\end{table}
+\begin{table}[H]\centering\small
+\caption{Hasil demo \code{co_training_teks} (F1 makro)}\label{tab:cotrain}
+\begin{tabularx}{\linewidth}{@{}Ycc@{}}
+\toprule
+Cara & OOF berlabel & Skor test\\
+\midrule
+Hanya label & 0,548 & 0,557\\
+Self-training & 0,493 & 0,511\\
+\textbf{Co-training (dipilih)} & \textbf{0,569} & \textbf{0,578}\\
+Tri-training & 0,519 & 0,540\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Aturan ``JIKA \dots\ DAN \dots\ MAKA'' untuk Slide}
+Notebook: \nb{rulefit_aturan}.
+\begin{itemize}
+  \item \lbl{Bagus untuk:} presentasi ke juri non-teknis; target biner atau satu kelas penting;
+  campuran kata kunci dan kolom tabel.
+  \item \lbl{Jangan dipakai kalau:} sebagai model utama (CV di bawah LightGBM); multikelas dengan
+  banyak kelas (buat satu per kelas penting saja).
+  \item \lbl{Baca:} \nb{aturan_teratas.png}. Biru menaikkan peluang, oranye menurunkan. Aturan
+  ``TIDAK kata:x DAN TIDAK kata:y'' berarti kata-kata negatif tidak muncul, biasanya ulasan
+  positif. Untuk slide, pilih 3--5 aturan dengan \code{porsi baris} 5--60\%. Aturan yang berlaku
+  untuk 95\% baris kurang bercerita.
+  \item \lbl{Demo (baju biner, 22 detik):} AUC CV RuleFit 0,873, LightGBM 0,877, L1 0,879; 53
+  aturan terpakai dari 556; test 0,881.
+  \item \lbl{Ganti:} \nb{POSITIVE}, \nb{STOP_WORDS} (\code{None} atau daftar stopword
+  Indonesia), dan \nb{RULE_C} (makin kecil, aturan makin sedikit).
+\end{itemize}
+
+\section{Alur Gabungan yang Disarankan}
+\lbl{Teks saja, multikelas.}
+\begin{enumerate}
+  \item TF-IDF dan fine-tune menulis OOF.
+  \item \nb{pengklasifikasi_alternatif} untuk mencari anggota yang berbeda.
+  \item \nb{ensemble_oof}.
+  \item Kalau metrik F1/QWK dan ada $\geq$ 4 model: \nb{bobot_ensemble_metaheuristik}.
+  \item \nb{uji_beda_model} untuk memastikan kemenangan bukan derau.
+\end{enumerate}
+\lbl{Teks + tabel, biner.}
+\begin{enumerate}
+  \item \nb{teks_tabular} atau \nb{stacking_teks_tabular}.
+  \item \nb{fitur_otomatis_tetangga}.
+  \item \nb{seleksi_fitur_metaheuristik}.
+  \item LightGBM final.
+  \item \nb{rulefit_aturan} dan \nb{penjelasan_teks} untuk slide.
+\end{enumerate}
+\lbl{Teks + tabel, multikelas, anggota timpang.} Beberapa OOF digabung di \nb{stacking_fwls}.
+
+\noindent\lbl{Label sedikit.} \nb{co_training_teks} dan \nb{graf_label_teks}, lalu OOF keduanya
+digabung di \nb{ensemble_oof}.
+
+\section{Urutan saat Waktu Sempit}
+Tabel~\ref{tab:urutan} mengurutkan langkah menurut untung di demo.
+\begin{table}[H]\centering\small
+\caption{Urutan langkah menurut untung demo}\label{tab:urutan}
+\begin{tabularx}{\linewidth}{@{}cY>{\raggedright\arraybackslash}p{2.6cm}>{\raggedright\arraybackslash}p{1.9cm}>{\raggedright\arraybackslash}p{2.6cm}@{}}
+\toprule
+No & Langkah & Untung demo & Waktu demo & Kapan\\
+\midrule
+1 & Stacking LR saat anggota timpang (\nb{stacking_fwls} atau \nb{ensemble_oof}) & +0,06 F1 vs
+ model terbaik & $\pm$1,5 menit & selalu dicoba\\
+2 & Fitur tetangga (\nb{fitur_otomatis_tetangga}) & +0,008 AUC & 30 detik & selalu dicoba\\
+3 & Co-training & +0,02 F1 & 25 detik & hanya kalau label sedikit\\
+4 & Bobot metaheuristik, seleksi fitur, pengklasifikasi alternatif & kecil/tidak stabil & 1--1,5
+ menit & sisa waktu $>$ 1 jam\\
+5 & RuleFit & -- & 22 detik & khusus bahan slide\\
+\bottomrule
+\end{tabularx}
+\end{table}
+Semua waktu di atas diukur di laptop dengan data demo (4--18 ribu baris). Data 5$\times$ lebih
+besar kira-kira 5$\times$ lebih lama; gzip-kNN serta annealing/genetik bisa lebih lama lagi.
+
+\end{document}

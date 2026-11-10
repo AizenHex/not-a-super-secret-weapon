@@ -36,6 +36,10 @@ Koreksi terbaru pengguna di chat menang atas isi file ini; setelah itu perbarui 
 
 ## Kode
 
+- Notebook untuk lomba/submission memuat model dari folder lokal `../../../pretrained/<nama>` (sentence-transformers/
+  transformers, diunduh lewat `_alat/unduh_model.py`), **bukan** lewat server seperti Ollama. Ollama hanya untuk
+  asisten kode di laptop. Pengguna: "loadnya jangan pake ollama dong, kan aku bakal submit ini nanti" (2026-11-09)
+
 - Potongan `arsenal/` disimpan sebagai `.ipynb`, itu satu-satunya sumber. Lint/uji membaca `.ipynb`
   langsung. (2026-10-24)
 - Gaya dicek `_alat/lint.py`: tanpa try/except, assert, comprehension, lambda bertumpuk, ternary
@@ -47,6 +51,11 @@ Koreksi terbaru pengguna di chat menang atas isi file ini; setelah itu perbarui 
 - Uji potongan: `_alat/uji_arsenal.py file.ipynb:1,2 --set NAMA=nilai`.
 - Notebook `arsenal/` dan `contoh/` disimpan tanpa output (pengguna minta repo "compact"). Jangan
   membuat lagi salinan sumber `.py` di repo. (2026-10-30)
+- Menambah arsenal: buat **banyak notebook per turn** (≥ 4–6), jangan satu per turn. Uji cukup lint + satu kali
+  jalan di data demo; tanpa varian, bench, atau cek gambar berulang. Pengguna: "jangan di test seintens ini.
+  wakutnya lama terbuang", "kok aku kecewa tiap turn cuma nambah 1" (2026-11-10). Isi arsenal bukan hanya
+  bentuk soal: pengguna juga minta **metode** niche/baru ("metode maksudku kayak hill climbing dsbnya",
+  2026-11-10), mis. metaheuristik, ensemble, seleksi/pembuatan fitur, semi-supervised; cek dulu yang sudah ada.
 
 ## Laya EDA (`_laya_eda/`)
 

@@ -56,8 +56,17 @@ metode + skor demo per notebook: [KATALOG.md](KATALOG.md). Tanda ⭐ = lebih bai
 | Durasi sampai kejadian + sensor | `tabular/survival` | — |
 | Ada entitas berulang (user, pasien, sekolah, speaker) | notebook tabular + `GroupKFold` (lihat `tabular/validasi`) | GroupKFold |
 | Train dan test terasa beda | `tabular/validasi` (adversarial validation) | — |
+| Teks train ≠ test (waktu/sumber/topik beda) | `text/geser_distribusi` (AUC adversarial, kata pembeda, bobot sampel) | Stratified |
 | Perlu menjelaskan model ke juri | `tabular/explain_klasifikasi` / `explain_regresi` (SHAP, PDP) | — |
 | Teks + label | `text/klasifikasi_tfidf` → `klasifikasi_embedding` → `klasifikasi_finetune` | Stratified |
+| Teks + kolom tabel, target kelas | `text/stacking_teks_tabular` (OOF LogReg/NB + tetangga → LightGBM) | Stratified |
+| Label bertingkat (kategori > subkategori, kolom jalur "a > b") | `text/klasifikasi_hierarkis` (datar vs top-down vs rantai) | Stratified |
+| Teks + kolom tabel, target angka | `text/stacking_teks_tabular_regresi` (OOF Ridge + kelas-bin + tetangga) | KFold |
+| Label berurutan (rating 1–5, tingkat), metrik QWK/MAE | `text/ordinal_teks` (datar, kumulatif, regresi + ambang) | Stratified |
+| Target jumlah (like, share; banyak nol) | `text/regresi_hitungan` (log1p, poisson, tweedie, hurdle) | KFold |
+| Beberapa kolom target sekaligus | `text/multi_target` (terpisah, rantai, label gabungan) | KFold |
+| Kategori ditulis beda-beda, teks → daftar resmi, teks test hampir kembar train | `text/fuzzy_kategori` (rapidfuzz) | — |
+| File teks terlalu besar untuk RAM | `text/data_besar_teks` (hashing + SGD per potongan) | holdout hash id |
 | Teks: entitas | `text/ner` | — |
 | Teks tanpa label | `text/clustering`, `text/topik`, `text/kata_kunci_ringkasan` | Baca manual |
 | Cari dokumen mirip | `text/retrieval` | — |
@@ -108,16 +117,30 @@ metode + skor demo per notebook: [KATALOG.md](KATALOG.md). Tanda ⭐ = lebih bai
 | Label dari beberapa anotator | `tabular/kesepakatan_anotator` (kappa, voting) |
 | Label dari aturan / kata kunci | `text/weak_supervision` |
 | Curiga banyak label salah | `text/label_berisik`, `vision/label_berisik`, `tabular/label_noise` (cleanlab) |
-| Hanya sebagian kecil berlabel | `tabular/semi_supervised`, `text/semi_supervised_teks`, `vision/semi_supervised`, `audio/semi_supervised` |
+| Hanya sebagian kecil berlabel | `tabular/semi_supervised`, `text/semi_supervised_teks`, `text/co_training_teks` (kata ↔ huruf, tri-training), `text/graf_label_teks` (label spreading), `vision/semi_supervised`, `audio/semi_supervised` |
 | Hanya contoh positif yang diketahui | `tabular/pu_learning` (Elkan-Noto) |
 | Test punya kelas yang tidak ada di train ("lainnya") | `vision/kelas_baru` (CLIP + ambang) |
 
 ### Setelah model jadi (naikkan skor, bahan presentasi)
 
+Kapan tiap metode niche layak dipakai, untuk data seperti apa, dan hasil demonya:
+[PANDUAN_METODE.md](PANDUAN_METODE.md).
+
 | Tujuan | Buka |
 |---|---|
 | Tuning | `tabular/tuning_*`, `text/tuning` (TF-IDF + C) |
 | Gabung model | `tabular/ensembling_*`, `tabular/blending`, `text/ensemble`, `vision/tta_ensemble` |
+| Cari bobot ensemble untuk metrik tidak halus (hill negatif, annealing, evolusi diferensial, genetik, Optuna) | `text/bobot_ensemble_metaheuristik` (OOF mana pun) |
+| Bobot ensemble berubah menurut ciri baris (panjang teks, kolom kosong) | `text/stacking_fwls` (FWLS, LightGBM + ciri) |
+| Anggota ensemble yang salahnya beda (gzip-kNN, BM25-kNN, Rocchio, Complement NB, PA, kernel RFF) | `text/pengklasifikasi_alternatif` |
+| Fitur buatan untuk LightGBM (tetangga kNN OOF, mini OpenFE + successive halving) | `text/fitur_otomatis_tetangga` |
+| Buang fitur derau (null importance, Boruta, permutasi, annealing, genetik) | `text/seleksi_fitur_metaheuristik` |
+| Aturan JIKA … MAKA untuk juri (RuleFit) | `text/rulefit_aturan` |
+| Kalibrasi, geser prior kelas test, himpunan prediksi (conformal) | `text/pasca_prediksi` (OOF mana pun) |
+| Interval tebakan regresi (conformal global/ternormalisasi/per kelompok) | `text/interval_prediksi` (OOF regresi mana pun) |
+| Model B benar-benar lebih baik dari A? (bootstrap, per lipatan, McNemar) | `text/uji_beda_model` (dua OOF) |
+| Jelaskan tebakan teks per kata (contoh benar/salah/ragu) | `text/penjelasan_teks` |
+| Bahan PPT teks tanpa akses data (gambar + angka tersimpan) | `text/eda_presentasi` |
 | Di mana model salah? | `tabular/analisis_kesalahan`, `text/analisis_kesalahan`, `vision/analisis_kesalahan`, `timeseries/analisis_kesalahan` |
 | Grafik untuk slide | `visualisasi/` (16 notebook); pilih jenis grafik lewat [visualisasi/PILIH_GRAFIK.md](visualisasi/PILIH_GRAFIK.md) |
 

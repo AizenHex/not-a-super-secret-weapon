@@ -17,7 +17,8 @@ SKIP = ["onnx/*", "openvino/*", "*.onnx", "*.h5", "*.msgpack", "*.ot", "*.tflite
         "coreml/*", "tf_model*", "flax_model*", "optimizer.pt", "scheduler.pt", "training_args.bin"]
 
 # folder: pola tambahan yang dilewati (bobot ganda .safetensors + .bin, hemat ± 1 GB per model)
-SKIP_EXTRA = {"xlmr_base": ["pytorch_model.bin"], "e5_base": ["pytorch_model.bin"]}
+SKIP_EXTRA = {"xlmr_base": ["pytorch_model.bin"], "e5_base": ["pytorch_model.bin"],
+              "nusabert": ["runs/*"]}
 
 # folder: repo Hugging Face
 HF = {
@@ -29,7 +30,9 @@ HF = {
     "indobert_large": "indobenchmark/indobert-large-p1",
     "indobertweet": "indolem/indobertweet-base-uncased",
     "xlmr_base": "FacebookAI/xlm-roberta-base",
+    "nusabert": "LazarusNLP/NusaBERT-base",  # Indonesia + bahasa daerah (Jawa, Sunda, Bali, ...)
     "e5_base": "intfloat/multilingual-e5-base",
+    "qwen3_emb": "Qwen/Qwen3-Embedding-0.6B",
     "nli_mdeberta": "MoritzLaurer/mDeBERTa-v3-base-xnli-multilingual-nli-2mil7",
     "qa_mdeberta": "timpal0l/mdeberta-v3-base-squad2",
     "qwen_05b": "Qwen/Qwen2.5-0.5B-Instruct",
