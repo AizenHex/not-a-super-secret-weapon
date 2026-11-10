@@ -2,6 +2,10 @@
 
 Terbaru di atas. Format: `- YYYY-MM-DD: <keputusan>. Alasan: <...>.`
 
+- 2026-11-10: Word2Vec/GloVe/FastText di `katalog_algoritma` ditulis sendiri di torch, bukan gensim. Alasan: gensim
+  tidak ada di venv/requirements dan PC lomba offline; aturan: tanya dulu sebelum pip. Satu notebook katalog untuk
+  semua algoritma (bukan satu per algoritma) supaya skor dibanding di split sama; jalur lomba tetap *_oof.
+
 - 2026-11-10: PaddleOCR dipasang lewat `requirements_paddle.txt` dengan `--no-deps` (paddlepaddle 3.3.1 CPU,
   paddlex 3.7.2, paddleocr 3.7.0, opencv-contrib-python 5.0.0.93 = versi opencv-python), dependensi lain di
   requirements.txt; model PP-OCRv6_medium det/rec + PP-LCNet doc_ori dari HF ke `pretrained/`. Alasan: paddlex

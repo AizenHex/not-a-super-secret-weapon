@@ -18,7 +18,7 @@ SKIP = ["onnx/*", "openvino/*", "*.onnx", "*.h5", "*.msgpack", "*.ot", "*.tflite
 
 # folder: pola tambahan yang dilewati (bobot ganda .safetensors + .bin, hemat ± 1 GB per model)
 SKIP_EXTRA = {"xlmr_base": ["pytorch_model.bin"], "e5_base": ["pytorch_model.bin"],
-              "nusabert": ["runs/*"]}
+              "nusabert": ["runs/*"], "bart_en": ["pytorch_model.bin"]}
 
 # folder: repo Hugging Face
 HF = {
@@ -33,6 +33,11 @@ HF = {
     "nusabert": "LazarusNLP/NusaBERT-base",  # Indonesia + bahasa daerah (Jawa, Sunda, Bali, ...)
     "e5_base": "intfloat/multilingual-e5-base",
     "qwen3_emb": "Qwen/Qwen3-Embedding-0.6B",
+    "albert_id": "indobenchmark/indobert-lite-base-p1",  # ALBERT Indonesia
+    "xlnet_en": "xlnet/xlnet-base-cased",
+    "ernie_en": "nghuyong/ernie-2.0-base-en",
+    "mt5_small": "google/mt5-small",               # T5 multibahasa
+    "bart_en": "facebook/bart-base",
     "nli_mdeberta": "MoritzLaurer/mDeBERTa-v3-base-xnli-multilingual-nli-2mil7",
     "qa_mdeberta": "timpal0l/mdeberta-v3-base-squad2",
     "qwen_05b": "Qwen/Qwen2.5-0.5B-Instruct",

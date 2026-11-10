@@ -36,6 +36,18 @@ F1 makro val 0,427; kelas ke-2 F1 0).
 
 ## Keadaan sekarang
 
+- 2026-11-10: `contoh/text/katalog_algoritma.ipynb` = contoh kode tiap algoritma dari daftar pengguna (ML klasik,
+  RNN/LSTM/GRU/Bi-/Attention/Text-CNN/Transformer dari nol, fine-tune HF satu fungsi, Word2Vec/GloVe/FastText
+  dari nol di torch), skor di split sama. Lint 0, Run All lulus di SmSA 3000 baris (GPU). ALBERT/XLNet/ERNIE/mT5/
+  BART hanya baris ber-`#`; foldernya ditambah ke `unduh_model.py` dan sedang diunduh. Sudah di-commit.
+- 2026-11-10: `contoh/text/eda_lengkap.ipynb` = EDA teks + angka/kategori (hanya membaca, tulis `temuan.md`),
+  dijalankan paling awal. Lint 0; Run All lulus di demo baju, SmSA regresi (target buatan) dan SmSA klasifikasi,
+  keduanya dengan `DATE_COL`, `LANGUAGE="id"`, tanpa kolom tabel. Belum diuji: target kosong (qcut gagal), data
+  tanpa kolom id. Sudah di-commit.
+- 2026-11-10: `contoh/text/praproses_lengkap.ipynb` = langkah sesudah EDA di jalur teks (periksa → bersih ringan/berat →
+  ukur per langkah → `train_bersih.csv`/`test_bersih.csv`); notebook model membacanya lewat `TRAIN_CSV`/`TEST_CSV`,
+  `TEXT_COLS` asli untuk BERT, `<kolom>_tfidf` untuk TF-IDF. Lint 0, Run All demo lulus, sudah di-commit.
+
 - Branch kerja: `rapikan-struktur` (remote `origin` = github.com/AizenHex/not-a-super-secret-weapon).
   Sesi cloud 2026-11-02 (Laya v2) bekerja di `new-gen` atas perintah pengguna.
   Default remote: `new-gen`, disamakan dengan `rapikan-struktur` 2026-10-31 (pengguna mulai

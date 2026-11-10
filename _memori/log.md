@@ -2,6 +2,71 @@
 
 Terbaru di atas. Format di [`README.md`](README.md).
 
+## 2026-11-10 claude-opus-5-5 - model pretrained ALBERT/XLNet/ERNIE/mT5/BART
+- Pemicu: pengguna menjawab tawaran menambah 5 model katalog: "pretrained".
+- Dikerjakan: `_alat/unduh_model.py` + albert_id (indobenchmark/indobert-lite-base-p1), xlnet_en, ernie_en,
+  mt5_small (google/mt5-small), bart_en (facebook/bart-base, lewati pytorch_model.bin ganda); daftar file repo HF
+  dicek lewat API. Unduhan ke `../pretrained` berjalan. Komentar MODEL_PATHS di `katalog_algoritma` diperbarui
+  (tetap ber-`#`, default hanya IndoBERT + DistilBERT).
+- Uji: belum (menunggu unduhan; rencana: bagian C semua model, 600 baris, 1 epoch).
+- Dikoreksi pengguna: -
+
+## 2026-11-10 claude-opus-5-5 - contoh/text/katalog_algoritma
+- Pemicu: pengguna menempel tabel algoritma teks (ML, RNN/CNN, Transformer, Embedding, LLM): "bisa gak buatin
+  contoh penggunaan kodenya?".
+- Dikerjakan: `contoh/text/katalog_algoritma.ipynb` (38 sel): A TF-IDF → NB/CNB/LogReg/LinearSVC/SVC rbf/KNN cosine,
+  pohon (DT/RF/XGB/LGBM) di TF-IDF 3000 fitur, CatBoost `text_features`; B satu kelas RNN/LSTM/GRU (+bi, +attention
+  pooling), Text-CNN, Transformer kecil dari nol; C `finetune(path)` AutoModelForSequenceClassification untuk
+  indobert/distilbert_id (lainnya ber-`#`); D Word2Vec SGNS, GloVe, FastText supervised (EmbeddingBag + n-gram
+  crc32) ditulis di torch. Ringkasan `ringkasan_skor.csv/.png` di `outputs/text/katalog_algoritma`. Baris di PANDUAN.
+- Uji: lint 0; Run All sekali SmSA 3000 baris di GPU laptop tanpa galat. F1 macro: IndoBERT 0,895, DistilBERT 0,893,
+  LinearSVC 0,855, CatBoost teks 0,854, FastText 0,824, Bi-GRU+Attn 0,821, GloVe 0,752, DT 0,719. Model ber-`#`
+  (RoBERTa/DeBERTa/ALBERT/XLNet/ERNIE/mT5/BART) tidak dijalankan.
+- Dikoreksi pengguna: -
+
+## 2026-11-10 claude-opus-5-5 - uji jalur sisa eda_lengkap
+- Pemicu: pengguna menempel laporan sesi eda_lengkap (bagian "yang belum diuji").
+- Dikerjakan: Run All lewat nbclient dengan sel konfigurasi ditimpa, data buatan di scratchpad dari SmSA
+  (target `skor` angka + `tanggal` acak 2024). Tiga perbaikan di `eda_lengkap.ipynb`: angka heatmap putih di
+  sel gelap (|r| > 0,6); legenda `col_0` di 12_waktu hilang (`colnames=[""]`); daftar "kolom berguna"
+  dibandingkan dengan max(kolom acak, tebakan) karena di regresi pohon pada kolom acak r2 -0,03 sehingga
+  kolom r2 0 ikut terhitung berguna.
+- Uji: lint 0; Run All lulus di demo baju, SmSA regresi + `DATE_COL` + `LANGUAGE="id"` tanpa kolom tabel, dan SmSA
+  klasifikasi yang sama. 9 gambar demo + 12_waktu dilihat. SmSA terurut per label: cek bocor id/urutan baris
+  berbunyi benar (skor > 0,95). Belum diuji: target kosong (qcut + astype(int) akan galat), data tanpa `ID_COL`.
+- Dikoreksi pengguna: -
+
+## 2026-11-10 claude-fable-5 - contoh/text/eda_lengkap
+- Pemicu: pengguna: "aku butuh kode EDA yang lengkap juga. teks dan angka. selengkap mungkin".
+- Dikerjakan: `contoh/text/eda_lengkap.ipynb` (hanya membaca data; target kelas atau angka, target angka dipotong
+  4 kuartil): profil kolom + tebak jenis, target, kosong vs target (chi²), angka (skew, pencilan, KS), kategori
+  (langka, tak dikenal di test), korelasi Spearman, teks (panjang, ciri per kelompok, kata khas log-odds, frasa,
+  kata baru di test, kembar), kekuatan satu kolom (pohon kecil vs kolom acak; id dan urutan baris ikut = cek
+  bocor), geser train→test + adversarial teks, ciri teks ↔ angka, teks saja vs tabel saja, waktu. Keluaran:
+  PNG, `profil_kolom.csv`, `kekuatan_kolom.csv`, `temuan.md` di `outputs/text/eda_lengkap`. Baris di
+  `contoh/PANDUAN.md`. `eda_presentasi` dan `tabular/eda` tidak diubah.
+- Uji: lint 0; Run All di ulasan baju (2 kolom teks + tabel, `rating` 5 kelas) tanpa galat; tiga gambar dilihat.
+  Pembanding kekuatan kolom diganti dua kali (dummy → pohon pada angka acak, f1_macro → balanced_accuracy)
+  karena pohon berbobot pada kolom tak berguna kalah dari tebakan berstrata. Belum diuji: target angka, cabang
+  `DATE_COL`, `LANGUAGE="id"`, data tanpa kolom tabel. Belum di-commit.
+- Dikoreksi pengguna: -
+
+## 2026-11-10 claude-fable-5 - contoh/text/praproses_lengkap
+- Pemicu: pengguna: "aku sangat membutuhkan preprocessing yang sangat-sangat bagus ... buatin aku notebook khusus
+  untuk preprocessing ... harus sangat lengkap ... i donno what am i doing".
+- Dikerjakan: `contoh/text/praproses_lengkap.ipynb` (satu notebook, dijalankan sebelum notebook model): periksa
+  20 jenis kotoran train % vs test %, awalan/akhiran berulang vs label (kasus GDOC `(ANTARA) -`, `COPYRIGHT`),
+  bersih ringan (mojibake cp1252/MacRoman tanpa try, HTML, unicode, `STRIP_PATTERNS`), bersih berat (URL, emoji,
+  slang, stopword, stemming), ukur skor per langkah dengan fold sama, kolom tabel (kosong tersamar, angka/tanggal
+  sebagai teks, kategori), `meta_*`, baris kembar/konflik, simpan `train_bersih.csv` + `test_bersih.csv` +
+  `langkah.txt` di `outputs/text/praproses_lengkap`. Kolom asli = versi ringan, `<kolom>_tfidf` = versi berat.
+  Baris di `contoh/PANDUAN.md`. Notebook praproses lama (arsenal `teks/dasar/praproses`, `contoh/preprocessing/*`)
+  tidak diubah.
+- Uji: lint 0; Run All sekali di SmSA yang dikotori (CPU): kotoran demo sisa 0, tiga cek simpan True. Skor demo:
+  mentah 0,857, semua langkah "tidak beda", stopword turun 0,015. Belum diuji di data nyata, data besar, target
+  regresi, atau lebih dari satu kolom teks. Belum di-commit.
+- Dikoreksi pengguna: -
+
 ## 2026-11-10 claude-opus-5-5 - run_baseline.bat + push
 - Pemicu: pengguna: "buatin run baseline.bat biar gampang cek. setelah itu push".
 - Dikerjakan: `run_baseline.bat` (root repo, CRLF): cari_python → nvidia-smi + torch.cuda → cek

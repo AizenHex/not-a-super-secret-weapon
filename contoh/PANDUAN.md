@@ -133,6 +133,7 @@ Kapan tiap metode niche layak dipakai, untuk data seperti apa, dan hasil demonya
 | Cari bobot ensemble untuk metrik tidak halus (hill negatif, annealing, evolusi diferensial, genetik, Optuna) | `text/bobot_ensemble_metaheuristik` (OOF mana pun) |
 | Bobot ensemble berubah menurut ciri baris (panjang teks, kolom kosong) | `text/stacking_fwls` (FWLS, LightGBM + ciri) |
 | Anggota ensemble yang salahnya beda (gzip-kNN, BM25-kNN, Rocchio, Complement NB, PA, kernel RFF) | `text/pengklasifikasi_alternatif` |
+| Contoh kode tiap algoritma teks, skor dibanding di split sama (NB, LogReg, SVM, KNN, pohon, XGB/LGBM/CatBoost; RNN/LSTM/GRU/Bi-/Attention/Text-CNN/Transformer dari nol; fine-tune BERT s.d. T5/BART; Word2Vec/GloVe/FastText dari nol) | `text/katalog_algoritma` |
 | Fitur buatan untuk LightGBM (tetangga kNN OOF, mini OpenFE + successive halving) | `text/fitur_otomatis_tetangga` |
 | Buang fitur derau (null importance, Boruta, permutasi, annealing, genetik) | `text/seleksi_fitur_metaheuristik` |
 | Aturan JIKA … MAKA untuk juri (RuleFit) | `text/rulefit_aturan` |
@@ -148,6 +149,8 @@ Kapan tiap metode niche layak dipakai, untuk data seperti apa, dan hasil demonya
 
 | Isi kolom | Buka | Inti |
 |---|---|---|
+| **Kenali data teks + angka (EDA), sebelum apa pun** | `text/eda_lengkap` | profil kolom, target, kosong, angka, kategori, korelasi, teks (kata khas, kembar, kata baru), kekuatan tiap kolom + cek bocor, geser train→test, teks vs tabel; `temuan.md` |
+| **Soal teks apa pun, sesudah EDA** | `text/praproses_lengkap` | periksa 20 kotoran train vs test, awalan/akhiran berulang vs label, bersih ringan (BERT) + berat (TF-IDF), skor per langkah, kolom tabel, simpan `train_bersih.csv` |
 | Kode/nomor/email/alamat, perlu ambil sebagian | `preprocessing/regex_ekstraksi` | grup bernama `(?P<nama>...)` + `str.extract` + laporan baris tidak cocok |
 | Uang `1,5 jt`, `3.700rb`, `2-3 juta`; berat `70.500 gr`, `0,7 kwintal`; tanggal `12 Agu 2024`, `45516`; lama `2 thn 3 bln` | `preprocessing/angka_satuan_tanggal` | satu pola angka+satuan, tabel `SKALA_*`, format tanggal dicoba berurutan |
 | Kategori typo/singkatan (`Tehnik Informatika`, `T. Informatika`, `TI`) | `preprocessing/kategori_fuzzy` | nilai unik → normalisasi → `difflib` → draf CSV → `KOREKSI` |
