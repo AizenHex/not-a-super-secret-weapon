@@ -10,6 +10,8 @@ PERINGATAN: menimpa notebook 1_..8_ di folder ini (ubahan tangan di notebook hil
 import json
 import os
 import shutil
+import subprocess
+import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
@@ -38,6 +40,11 @@ BERTOPIC = ('DATA_CSV = f"{HASIL}/praproses/train_bersih.csv"\nTEXT_COL = TEXT_C
             'N_TOPICS = None           # None = otomatis (HDBSCAN), atau angka = target topik + 1\n'
             + out("bertopic") + 'import os\nos.makedirs(OUTPUT_FOLDER, exist_ok=True)\n')
 
+MULTI = ('if LABEL_COLS is None:\n'
+         '    raise ValueError("Isi LABEL_COLS di konfig.py (kolom label 0/1) untuk multilabel")\n'
+         + CLEAN + out("finetune_multilabel") + 'OOF_FOLDER = f"{HASIL}/oof_multilabel"\n'
+         + SAMPLE + 'TEXT_COL = TEXT_COLS[0]\nNOTEBOOK = "4m_finetune_multilabel"\n')
+
 # nama baru -> (notebook asal, ekor sel Konfigurasi)
 NOTEBOOKS = {
     "1_eda": ("eda_lengkap", RAW + out("eda")),
@@ -49,6 +56,7 @@ NOTEBOOKS = {
     "6_topik": ("topik_lengkap", CLEAN + out("topik")),
     "6b_topik_bertopic": ("topik_bertopic", BERTOPIC),
     "7_laporan_model": ("laporan_model", CLEAN + out("laporan") + OOF),
+    "4m_finetune_multilabel": ("finetune_multilabel", MULTI),
 }
 
 # (notebook, teks lama, teks baru): wajib ketemu tepat sekali, kalau tidak skrip berhenti
@@ -69,6 +77,37 @@ REPLACEMENTS = [
      'topic_info.drop(columns=["Representative_Docs"]).to_csv(f"{OUTPUT_FOLDER}/info_topik.csv",\n'
      "                                                        index=False)   # tanpa teks asli"),
 ]
+TOPIC_LABEL_MD = """## Topik x label (hanya soal MULTILABEL, `LABEL_COLS` di konfig.py)
+Tiap sel = porsi teks di satu topik yang punya label itu (satu teks boleh punya beberapa label,
+jadi baris TIDAK berjumlah 100%). **Lift** = porsi itu dibagi porsi label di seluruh train."""
+TOPIC_LABEL_CODE = """if LABEL_COLS is not None:
+    multi = data[(data["asal"] == "train") & (data["topik"] >= 0)]
+    label_share = multi.groupby("topik")[LABEL_COLS].mean()
+    label_base = multi[LABEL_COLS].mean()
+    label_lift = label_share / label_base.clip(lower=1e-9)
+    figure, axis = plt.subplots(figsize=(1.1 * len(LABEL_COLS) + 4, 0.5 * len(label_share) + 2))
+    axis.imshow(label_share.to_numpy(), cmap="Blues", vmin=0, vmax=1, aspect="auto")
+    axis.set_xticks(range(len(LABEL_COLS)), LABEL_COLS, rotation=30, ha="right")
+    axis.set_yticks(range(len(label_share)), np.array(names)[label_share.index], fontsize=8)
+    for row in range(len(label_share)):
+        for column in range(len(LABEL_COLS)):
+            value = label_share.iloc[row, column]
+            axis.text(column, row, f"{100 * value:.0f}%\\nx{label_lift.iloc[row, column]:.1f}",
+                      ha="center", va="center", fontsize=8, color=["black", "white"][int(value > 0.6)])
+    axis.set_title("Porsi teks berlabel tiap topik (angka kedua = lift)")
+    table = label_share.round(3).reset_index()
+    table["topik"] = np.array(names)[label_share.index]
+    save_figure(figure, "06b_topik_x_label", table)
+    for name in LABEL_COLS:
+        top_topic = label_lift[name].idxmax()
+        add_fact("Topik x label", f"Label {name} (porsi umum {pct(label_base[name])}) paling kuat di "
+                 f"{names[top_topic]}: {pct(label_share.loc[top_topic, name])} dari topik itu "
+                 f"(lift {label_lift.loc[top_topic, name]:.1f}).")
+print("LABEL_COLS:", LABEL_COLS)"""
+# sel sisipan: (notebook, judul sel sesudahnya, markdown, kode)
+INSERTS = [("6_topik", "## Topik train vs test", TOPIC_LABEL_MD, TOPIC_LABEL_CODE)]
+# notebook yang ditulis sendiri (bukan salinan repo): sumber .py bersel di _alat/
+OWN = ["3m_baseline_multilabel", "5m_ensemble_multilabel"]
 DROP_HEADINGS = ["## Kotori data demo", "## Cek dengan kunci jawaban"]
 DROP_CODE = ["# HAPUS saat lomba: cek bahwa semua kotoran demo hilang"]
 
@@ -111,6 +150,15 @@ def build(new_name, old_name, tail):
             if len(hits) != 1:
                 raise SystemExit(f"{new_name}: '{old[:40]}' ketemu {len(hits)} kali, harus 1")
             hits[0]["source"] = hits[0]["source"].replace(old, new)
+    for name, before, markdown, code in INSERTS:
+        if name == new_name:
+            spots = [i for i, cell in enumerate(cells) if cell["source"].startswith(before)]
+            if len(spots) != 1:
+                raise SystemExit(f"{new_name}: judul '{before}' ketemu {len(spots)} kali")
+            extra = [{"cell_type": "markdown", "metadata": {}, "source": markdown},
+                     {"cell_type": "code", "metadata": {}, "source": code, "outputs": [],
+                      "execution_count": None}]
+            cells[spots[0]:spots[0]] = extra
     config = cells[config_index(cells)]
     config["source"] = config["source"].rstrip("\n") + HEAD + tail.rstrip("\n")
     notebook["cells"] = cells
@@ -122,7 +170,8 @@ def build(new_name, old_name, tail):
 def copy_data():
     """Kamus alay + data demo ikut di folder ini, supaya tidak bergantung pada data_latihan."""
     pairs = [("preprocessing/kamus_alay_salsabila.csv", "kamus"), ("preprocessing/kamus_slang.csv", "kamus"),
-             ("text/sentiment/smsa_train.csv", "demo"), ("text/sentiment/smsa_test.csv", "demo")]
+             ("text/sentiment/smsa_train.csv", "demo"), ("text/sentiment/smsa_test.csv", "demo"),
+             ("text/multilabel/casa_train.csv", "demo"), ("text/multilabel/casa_test.csv", "demo")]
     for relative, folder in pairs:
         os.makedirs(os.path.join(ROOT, folder), exist_ok=True)
         target = os.path.join(ROOT, folder, os.path.basename(relative))
@@ -133,4 +182,8 @@ def copy_data():
 
 for new_name, (old_name, tail) in NOTEBOOKS.items():
     build(new_name, old_name, tail)
+for name in OWN:
+    subprocess.run([sys.executable, os.path.join(REPO, "_alat", "py2nb.py"),
+                    os.path.join(HERE, name + ".py"), os.path.join(ROOT, name + ".ipynb")], check=True)
+    print(f"{name}.ipynb  <- _alat/{name}.py")
 copy_data()

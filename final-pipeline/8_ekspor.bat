@@ -12,7 +12,7 @@ if not defined PY (
     pause
     exit /b 1
 )
-"%PY%" "%~dp0..\_alat\ekspor_hasil.py" "%HASIL%\eda" "%HASIL%\praproses" "%HASIL%\baseline" "%HASIL%\finetune" "%HASIL%\ensemble" "%HASIL%\topik" "%HASIL%\bertopic" "%HASIL%\laporan"
+"%PY%" "%~dp0..\_alat\ekspor_hasil.py" "%HASIL%\eda" "%HASIL%\praproses" "%HASIL%\baseline" "%HASIL%\finetune" "%HASIL%\ensemble" "%HASIL%\topik" "%HASIL%\bertopic" "%HASIL%\laporan" "%HASIL%\baseline_multilabel" "%HASIL%\finetune_multilabel" "%HASIL%\ensemble_multilabel"
 if errorlevel 1 (
     echo GAGAL. Baca pesan di atas.
 )
