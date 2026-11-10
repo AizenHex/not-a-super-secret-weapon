@@ -2,6 +2,10 @@
 
 Terbaru di atas. Format: `- YYYY-MM-DD: <keputusan>. Alasan: <...>.`
 
+- 2026-11-10: T5 di katalog = LazarusNLP/IndoNanoT5-base, bukan google/mt5-small. Alasan: mt5-small tanpa
+  tokenizer.json, butuh `sentencepiece` (tidak di venv; aturan tanya dulu sebelum pip); IndoNanoT5 punya
+  tokenizer.json dan berbahasa Indonesia.
+
 - 2026-11-10: Word2Vec/GloVe/FastText di `katalog_algoritma` ditulis sendiri di torch, bukan gensim. Alasan: gensim
   tidak ada di venv/requirements dan PC lomba offline; aturan: tanya dulu sebelum pip. Satu notebook katalog untuk
   semua algoritma (bukan satu per algoritma) supaya skor dibanding di split sama; jalur lomba tetap *_oof.

@@ -31,11 +31,13 @@ lifelines==0.30.3
 # Deret waktu
 statsmodels==0.15.0
 sktime==1.2.0
+ruptures==1.1.10             # deteksi titik perubahan (change point)
 
 # Unsupervised
 umap-learn==0.5.12
 pyod==3.6.6
 mlxtend==0.25.0
+kmodes==0.12.2               # k-prototypes untuk data campuran
 
 # Teks
 transformers==5.18.0
@@ -105,6 +107,7 @@ rouge_score==0.1.2           # ROUGE untuk generasi teks
 absl-py==2.5.1               # dipakai rouge_score
 sacrebleu==2.6.0             # BLEU / chrF
 portalocker==4.4.1           # dipakai sacrebleu
+jiwer==4.0.0                 # WER/CER untuk ASR dan OCR
 
 # PaddleOCR: dependensi (paketnya sendiri di requirements_paddle.txt, dipasang --no-deps)
 aiohttp==3.14.5

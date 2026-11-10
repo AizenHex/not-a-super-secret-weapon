@@ -38,8 +38,9 @@ F1 makro val 0,427; kelas ke-2 F1 0).
 
 - 2026-11-10: `contoh/text/katalog_algoritma.ipynb` = contoh kode tiap algoritma dari daftar pengguna (ML klasik,
   RNN/LSTM/GRU/Bi-/Attention/Text-CNN/Transformer dari nol, fine-tune HF satu fungsi, Word2Vec/GloVe/FastText
-  dari nol di torch), skor di split sama. Lint 0, Run All lulus di SmSA 3000 baris (GPU). ALBERT/XLNet/ERNIE/mT5/
-  BART hanya baris ber-`#`; foldernya ditambah ke `unduh_model.py` dan sedang diunduh. Sudah di-commit.
+  dari nol di torch), skor di split sama. Lint 0, Run All lulus di SmSA 3000 baris (GPU). ALBERT/XLNet/ERNIE/T5/
+  BART (T5 = IndoNanoT5) ber-`#`, sudah di `unduh_model.py` dan terunduh; semua 12 model C diuji jalan.
+  Versi awal di-commit (2ffd26d); perubahan unduh_model + komentar MODEL_PATHS belum di-commit.
 - 2026-11-10: `contoh/text/eda_lengkap.ipynb` = EDA teks + angka/kategori (hanya membaca, tulis `temuan.md`),
   dijalankan paling awal. Lint 0; Run All lulus di demo baju, SmSA regresi (target buatan) dan SmSA klasifikasi,
   keduanya dengan `DATE_COL`, `LANGUAGE="id"`, tanpa kolom tabel. Belum diuji: target kosong (qcut gagal), data
@@ -134,6 +135,12 @@ F1 makro val 0,427; kelas ke-2 F1 0).
   (di luar repo, bukan git); catatan lengkap `Z:/GEMASTIK/Vignate-2/HANDOFF.md`.
 
 ## Pekerjaan terbuka
+
+- Cek terakhir 2026-11-10 (rinci di log): model 48/48 terunduh (21 GB), venv = requirements (+ jiwer/kmodes/ruptures),
+  PANDUAN/KATALOG sudah memuat semua notebook teks, semua di-push. Sisa: angka "9 GB / 18 model" di
+  `download_model.bat`/`unduh_model.py`/README usang; `data_latihan` (junction ke `Z:/GEMASTIK-DATABASE`) harus disalin
+  sendiri; wheelhouse tidak ada; tautan mati PANDUAN (`visualisasi/PILIH_GRAFIK.md`, `eda_otomatis.ipynb`); model
+  `bge_m3`/`e5_large_instruct`/`qwen3_06b` tidak diunduh (hanya alternatif ber-`#`); T12 gladi belum.
 
 - Perbaikan review jalur runbook (2026-11-10, di-push bersama `run_baseline.bat` untuk cek PC lomba): 12 notebook `contoh/text/` (penjaga sample demo,
   NUM_COLS ⊂ kolom test, opsi grup teks kembar, peringatan validator, path pseudo-label). Hari lomba:

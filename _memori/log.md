@@ -2,13 +2,48 @@
 
 Terbaru di atas. Format di [`README.md`](README.md).
 
-## 2026-11-10 claude-opus-5-5 - model pretrained ALBERT/XLNet/ERNIE/mT5/BART
+## 2026-11-10 claude-fable-5-2 - tindak lanjut cek: library, PANDUAN/KATALOG, commit + push
+- Pemicu: pengguna memilih butir 1, 4, 5 dari hasil cek, "pake agent haiku aja".
+- Dikerjakan (dua subagen Haiku, hasil kuperiksa lewat diff): `jiwer` 4.0.0, `kmodes` 0.12.2, `ruptures` 1.1.10
+  dipasang di venv (dry-run: tidak ada paket lain berubah) + masuk `requirements.txt`; 24 notebook `contoh/text`
+  ditambahkan ke `contoh/PANDUAN.md` (peta cepat; baseline_oof → finetune_oof → ensemble_oof sesudah
+  praproses_lengkap) dan `contoh/KATALOG.md` (bagian baru di akhir; skor hanya untuk baseline_oof/ensemble_oof dari
+  STATUS T2/T6, sisanya "-").
+- Ditemukan saat memeriksa: `embedding_llm_oof` (default) dan komentar `setfit_kontrastif` menunjuk
+  `pretrained/qwen3_emb_06b`, padahal foldernya `qwen3_emb`; diganti. Alternatif ber-`#` yang modelnya TIDAK
+  diunduh: `bge_m3`, `e5_large_instruct` (embedding_llm_oof), `qwen3_06b` (llm_lora_klasifikasi).
+- Uji: lint 0; JSON kedua notebook valid. `embedding_llm_oof` tidak di-Run All sesudah ganti path.
+- Di-commit dan di-push ke `origin/new-gen` atas permintaan pengguna (butir 1).
+- Dikoreksi pengguna: -
+
+## 2026-11-10 claude-fable-5-2 - cek terakhir repo (tanpa perubahan kode)
+- Pemicu: pengguna: "lakukan check terakhir di repositori ini, apakah ada yang belum lengkap, belum terunduh".
+- Hasil lulus: 48/48 folder model `unduh_model.py` ada di `../pretrained` (21,1 GB, tanpa file sisa unduhan, semua
+  punya bobot; tokenizer/prosesor 26 model HF dimuat offline); semua versi `requirements*.txt` = venv; lint 0; semua
+  path `pretrained/`/`data_latihan/` di notebook ada (kecuali `tapt_indobert` = keluaran `mlm_tapt`); uji asap
+  `finetune_oof` (fold 0, 1 epoch, GPU: 64 s, F1 OOF 0,923, MASALAH 0) dan `ensemble_oof` (6 s) sesudah edit 10 Nov.
+- Belum lengkap: (1) 5 file belum di-commit/push (unduh_model + 5 model baru, katalog_algoritma, memori): PC panitia
+  yang `git clone` tidak akan mengunduh albert/xlnet/ernie/indot5/bart; (2) `download_model.bat`, docstring
+  `unduh_model.py`, README butir 3 masih menulis "9 GB / 18 model", nyatanya 21 GB / 32 repo HF; (3) `jiwer`, `kmodes`,
+  `ruptures` diimpor 6 notebook non-teks tapi tidak ada di requirements/venv; (4) `data_latihan` = junction ke
+  `Z:\GEMASTIK-DATABASE\data_latihan` (1,1 GB, di luar repo): harus disalin sendiri, `run_baseline.bat` butuh;
+  (5) 24 notebook `contoh/text` (termasuk baseline_oof/finetune_oof/ensemble_oof) tidak disebut di PANDUAN/KATALOG
+  (T13 kosong), T9/T10/T12 STATUS kosong, T11c belum; (6) PANDUAN: tautan mati `visualisasi/PILIH_GRAFIK.md`,
+  `eda_otomatis.ipynb`; (7) `pip check`: paddlex minta numpy<2.4 (sudah diketahui, --no-deps); (8) wheelhouse
+  `../env/wheelhouse` tidak ada (cadangan offline); (9) hasil_build 7 Nov masih "GAGAL text/finetune_oof" (usang).
+- Dikoreksi pengguna: -
+- Berikutnya: pengguna memutuskan commit/push dan perbaikan butir 2, 3, 6.
+
+## 2026-11-10 claude-opus-5-5 - model pretrained ALBERT/XLNet/ERNIE/T5/BART
 - Pemicu: pengguna menjawab tawaran menambah 5 model katalog: "pretrained".
 - Dikerjakan: `_alat/unduh_model.py` + albert_id (indobenchmark/indobert-lite-base-p1), xlnet_en, ernie_en,
-  mt5_small (google/mt5-small), bart_en (facebook/bart-base, lewati pytorch_model.bin ganda); daftar file repo HF
-  dicek lewat API. Unduhan ke `../pretrained` berjalan. Komentar MODEL_PATHS di `katalog_algoritma` diperbarui
-  (tetap ber-`#`, default hanya IndoBERT + DistilBERT).
-- Uji: belum (menunggu unduhan; rencana: bagian C semua model, 600 baris, 1 epoch).
+  indot5_base (LazarusNLP/IndoNanoT5-base), bart_en (facebook/bart-base, lewati pytorch_model.bin ganda); semua
+  diunduh ke `../pretrained`. google/mt5-small sempat diunduh lalu diganti + foldernya dihapus: hanya punya
+  `spiece.model`, tokenizer butuh paket `sentencepiece` yang tidak ada di venv. Komentar MODEL_PATHS
+  `katalog_algoritma` diperbarui (tetap ber-`#`, default IndoBERT + DistilBERT).
+- Uji: bagian C, 600 baris, 1 epoch, F1 macro: IndoBERT large 0,872, IndoBERT 0,849, IndoBERTweet 0,849,
+  DistilBERT 0,835, NusaBERT 0,790, XLM-R 0,632, XLNet 0,533, ERNIE 0,454, ALBERT 0,431, mDeBERTa 0,193 (satu
+  kelas; 1 epoch kecil, belum diuji lebih lama), IndoNanoT5 0,831 (136 s), BART 0,548.
 - Dikoreksi pengguna: -
 
 ## 2026-11-10 claude-opus-5-5 - contoh/text/katalog_algoritma

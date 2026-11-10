@@ -36,7 +36,7 @@ HF = {
     "albert_id": "indobenchmark/indobert-lite-base-p1",  # ALBERT Indonesia
     "xlnet_en": "xlnet/xlnet-base-cased",
     "ernie_en": "nghuyong/ernie-2.0-base-en",
-    "mt5_small": "google/mt5-small",               # T5 multibahasa
+    "indot5_base": "LazarusNLP/IndoNanoT5-base",   # T5 Indonesia (punya tokenizer.json, tanpa sentencepiece)
     "bart_en": "facebook/bart-base",
     "nli_mdeberta": "MoritzLaurer/mDeBERTa-v3-base-xnli-multilingual-nli-2mil7",
     "qa_mdeberta": "timpal0l/mdeberta-v3-base-squad2",

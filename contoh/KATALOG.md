@@ -893,3 +893,37 @@ seluruh notebook dijalankan (hasil mentah: `_alat/log/varian.txt`). 72 alternati
 
 **Catatan LightGBM / XGBoost:** jika CPU sedang dipakai proses lain, pengaturan thread bawaan
 bisa ratusan kali lebih lambat. Tulis `n_jobs=4` (atau jumlah inti fisik) bila notebook terasa macet.
+
+---
+
+# Tambahan — 24 notebook teks yang belum tercatat
+
+Kolom sama dengan tabel di atas. `-` = angka belum ada di notebook (belum diukur), jadi tidak diisi.
+Skor `baseline_oof` dan `ensemble_oof` berasal dari catatan pembuatan notebook (data demo smsa).
+
+| Notebook | Asli | Alternatif terbaik (hapus `#`) | Catatan |
+|---|---|---|---|
+| `text/absa` | - | - | ABSA 10 aspek; data demo HoASA; split tidak stratified |
+| `text/augmentasi` | - | - | Augmentasi hanya di train; data demo EmoT, 400 baris |
+| `text/bahasa_daerah` | - | - | Data demo NusaX-senti (12 bahasa); split per kalimat asal |
+| `text/baseline_oof` | F1 makro OOF 0.8602 (test 0.8343) | bersih alay 0.8611; Ridge 0.8603 | Data demo smsa. Alt: LogReg 0.8528, NB-SVM 0.8562, kata saja 0.8564, char saja 0.8520, SGD 0.8448, ComplementNB 0.8209. Bentuk lain (hanya jalan): emot 0.6926, HS 0.8654, wrete 0.4779 |
+| `text/dokumen_panjang` | - | - | Data demo arXiv (2.000 dokumen); chunk bertumpuk, agregasi per dokumen |
+| `text/embedding_llm_oof` | - | - | Data demo SmSA (3 kelas); Qwen3-Embedding, bge-m3, e5 + kepala LogReg/LGBM |
+| `text/ensemble_oof` | rata-rata jujur 0.8640 (6 varian baseline_oof); tunggal terbaik 0.8576 | - | Data demo smsa dengan OOF baseline_oof; alt rank, Nelder-Mead, stacking LogReg/Ridge (LOLOS 13 dtk, CPU) |
+| `text/finetune_multilabel` | - | - | Data demo CASA (6 aspek, 810 baris); ambang per label dari OOF |
+| `text/finetune_oof` | - | - | Data demo SmSA (3 kelas), indobert; belum ada skor tercatat |
+| `text/finetune_regresi` | - | - | Data demo regression yelp (Inggris); pembanding `text/regresi_teks` |
+| `text/inggris` | - | - | Data demo TweetEval sentiment (3 kelas) |
+| `text/llm_lora_klasifikasi` | - | - | Data demo SmSA (3 kelas); LoRA ditulis sendiri, OOF |
+| `text/llm_prompt` | - | - | Data demo SmSA; Qwen2.5-0.5B-Instruct few-shot |
+| `text/mlm_tapt` | - | - | Data demo teks SmSA train + test; checkpoint TAPT |
+| `text/ner_bert` | - | - | Data demo NERP (5 jenis entitas); F1 entitas |
+| `text/pasangan_teks` | - | - | Data demo WReTE (IndoNLU) |
+| `text/pos_tagging` | - | - | Data demo POSP (IndoNLU, 26 tag); CRF |
+| `text/rag_llm` | - | - | Data demo FacQA; cari dokumen + jawab Qwen 0.5B |
+| `text/regresi_teks` | - | - | Data demo ulasan Yelp, target stars 1-5; TF-IDF + Ridge |
+| `text/setfit_kontrastif` | - | - | Data demo SmSA, 200 contoh per kelas; OOF |
+| `text/tanya_jawab` | - | - | Data demo FacQA; mDeBERTa SQuAD2 zero-shot; EM + F1 token |
+| `text/textcnn_bilstm` | - | - | Data demo SmSA (3 kelas); dari nol; OOF |
+| `text/topik_dinamis` | - | - | Data demo TweetTopic 2019-2021; NMF; NMI sebagai pembanding |
+| `text/zero_shot_nli` | - | - | Data demo SmSA; mDeBERTa XNLI |

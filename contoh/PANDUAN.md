@@ -53,23 +53,42 @@ metode + skor demo per notebook: [KATALOG.md](KATALOG.md). Tanda ⭐ = lebih bai
 | CSV, kelas positif sangat langka | `tabular/imbalanced` (class weight + threshold) | Stratified |
 | CSV, target angka | `tabular/regresi` → `regresi_lanjutan` (log target, interval) → `tuning_regresi` | KFold |
 | Tiap baris punya banyak label | `tabular/multilabel` / `text/multilabel` | KFold |
+| Tiap baris punya banyak label, ada GPU | `text/finetune_multilabel` (BCE, ambang per label dari OOF) | KFold (OOF) |
 | Durasi sampai kejadian + sensor | `tabular/survival` | — |
 | Ada entitas berulang (user, pasien, sekolah, speaker) | notebook tabular + `GroupKFold` (lihat `tabular/validasi`) | GroupKFold |
 | Train dan test terasa beda | `tabular/validasi` (adversarial validation) | — |
 | Teks train ≠ test (waktu/sumber/topik beda) | `text/geser_distribusi` (AUC adversarial, kata pembeda, bobot sampel) | Stratified |
 | Perlu menjelaskan model ke juri | `tabular/explain_klasifikasi` / `explain_regresi` (SHAP, PDP) | — |
 | Teks + label | `text/klasifikasi_tfidf` → `klasifikasi_embedding` → `klasifikasi_finetune` | Stratified |
+| Teks + label, data sedikit (puluhan s.d. ribuan baris) | `text/setfit_kontrastif` (kontras + LogReg, OOF) | Stratified (OOF) |
+| Teks + label, sedikit data latih (ratusan baris) | `text/augmentasi` (hapus, tukar, slang; hanya di train) | Holdout stratified |
+| Teks + label, bahasa daerah atau campuran bahasa Indonesia-daerah | `text/bahasa_daerah` (char n-gram, split per kalimat asal) | Group (kalimat asal) |
+| Teks + label, bahasa Inggris (tweet, ulasan) | `text/inggris` (emoji, stem Porter, TF-IDF) | Holdout stratified |
+| Teks + label, konteks sulit (sarkasme, topik campur), ada GPU | `text/llm_lora_klasifikasi` (LLM kecil + LoRA, OOF) | Stratified (OOF) |
+| Teks + label, teks panjang (berita, artikel, laporan) | `text/dokumen_panjang` (chunk bertumpuk, agregasi per dokumen, OOF) | Stratified per dokumen |
+| Teks + label, skor kuat tanpa fine-tune | `text/embedding_llm_oof` (Qwen3-Embedding, bge-m3, e5 + kepala LogReg/LGBM, OOF) | Stratified (OOF) |
+| Teks + label, model dari nol (kode, slang, log, urutan ID) | `text/textcnn_bilstm` (TextCNN / BiLSTM + attention, OOF) | Stratified (OOF) |
+| Dua teks: sama makna, entailment, parafrasa | `text/pasangan_teks` (embedding + fitur leksikal, LogReg/LGBM) | Holdout stratified |
+| Satu ulasan dinilai untuk banyak aspek (kebersihan, AC, wifi) | `text/absa` (TF-IDF + LogReg per aspek) | Holdout |
 | Teks + kolom tabel, target kelas | `text/stacking_teks_tabular` (OOF LogReg/NB + tetangga → LightGBM) | Stratified |
 | Label bertingkat (kategori > subkategori, kolom jalur "a > b") | `text/klasifikasi_hierarkis` (datar vs top-down vs rantai) | Stratified |
 | Teks + kolom tabel, target angka | `text/stacking_teks_tabular_regresi` (OOF Ridge + kelas-bin + tetangga) | KFold |
+| Teks saja, target angka (rating, harga, skor) | `text/regresi_teks` (TF-IDF + Ridge, clip, QWK) | Holdout |
+| Teks, target angka atau ordinal, ada GPU | `text/finetune_regresi` (transformer + mean pooling, ambang ordinal, OOF) | KFold (OOF) |
 | Label berurutan (rating 1–5, tingkat), metrik QWK/MAE | `text/ordinal_teks` (datar, kumulatif, regresi + ambang) | Stratified |
 | Target jumlah (like, share; banyak nol) | `text/regresi_hitungan` (log1p, poisson, tweedie, hurdle) | KFold |
 | Beberapa kolom target sekaligus | `text/multi_target` (terpisah, rantai, label gabungan) | KFold |
 | Kategori ditulis beda-beda, teks → daftar resmi, teks test hampir kembar train | `text/fuzzy_kategori` (rapidfuzz) | — |
 | File teks terlalu besar untuk RAM | `text/data_besar_teks` (hashing + SGD per potongan) | holdout hash id |
 | Teks: entitas | `text/ner` | — |
+| Teks: label per kata, skor tinggi (GPU) | `text/ner_bert` (BIO, subword, F1 entitas) | Holdout per kalimat |
+| Teks: kelas kata per token (POS) | `text/pos_tagging` (CRF, akurasi token + F1 macro) | Group per kalimat |
 | Teks tanpa label | `text/clustering`, `text/topik`, `text/kata_kunci_ringkasan` | Baca manual |
+| Teks bertanggal, topik berubah dari waktu | `text/topik_dinamis` (NMF + tren bulanan per periode) | Baca manual |
+| Label belum ada atau kategori baru diumumkan saat lomba | `text/zero_shot_nli` (NLI, tanpa latih), `text/llm_prompt` (LLM kecil few-shot) | Holdout stratified |
 | Cari dokumen mirip | `text/retrieval` | — |
+| Ada kumpulan dokumen dan pertanyaan, jawabannya tidak ada di teks | `text/rag_llm` (cari TF-IDF/MiniLM, jawab Qwen 0.5B) | — |
+| Pertanyaan + paragraf, cari potongan jawaban | `text/tanya_jawab` (mDeBERTa SQuAD2, EM + F1 token) | — |
 | Satu deret waktu, ramal ke depan | `timeseries/peramalan_statistik` → `peramalan_ml` | Split waktu |
 | Deret waktu + variabel penjelas | `timeseries/peramalan_exog` (pastikan eksogen masa depan ada!) | Split waktu |
 | Deret waktu: klasifikasi / anomali / cek pola | `timeseries/klasifikasi` / `anomali` / `diagnostik` | — |
@@ -129,6 +148,7 @@ Kapan tiap metode niche layak dipakai, untuk data seperti apa, dan hasil demonya
 | Tujuan | Buka |
 |---|---|
 | Tuning | `tabular/tuning_*`, `text/tuning` (TF-IDF + C) |
+| Adaptasi ke gaya teks lomba (medsos, berita lokal, domain) sebelum fine-tune | `text/mlm_tapt` (MLM di teks train + test) |
 | Gabung model | `tabular/ensembling_*`, `tabular/blending`, `text/ensemble`, `vision/tta_ensemble` |
 | Cari bobot ensemble untuk metrik tidak halus (hill negatif, annealing, evolusi diferensial, genetik, Optuna) | `text/bobot_ensemble_metaheuristik` (OOF mana pun) |
 | Bobot ensemble berubah menurut ciri baris (panjang teks, kolom kosong) | `text/stacking_fwls` (FWLS, LightGBM + ciri) |
@@ -151,6 +171,9 @@ Kapan tiap metode niche layak dipakai, untuk data seperti apa, dan hasil demonya
 |---|---|---|
 | **Kenali data teks + angka (EDA), sebelum apa pun** | `text/eda_lengkap` | profil kolom, target, kosong, angka, kategori, korelasi, teks (kata khas, kembar, kata baru), kekuatan tiap kolom + cek bocor, geser train→test, teks vs tabel; `temuan.md` |
 | **Soal teks apa pun, sesudah EDA** | `text/praproses_lengkap` | periksa 20 kotoran train vs test, awalan/akhiran berulang vs label, bersih ringan (BERT) + berat (TF-IDF), skor per langkah, kolom tabel, simpan `train_bersih.csv` |
+| Teks + label, submission pertama (maks 45 menit) dan sumber OOF | `text/baseline_oof` | k-fold, validator, pengali kelas F1 makro, OOF tersimpan |
+| Teks + label, jalur skor tinggi dengan GPU (sudah ada baseline) | `text/finetune_oof` | k-fold, AMP bf16, OOF dan test tersimpan; `FOLDS_TO_RUN = [0]` untuk uji waktu |
+| Sudah ada minimal 2 OOF dari notebook lain (baseline_oof / finetune_oof / teks_tabular) | `text/ensemble_oof` | gabung dengan metrik lomba, skor jujur, submission + validator |
 | Kode/nomor/email/alamat, perlu ambil sebagian | `preprocessing/regex_ekstraksi` | grup bernama `(?P<nama>...)` + `str.extract` + laporan baris tidak cocok |
 | Uang `1,5 jt`, `3.700rb`, `2-3 juta`; berat `70.500 gr`, `0,7 kwintal`; tanggal `12 Agu 2024`, `45516`; lama `2 thn 3 bln` | `preprocessing/angka_satuan_tanggal` | satu pola angka+satuan, tabel `SKALA_*`, format tanggal dicoba berurutan |
 | Kategori typo/singkatan (`Tehnik Informatika`, `T. Informatika`, `TI`) | `preprocessing/kategori_fuzzy` | nilai unik → normalisasi → `difflib` → draf CSV → `KOREKSI` |
