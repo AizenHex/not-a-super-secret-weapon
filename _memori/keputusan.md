@@ -2,7 +2,7 @@
 
 Terbaru di atas. Format: `- YYYY-MM-DD: <keputusan>. Alasan: <...>.`
 
-- 2026-11-10: `../final-pipeline` = salinan bernomor notebook `contoh/text` yang dibangkitkan skrip
+- 2026-11-10: `final-pipeline/` (root repo) = salinan bernomor notebook `contoh/text` yang dibangkitkan skrip
   (`final-pipeline/_alat/buat_ulang.py`), bukan notebook yang ditulis ulang; nilai soal di satu `konfig.py` yang
   di-`exec` di akhir sel Konfigurasi. Alasan: kode yang sudah teruji tidak disentuh (hanya path, ekor konfigurasi,
   sel demo dibuang), dan saat lomba cukup mengubah satu file, bukan tujuh sel. `exec`, bukan `import`, supaya

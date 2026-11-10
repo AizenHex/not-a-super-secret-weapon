@@ -22,8 +22,14 @@ Terbaru di atas. Format di [`README.md`](README.md).
 - Belum: metrik selain F1 makro, data banyak kolom teks, CSV ber-`;`, `SAMPLE_PANITIA` diisi file nyata,
   `jupyter.bat` diklik, PC panitia. `6b` ditambal (stopword Sastrawi, simpan ke OUTPUT_FOLDER, tanpa
   Representative_Docs) dan hanya diuji sekali.
+- DIPINDAH ke dalam repo atas permintaan pengguna ("tolong masukin ke sini super secret weapon"): sekarang
+  `final-pipeline/` di root repo (ikut git). Path jadi `../../pretrained`, `../../outputs/final`; `.bat` memanggil
+  `..\cari_python.bat` dan `..\_alat\ekspor_hasil.py`. Notebook dibangkitkan ulang; 1, 2, 3, 5, 7 Run All ulang
+  LULUS dari lokasi baru (`MASALAH: 0`); 4, 6, 6b tidak diulang (hanya dicek `../../pretrained/indobert` dan
+  `minilm` ada); `8_ekspor.bat` tidak diulang sesudah pindah. `_alat/lint.py` tidak berlaku untuk folder ini
+  (sel Konfigurasi 37 baris karena ekor konfig).
 - Dikoreksi pengguna: -
-- Berikutnya: pengguna menyalin `final-pipeline` ke PC panitia (tidak ikut `git clone`).
+- Berikutnya: di PC panitia cukup `git pull`.
 
 ## 2026-11-10 claude-fable-5-2 - rencana R1-R5: topik_lengkap + dokumentasi aman NDA [berjalan]
 - Pemicu: pengguna minta notebook topic modeling "sangat lengkap" dan EDA lengkap untuk PPT yang dibuat AI tanpa

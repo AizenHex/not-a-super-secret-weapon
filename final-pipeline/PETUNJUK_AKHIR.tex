@@ -1,0 +1,424 @@
+% PETUNJUK AKHIR final-pipeline, GEMASTIK XIX Penambangan Data (11 November 2026).
+% Bangun: pdflatex PETUNJUK_AKHIR.tex (dua kali).
+\documentclass[11pt,a4paper]{article}
+\usepackage[left=2.5cm,right=2.5cm,top=2.3cm,bottom=2.4cm]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[indonesian]{babel}
+\usepackage{lmodern}
+\usepackage{amssymb,booktabs,tabularx,array,enumitem,titlesec,float,xcolor}
+\usepackage[most]{tcolorbox}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,shapes.multipart,calc}
+\usepackage[hidelinks]{hyperref}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{5pt}
+\setlength{\emergencystretch}{2em}
+\titleformat{\section}{\Large\bfseries}{\thesection}{0.7em}{}
+\titleformat{\subsection}{\large\bfseries}{\thesubsection}{0.6em}{}
+\titlespacing*{\section}{0pt}{14pt}{6pt}
+\titlespacing*{\subsection}{0pt}{10pt}{3pt}
+\setlist{leftmargin=*,itemsep=1pt,parsep=0pt,topsep=2pt}
+\renewcommand{\arraystretch}{1.2}
+\newcolumntype{Y}{>{\raggedright\arraybackslash}X}
+
+% ---------- warna ----------
+\definecolor{biru}{HTML}{1F5FAE}
+\definecolor{hijau}{HTML}{1A9B6C}
+\definecolor{jingga}{HTML}{E8663D}
+\definecolor{kuning}{HTML}{C8860A}
+\definecolor{ungu}{HTML}{7A4FB5}
+\definecolor{merah}{HTML}{C0392B}
+\definecolor{abu}{HTML}{6B7280}
+
+% ---------- alat tulis ----------
+\newcommand{\f}[1]{\texttt{\detokenize{#1}}}                 % nama file / kode
+\newcommand{\ket}[1]{{\color{black!55}#1}}                    % keterangan abu-abu
+\newcommand{\cek}{$\square$\enspace}
+\newcommand{\pil}[2]{\tikz[baseline=(p.base)]\node[fill=#1,text=white,font=\bfseries\scriptsize,
+  rounded corners=2pt,inner xsep=4pt,inner ysep=2pt](p){#2};}
+
+% kotak gambar bernomor, pita judul abu-abu
+\newtcolorbox[auto counter]{gambar}[2][]{enhanced,colback=white,colframe=black!18,boxrule=0.5pt,
+  arc=2pt,colbacktitle=black!6,coltitle=black,fonttitle=\bfseries\small,
+  title={Gambar \thetcbcounter. #2},left=6pt,right=6pt,top=6pt,bottom=6pt,
+  before skip=8pt,after skip=10pt,halign=center,#1}
+% kartu notebook: #1 warna, #2 nama, #3 keterangan kanan
+\newtcolorbox{nb}[3]{enhanced,colback=white,colframe=#1,boxrule=0.5pt,leftrule=4pt,arc=2pt,
+  colbacktitle=#1!10,coltitle=#1!75!black,fonttitle=\bfseries,
+  title={#2\hfill{\normalfont\small #3}},left=6pt,right=6pt,top=3pt,bottom=3pt,
+  before skip=7pt,after skip=7pt,fontupper=\small}
+\newenvironment{isi}{\tabularx{\linewidth}{@{}>{\bfseries}p{1.45cm}Y@{}}}{\endtabularx}
+% kotak peringatan / catatan
+\newtcolorbox{awas}[1][merah]{enhanced,colback=#1!5,colframe=#1,boxrule=0pt,leftrule=3pt,arc=0pt,
+  left=7pt,right=7pt,top=4pt,bottom=4pt,before skip=7pt,after skip=7pt}
+
+\tikzset{
+  ar/.style={-{Stealth[length=2mm]},black!60,line width=0.7pt},
+  kartu/.style 2 args={rectangle split,rectangle split parts=2,draw=#1,rounded corners=2pt,
+    rectangle split part fill={#1,white},text width=#2,align=left,font=\scriptsize,inner sep=3pt},
+  kotak/.style={draw=black!45,rounded corners=2pt,align=center,font=\footnotesize,inner sep=4pt},
+  hasil/.style={draw=#1,fill=#1!12,rounded corners=2pt,align=left,font=\footnotesize,inner sep=4pt},
+}
+\newcommand{\jdl}[1]{\textcolor{white}{\textbf{#1}}}
+
+% ---------- angka gladi (diukur 10 November 2026 di laptop, data demo SmSA) ----------
+\newcommand{\wEda}{23 s}\newcommand{\wPra}{60 s}\newcommand{\wBase}{24 s, F1 OOF 0,860}
+\newcommand{\wFt}{31 s per epoch per fold; 1 epoch F1 OOF 0,927}
+\newcommand{\wEns}{5 s}\newcommand{\wTopik}{5 menit}\newcommand{\wBer}{80 s}\newcommand{\wLap}{7 s}
+
+\begin{document}
+
+% ================= kepala =================
+\begin{tcolorbox}[enhanced,colback=biru,colframe=biru,arc=3pt,left=12pt,right=12pt,top=10pt,bottom=10pt]
+  {\color{white}{\LARGE\bfseries Petunjuk Akhir: final-pipeline}\\[3pt]
+  {\large GEMASTIK XIX Penambangan Data \textbullet\ Rabu, 11 November 2026 \textbullet\ 13.00--18.00}\\[6pt]
+  \small Tebakan soal: \textbf{klasifikasi teks} (skor di Kaggle) dan \textbf{topic modeling}
+  (dipresentasikan). Delapan langkah bernomor, satu file konfigurasi.}
+\end{tcolorbox}
+
+\begin{gambar}{Lima jam dalam satu garis (rencana, bukan aturan panitia)}
+\begin{tikzpicture}[x=0.05cm,y=1cm]
+  % 1 menit = 0,05 cm
+  \foreach \a/\b/\c/\n in {0/20/biru/1,20/45/hijau/2,45/75/kuning/3,75/180/jingga/4,
+                           180/210/ungu/5+7,210/240/abu/8,240/300/merah/submit}
+    {\fill[\c,rounded corners=1.5pt] (\a+0.6,0) rectangle (\b-0.6,0.75);
+     \node[text=white,font=\bfseries\small] at ({(\a+\b)/2},0.375) {\n};}
+  \fill[hijau!70!black,rounded corners=1.5pt] (85,-0.62) rectangle (170,-0.12);
+  \node[text=white,font=\bfseries\scriptsize] at (127.5,-0.37) {6 topik, selagi GPU melatih};
+  \foreach \m/\j in {0/13.00,60/14.00,120/15.00,180/16.00,240/17.00,300/18.00}
+    {\draw[black!50] (\m,0.85)--(\m,1.0); \node[font=\scriptsize,above] at (\m,0.95) {\j};}
+  \draw[black!55,line width=0.6pt] (0,1.55)--(238,1.55) node[midway,above,font=\scriptsize]
+    {tanpa internet, tanpa leaderboard: putusan dari CV lokal};
+  \draw[merah,line width=0.9pt] (242,1.55)--(300,1.55) node[midway,above,font=\scriptsize,text=merah]
+    {internet, 3 submission};
+\end{tikzpicture}
+
+\vspace{2pt}
+{\scriptsize\raggedright
+\pil{biru}{1} soal, \f{konfig.py}, EDA\quad
+\pil{hijau}{2} praproses\quad
+\pil{kuning}{3} baseline + submission pertama di disk\quad
+\pil{jingga}{4} fine-tune (1--2 model)\quad
+\pil{ungu}{5+7} ensemble, laporan\quad
+\pil{abu}{8} pilih 3 file, ekspor\par}
+\end{gambar}
+
+% ================= 1 =================
+\section{Peta pipeline}
+
+Folder \f{final-pipeline} berisi salinan tujuh notebook repo yang sudah teruji, diberi nomor urut.
+Kodenya sama dengan \f{contoh/text/}; yang berbeda hanya path dan sel Konfigurasi, yang sekarang
+membaca \f{konfig.py}. Jalankan menurut nomor.
+
+\begin{gambar}{Alur file dari soal sampai bahan presentasi}
+\begin{tikzpicture}
+  \node[fill=black!80,text=white,rounded corners=2pt,font=\footnotesize,minimum width=15.5cm,
+        minimum height=6mm,anchor=north west] (k) at (0,1.5)
+    {\textbf{\texttt{konfig.py}}\quad path file soal, nama kolom, folder hasil: diubah sekali, dibaca semua notebook};
+  \node[kartu={biru}{2.45cm},anchor=north west] (n1) at (0,0)
+    {\jdl{\f{1_eda}}\nodepart{two}kenali data, cek bocor, train vs test\\ \ket{temuan.md}};
+  \node[kartu={hijau}{2.45cm},anchor=north west] (n2) at (3.2,0)
+    {\jdl{\f{2_praproses}}\nodepart{two}periksa kotoran, bersih ringan + berat\\ \ket{\f{train_bersih.csv}}};
+  \node[kartu={kuning}{2.45cm},anchor=north west] (n3) at (6.4,0)
+    {\jdl{\f{3_baseline}}\nodepart{two}TF-IDF + SVM, 5 fold, validator\\ \ket{oof + submission}};
+  \node[kartu={jingga}{2.45cm},anchor=north west] (n4) at (9.6,0)
+    {\jdl{\f{4_finetune}}\nodepart{two}IndoBERT dkk., 5 fold, GPU\\ \ket{oof + submission}};
+  \node[kartu={ungu}{2.45cm},anchor=north west] (n5) at (12.8,0)
+    {\jdl{\f{5_ensemble}}\nodepart{two}gabung OOF, skor jujur\\ \ket{submission akhir}};
+  \node[kartu={hijau!70!black}{2.45cm},anchor=north west] (n6) at (3.2,-2.9)
+    {\jdl{\f{6_topik}}\nodepart{two}NMF / LDA / embedding, pilih jumlah topik\\ \ket{\f{fakta_topik.md}}};
+  \node[kartu={hijau!70!black}{2.45cm},anchor=north west] (n6b) at (6.4,-2.9)
+    {\jdl{\f{6b_bertopic}}\nodepart{two}BERTopic (HDBSCAN), pembanding\\ \ket{\f{info_topik.csv}}};
+  \node[kartu={ungu}{2.45cm},anchor=north west] (n7) at (9.6,-2.9)
+    {\jdl{\f{7_laporan}}\nodepart{two}per kelas, confusion matrix, ECE\\ \ket{\f{fakta_model.md}}};
+  \node[kartu={abu}{2.45cm},anchor=north west] (n8) at (12.8,-2.9)
+    {\jdl{\f{8_ekspor.bat}}\nodepart{two}saring yang boleh keluar\\ \ket{\f{bawa_pulang/}}};
+  \foreach \a/\b in {n1/n2,n2/n3,n3/n4,n4/n5} \draw[ar] (\a.east)--(\b.west);
+  \foreach \n in {n1,n2,n3,n4,n5} \draw[ar,black!35] (\n.north |- k.south)--(\n.north);
+  \draw[ar] (n2.south)--(n6.north);
+  \draw[ar] (n4.south)--(n7.north) node[midway,right,font=\tiny] {OOF};
+  \draw[ar] (n5.south)--(n8.north);
+  \draw[ar,densely dashed] (n6.east)--(n6b.west);
+  \draw[ar] (n7.east)--(n8.west);
+  \draw[ar] (n6.south)-- ++(0,-0.35) -| (n8.south);
+\end{tikzpicture}
+\end{gambar}
+
+\begin{gambar}{Susunan folder yang wajib (path di notebook relatif)}
+\begin{minipage}{0.56\linewidth}\small\ttfamily\raggedright
+C:/GEMASTIK/\\
+\quad not-a-super-secret-weapon/\quad\ket{\rmfamily repo}\\
+\quad\quad \textbf{final-pipeline/}\quad\ket{\rmfamily folder ini}\\
+\quad\quad\quad konfig.py\\
+\quad\quad\quad 1\_eda.ipynb \dots\ 7\_laporan\_model.ipynb\\
+\quad\quad\quad 8\_ekspor.bat, jupyter.bat\\
+\quad\quad\quad demo/, kamus/\\
+\quad pretrained/\quad\ket{\rmfamily model (\f{download_model.bat})}\\
+\quad .venv/\quad\ket{\rmfamily dibuat setup.bat}\\
+\quad outputs/final/\quad\ket{\rmfamily semua hasil}
+\end{minipage}\hfill
+\begin{minipage}{0.4\linewidth}\small\raggedright
+\textbf{Buka:} dobel klik \f{jupyter.bat} di folder ini.\par\smallskip
+\textbf{Tidak butuh} \f{data_latihan}: data demo dan kamus alay sudah ikut di sini.\par\smallskip
+Folder ini \textbf{ada di dalam repo}, jadi ikut \f{git clone} / \f{git pull}.
+\end{minipage}
+\end{gambar}
+
+% ================= 2 =================
+\section{Yang diubah saat soal dibuka}
+
+Hanya \f{konfig.py}. Sesudah menyimpan, di tiap notebook pilih \emph{Restart Kernel and Run All}.
+
+\begin{tcolorbox}[enhanced,colback=black!3,colframe=black!25,boxrule=0.5pt,arc=2pt,
+  left=8pt,right=8pt,top=5pt,bottom=5pt,fontupper=\small\ttfamily]
+\textcolor{biru}{TRAIN\_MENTAH} = "C:/GEMASTIK/soal/train.csv"\hfill\pil{biru}{wajib}\\
+\textcolor{biru}{TEST\_MENTAH}\ \ = "C:/GEMASTIK/soal/test.csv"\hfill\pil{biru}{wajib}\\
+\textcolor{biru}{SAMPLE\_PANITIA} = "C:/GEMASTIK/soal/sample\_submission.csv"\hfill\pil{biru}{wajib}\\[3pt]
+\textcolor{hijau}{ID\_COL} = "id"\qquad \textcolor{hijau}{TEXT\_COLS} = ["text"]\qquad
+\textcolor{hijau}{TARGET} = "label"\hfill\pil{hijau}{wajib}\\
+\textcolor{hijau}{SUBMIT\_COL} = TARGET\hfill\pil{abu}{bila nama di sample beda}\\[3pt]
+\textcolor{jingga}{HASIL} = "../../outputs/lomba"\hfill\pil{jingga}{ganti dari "final"}\\
+\textcolor{abu}{LANGUAGE}, \textcolor{abu}{DATE\_COL}, \textcolor{abu}{GROUP\_COL},
+\textcolor{abu}{TFIDF\_BERAT}\hfill\pil{abu}{bila perlu}
+\end{tcolorbox}
+
+\begin{awas}
+\textbf{Tiga hal yang tidak ada di \f{konfig.py}.}
+\begin{enumerate}
+  \item \textbf{Metrik.} Bawaannya F1 makro. Kalau soal memakai metrik lain, pindahkan \texttt{\#} di
+  baris \f{return} sel ``Metrik'' pada \f{3_baseline}, \f{4_finetune}, dan \f{5_ensemble}
+  (ketiganya harus sama).
+  \item \textbf{Pemisah dan encoding CSV.} Kalau \f{pd.read_csv} gagal atau kolom jadi satu,
+  pakai baris ber-\texttt{\#} di sel ``Baca data'' \f{2_praproses} (\f{sep=";"},
+  \f{encoding="latin-1"}). Notebook 3--7 membaca \f{train_bersih.csv}, jadi cukup dibetulkan di
+  notebook 1 dan 2.
+  \item \textbf{Pola awalan/akhiran.} \f{STRIP_PATTERNS} di \f{2_praproses} masih pola demo.
+  Isi dari tabel ``Awalan dan akhiran berulang'' di notebook itu, atau kosongkan (\f{[]}).
+\end{enumerate}
+\end{awas}
+
+% ================= 3 =================
+\section{Langkah demi langkah}
+
+Waktu di pojok kanan diukur pada gladi 10 November 2026 di laptop (RTX 5060 8 GB) dengan data
+demo SmSA: 11.000 teks latih, 3 kelas. Data lomba yang lebih besar atau lebih panjang akan lebih
+lama.
+
+\begin{nb}{biru}{\f{1_eda}}{demo \wEda}
+\begin{isi}
+Tujuan & Tahu bentuk data sebelum memilih apa pun. Tidak mengubah file.\\
+Lihat & Sebaran kelas, panjang teks, teks kembar dan kembar beda label, kekuatan tiap kolom
+(tanda bocor), AUC adversarial train vs test.\\
+Luaran & \f{eda/temuan.md} dan PNG. \f{AMAN_NDA = True}: tidak mencetak teks asli.
+\end{isi}
+\end{nb}
+
+\begin{nb}{hijau}{\f{2_praproses}}{demo \wPra}
+\begin{isi}
+Tujuan & Membuat \f{train_bersih.csv} dan \f{test_bersih.csv} yang dibaca semua notebook
+sesudahnya.\\
+Ubah & \f{STRIP_PATTERNS}; saklar \f{DROP_*} di bagian 7 (teks kembar beda label).\\
+Lihat & Tabel ``Ukur'': langkah mana yang menaikkan skor. Tiga baris \f{CEK} di sel terakhir
+harus \f{True}.\\
+Awas & Jumlah baris train bisa berkurang (kosong, kembar). Jangan jalankan ulang notebook ini
+sesudah ada OOF, kecuali semua model dilatih ulang.
+\end{isi}
+\end{nb}
+
+\begin{nb}{kuning}{\f{3_baseline}}{demo \wBase}
+\begin{isi}
+Tujuan & Submission pertama yang sah dan OOF pertama. Target: selesai sebelum 14.15.\\
+Ubah & \f{MODEL_NAME} tiap variasi (mis. \f{tfidf_logreg}), lalu pindahkan \texttt{\#} di
+\f{CLASSIFIER}. Nama sama berarti OOF lama tertimpa.\\
+Lihat & Skor OOF dan baris terakhir validator: \textbf{\f{MASALAH: 0}}. Tulisan
+\f{PERINGATAN: SAMPLE_CSV masih file demo} berarti \f{SAMPLE_PANITIA} belum diisi.\\
+Luaran & \f{baseline/submission.csv}, \f{oof/oof_<nama>.npy}, \f{oof/percobaan.csv}.
+\end{isi}
+\end{nb}
+
+\begin{nb}{jingga}{\f{4_finetune}}{demo \wFt}
+\begin{isi}
+Tujuan & Skor tertinggi. Zero-shot dan few-shot dilarang; fine-tune sendiri seperti ini boleh.\\
+Ubah & \f{PRETRAINED} + \f{MODEL_NAME} (Gambar~\ref{g:model}); \f{MAX_LENGTH} dari tabel
+persentil token (ambil sekitar p95).\\
+Uji dulu & \f{FOLDS_TO_RUN = [0]} untuk mengukur waktu satu fold (OOF tidak disimpan), lalu
+kembalikan ke \f{None}. Waktu penuh kira-kira 5 kali satu fold. Gladi memakai 1 epoch (3 menit); bawaan 3 epoch, jadi kira-kira 8 menit di data demo.\\
+Awas & GPU hanya untuk satu notebook fine-tune pada satu waktu. Model \emph{large}:
+\f{BATCH_SIZE = 8}, \f{ACCUM_STEPS = 2}, \f{GRAD_CHECKPOINT = True}.
+\end{isi}
+\end{nb}
+
+\begin{gambar}[label=g:model]{Memilih \texttt{PRETRAINED} di \texttt{4\_finetune}}
+\begin{tikzpicture}
+  \node[kotak,text width=2.1cm] (q) at (0,0) {\textbf{Teksnya seperti apa?}\\ \ket{lihat \f{1_eda}}};
+  \node[kotak,text width=4.6cm,align=left] (a) at (4.6,1.8) {\textbf{Medsos}: alay, emoji, mention};
+  \node[kotak,text width=4.6cm,align=left] (b) at (4.6,0.6) {\textbf{Formal}: berita, ulasan rapi};
+  \node[kotak,text width=4.6cm,align=left] (c) at (4.6,-0.6) {\textbf{Campur}: daerah, Inggris};
+  \node[kotak,text width=4.6cm,align=left] (d) at (4.6,-1.8) {\textbf{Waktu mepet} atau data sangat besar};
+  \node[hasil=jingga,text width=5.3cm] (ra) at (11.2,1.8) {\f{indobertweet} + nyalakan \f{prep_tweet}};
+  \node[hasil=biru,text width=5.3cm] (rb) at (11.2,0.6) {\f{indobert}, lalu \f{indobert_large}};
+  \node[hasil=hijau,text width=5.3cm] (rc) at (11.2,-0.6) {\f{xlmr_base} atau \f{nusabert}};
+  \node[hasil=abu,text width=5.3cm] (rd) at (11.2,-1.8) {\f{distilbert_id} atau \f{minilm}};
+  \foreach \x/\y in {a/ra,b/rb,c/rc,d/rd} {\draw[ar] (q.east)--(\x.west); \draw[ar] (\x.east)--(\y.west);}
+\end{tikzpicture}
+
+\vspace{2pt}\parbox{\linewidth}{\centering\scriptsize\ket{Dua model yang berbeda (mis.
+\f{indobert} dan \f{xlmr_base}) lebih berguna untuk ensemble daripada satu model dengan dua seed.}}
+\end{gambar}
+
+\begin{nb}{ungu}{\f{5_ensemble}}{demo \wEns}
+\begin{isi}
+Tujuan & Menggabung semua OOF di \f{oof/} dan menilai dengan skor jujur (bobot dicari di lipatan
+lain).\\
+Lihat & Sel ``Putusan''. Gabungan hanya dipakai bila naik sekurangnya \f{MIN_GAIN} (0,002);
+kalau tidak, notebook memilih model tunggal terbaik. Ikuti putusannya.\\
+Luaran & \f{ensemble/submission.csv}, \f{ablation.csv} (bahan slide).
+\end{isi}
+\end{nb}
+
+\begin{nb}{hijau!70!black}{\f{6_topik} dan \f{6b_topik_bertopic}}{demo \wTopik\ dan \wBer}
+\begin{isi}
+Tujuan & Topic modeling untuk presentasi. \f{6_topik} membandingkan NMF, LDA, dan
+embedding+KMeans pada beberapa jumlah topik dengan koherensi NPMI, keragaman, dan kestabilan,
+lalu memilih sendiri.\\
+Ubah & \f{EXTRA_STOPWORDS} (kata umum yang mengotori topik), lalu \f{TOPIC_NAMES} sesudah
+membaca kata teratas. \f{TOPIC_COUNTS} bila jumlah topik yang wajar jauh dari 4--15.\\
+Kapan & Selagi \f{4_finetune} berjalan. NMF dan LDA memakai CPU. Metode \f{"embedding"} dan
+\f{6b} memakai MiniLM di GPU; bila VRAM penuh, hapus \f{"embedding"} dari \f{METHODS} dulu.\\
+Luaran & \f{topik/fakta_topik.md}, grafik kata teratas, topik $\times$ kelas, peta 2D.
+\f{6b} hanya pembanding: BERTopic menentukan jumlah topik sendiri dan menyisakan topik $-1$.
+\end{isi}
+\end{nb}
+
+\begin{nb}{ungu}{\f{7_laporan_model}}{demo \wLap}
+\begin{isi}
+Tujuan & Bahan slide hasil klasifikasi dari OOF, tanpa GPU: skor tiap model, laporan per kelas,
+confusion matrix, pasangan kelas tertukar, keandalan (ECE).\\
+Luaran & \f{laporan/fakta_model.md} dan 10 grafik. Jalankan sesudah model terakhir selesai.
+\end{isi}
+\end{nb}
+
+\begin{nb}{abu}{\f{8_ekspor.bat}}{beberapa detik}
+\begin{isi}
+Tujuan & Menyalin yang boleh keluar ke \f{outputs/bawa_pulang/} dan menolak sisanya.\\
+Ubah & Baris \f{set "HASIL=..."} bila \f{HASIL} di \f{konfig.py} diganti.\\
+Lihat & \f{MANIFEST.md}: daftar yang disalin, yang ditolak, dan alasannya.
+\end{isi}
+\end{nb}
+
+% ================= 4 =================
+\section{Jam terakhir: tiga submission}
+
+Empat jam pertama tidak ada leaderboard. Pilih file dari skor OOF dan dari validator, bukan dari
+perasaan.
+
+\begin{gambar}{Urutan tiga submission (saran)}
+\begin{tikzpicture}
+  \node[kartu={kuning}{4.3cm},anchor=north west,font=\footnotesize] (s1) at (0,0)
+    {\jdl{Submission 1: yang pasti sah}\nodepart{two}Model tunggal dengan OOF tertinggi.
+     Tujuannya memastikan format diterima dan melihat selisih OOF dengan leaderboard.};
+  \node[kartu={ungu}{4.3cm},anchor=north west,font=\footnotesize] (s2) at (5.35,0)
+    {\jdl{Submission 2: ensemble}\nodepart{two}Keluaran \f{5_ensemble}, bila putusannya memang
+     memilih gabungan. Kalau tidak, model tunggal terbaik kedua.};
+  \node[kartu={merah}{4.3cm},anchor=north west,font=\footnotesize] (s3) at (10.7,0)
+    {\jdl{Submission 3: cadangan}\nodepart{two}Simpan sampai 17.40. Pakai untuk memperbaiki
+     kesalahan format, atau untuk kandidat OOF tertinggi berikutnya.};
+  \draw[ar] (s1.east)--(s2.west); \draw[ar] (s2.east)--(s3.west);
+\end{tikzpicture}
+\end{gambar}
+
+\textbf{Sebelum mengunggah tiap file:}\par
+\cek validator di notebook penghasilnya menulis \f{MASALAH: 0} dan tidak ada
+\f{PERINGATAN: SAMPLE_CSV masih file demo};\par
+\cek jumlah baris dan urutan id sama dengan sample panitia (dicek validator);\par
+\cek sebaran kelas prediksi masuk akal, tidak satu kelas saja (dicetak validator);\par
+\cek nama file dan nama kolom persis seperti yang diminta soal.
+
+Leaderboard publik hanya sebagian data test. Selisih kecil di sana belum tentu nyata; kalau OOF
+dan leaderboard tidak sepakat untuk selisih kecil, pegang OOF.
+
+% ================= 5 =================
+\section{Yang boleh keluar dari PC lomba}
+
+\begin{minipage}[t]{0.485\linewidth}
+\begin{tcolorbox}[enhanced,colback=hijau!6,colframe=hijau,boxrule=0.5pt,arc=2pt,
+  title={Boleh dibawa},fonttitle=\bfseries,colbacktitle=hijau,left=6pt,right=6pt,
+  equal height group=nda,fontupper=\small\raggedright]
+\begin{itemize}
+  \item PNG grafik dan tabel ringkas
+  \item \f{temuan.md}, \f{fakta_topik.md}, \f{fakta_model.md}
+  \item notebook, file submission, model
+  \item screenshot
+\end{itemize}
+Semuanya dikumpulkan \f{8_ekspor.bat}.
+\end{tcolorbox}
+\end{minipage}\hfill
+\begin{minipage}[t]{0.485\linewidth}
+\begin{tcolorbox}[enhanced,colback=merah!6,colframe=merah,boxrule=0.5pt,arc=2pt,
+  title={Dilarang keluar},fonttitle=\bfseries,colbacktitle=merah,left=6pt,right=6pt,
+  equal height group=nda,fontupper=\small\raggedright]
+\begin{itemize}
+  \item teks asli atau baris data
+  \item \f{train_bersih.csv}, \f{test_bersih.csv}
+  \item file per baris: OOF (\f{.npy}), \f{topik_dokumen.csv}, \f{pseudo_label.csv}
+  \item output sel yang mencetak teks
+\end{itemize}
+\end{tcolorbox}
+\end{minipage}
+
+\smallskip
+Slide dibuat di laptop tanpa akses data, jadi setiap angka yang ingin disebut harus sudah ada di
+tiga file \f{.md} di atas atau di PNG. Kalau ada angka yang kurang, tambahkan ke notebook
+\emph{sebelum} meninggalkan PC lomba.
+
+% ================= 6 =================
+\section{Kalau macet}
+
+{\small
+\begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}p{5.2cm}Y@{}}
+\toprule
+\textbf{Gejala} & \textbf{Tindakan}\\
+\midrule
+\f{CUDA out of memory} & \f{BATCH_SIZE = 8} dan \f{ACCUM_STEPS = 2}; kecilkan \f{MAX_LENGTH};
+tutup kernel notebook lain yang memakai GPU (termasuk \f{6_topik}).\\
+\f{device: cpu} di \f{4_finetune} & Driver NVIDIA belum cocok (torch cu128 butuh driver 570 ke
+atas). Selagi diperbaiki, kerjakan variasi \f{3_baseline}.\\
+Satu fold terlalu lama & \f{distilbert_id} atau \f{minilm}; \f{EPOCHS = 2}; \f{PATIENCE = 2}
+dengan \f{EVALS_PER_EPOCH = 2}.\\
+\f{TIDAK ADA OOF YANG COCOK} & OOF dibuat dari train yang lain: \f{2_praproses} dijalankan ulang
+atau \f{HASIL} masih memuat OOF demo. Latih ulang model, atau ganti nama \f{HASIL}.\\
+\f{id test = id sample: False} & \f{ID_COL} salah, atau test bukan file yang dipasangkan dengan
+sample.\\
+\f{UnicodeDecodeError}, kolom jadi satu & Baris ber-\texttt{\#} di sel ``Baca data'' \f{2_praproses}
+(\f{encoding}, \f{sep}).\\
+Prediksi hampir satu kelas & Kelas timpang: \f{CLASS_WEIGHT = True} di \f{4_finetune}; baseline
+sudah memakai \f{class_weight="balanced"} dan pengali kelas.\\
+OOF tinggi, leaderboard rendah & Curigai teks kembar train (isi \f{GROUP_COL} atau lihat temuan
+kembar di \f{1_eda}) dan pergeseran train--test (AUC adversarial di \f{1_eda}).\\
+Topik berisi kata sampah & Tambah ke \f{EXTRA_STOPWORDS}, naikkan \f{MIN_DF}, turunkan
+\f{MAX_DF}.\\
+\bottomrule
+\end{tabularx}}
+
+% ================= 7 =================
+\section{Daftar cek}
+
+\begin{minipage}[t]{0.485\linewidth}\small
+\textbf{Sebelum 13.00}\par
+\cek susunan folder seperti Gambar 3\par
+\cek \f{jupyter.bat} membuka JupyterLab\par
+\cek rantai 1--7 pernah Run All di data demo\par
+\cek \f{4_finetune} menulis \f{device: cuda}\par
+\cek folder \f{outputs/final} demo tidak dipakai lagi\par
+\end{minipage}\hfill
+\begin{minipage}[t]{0.485\linewidth}\small
+\textbf{Sebelum meninggalkan PC}\par
+\cek tiga file submission tercatat: nama, skor OOF, skor leaderboard\par
+\cek \f{6_topik}: \f{TOPIC_NAMES} sudah diisi\par
+\cek \f{7_laporan_model} dijalankan sesudah model terakhir\par
+\cek \f{8_ekspor.bat}, lalu baca \f{MANIFEST.md}\par
+\cek screenshot leaderboard\par
+\end{minipage}
+
+\end{document}
