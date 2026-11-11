@@ -32,7 +32,7 @@ SUBMISSION_NAME = "submission.csv"
 # ---- final-pipeline: nilai soal dibaca dari konfig.py (ubah DI SANA, bukan di sini) ----
 exec(open("konfig.py", encoding="utf-8").read())
 if LABEL_COLS is None:
-    raise ValueError("Isi LABEL_COLS di konfig.py (daftar kolom label 0/1) untuk soal multilabel")
+    raise ValueError("Isi LABEL_COLS di sel Konfigurasi (daftar kolom label 0/1) untuk soal multilabel")
 TRAIN_CSV = f"{HASIL}/praproses/train_bersih.csv"
 TEST_CSV = f"{HASIL}/praproses/test_bersih.csv"
 OUTPUT_FOLDER = f"{HASIL}/ensemble_multilabel"

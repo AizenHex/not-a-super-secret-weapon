@@ -31,3 +31,13 @@ _laya_eda_v3/proyek/
 
 # hasil 9_figur_ppt.py (dibuat ulang dari CSV)
 final-pipeline/figur_ppt/
+
+# gambar paper (hak cipta penulis, repo publik): hanya lokal
+final-pipeline/referensi_figur/img/
+final-pipeline/referensi_figur/paperbench/
+final-pipeline/referensi_figur/arxiv/
+final-pipeline/referensi_figur/katalog.md
+final-pipeline/referensi_figur/galeri.html
+
+# figur slide gaya VIGNETTE (hasil 9b_slide.py)
+final-pipeline/slide/

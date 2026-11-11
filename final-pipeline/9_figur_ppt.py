@@ -1,6 +1,6 @@
 """Figur gaya paper untuk PPT, dibuat HANYA dari CSV hasil 1_eda, 5_ensemble, 6_topik, 7_laporan_model.
 
-Pakai:  python 9_figur_ppt.py                       -> membaca HASIL di konfig.py
+Pakai:  python 9_figur_ppt.py                       -> membaca folder HASIL di bawah (samakan dengan notebook)
         python 9_figur_ppt.py ../../outputs/bawa_pulang   -> membaca folder lain (mis. di laptop)
 Hasil:  final-pipeline/figur_ppt/*.png (tempel ke PPT) dan *.svg (seret ke Figma, teks tetap bisa diedit).
 Figur yang CSV-nya tidak ada dilewati. Tidak ada angka yang diketik tangan di file ini.
@@ -19,10 +19,10 @@ from matplotlib.colors import LinearSegmentedColormap
 from matplotlib.ticker import FuncFormatter, ScalarFormatter
 
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
-import konfig
 
 # ---------------- Konfigurasi ----------------
-SUMBER = konfig.HASIL
+HASIL = "../../outputs/final"   # GANTI: sama dengan HASIL di sel Konfigurasi notebook
+SUMBER = HASIL
 if len(sys.argv) > 1:
     SUMBER = sys.argv[1]
 KELUAR = "figur_ppt"          # di dalam repo (final-pipeline/figur_ppt), tidak ikut git

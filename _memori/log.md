@@ -2,6 +2,90 @@
 
 Terbaru di atas. Format di [`README.md`](README.md).
 
+## 2026-11-11 claude-opus-5-5 - final-pipeline tanpa konfig.py + EDA multilabel
+- Pemicu: pengguna: "edanya belum ada multi label? dan juga jangan pakai konfig.py"; lewat pertanyaan memilih "tiap
+  notebook mandiri" dan "ya, tambahkan" EDA multilabel.
+- Dikerjakan: `_alat/buat_ulang.py`: blok SOAL (isi konfig.py lama + TOPIK_BERAT) disalin ke awal sel Konfigurasi
+  tiap notebook (variabel yang dipakai saja), baris asli yang ditimpa/tak terpakai dibuang, 3m/5m (py2nb) diproses
+  sama, sebutan "di konfig.py" -> "di sel Konfigurasi". Sisipan `1_eda` bagian 7f Multilabel (porsi label, label per
+  teks, P(b|a), panjang per label, kembar beda kombinasi; validasi 0/1). `konfig.py` dihapus; `9_figur_ppt.py`,
+  `9b_slide.py` dapat konstanta sendiri; `8_ekspor.bat` komentar; HANDOFF.md baris 14. PETUNJUK_AKHIR: semua sebutan
+  konfig.py diganti, tabel notebook -> baris NILAI SOAL (bag. 2), 7f di bagian multilabel; PDF dibangun + dilihat.
+- Diuji: semua sel Konfigurasi dieksekusi (3m/4m/5m berhenti di galat LABEL_COLS = None, sesuai rancangan);
+  `1_eda` penuh di CASA multilabel (venv `../.venv`): 7f jalan, bug pembagian P(b|a) ditemukan + diperbaiki;
+  `6_topik` sel 1-11 di SmSA. Notebook lain belum Run All penuh sesudah perubahan.
+
+## 2026-11-11 claude-opus-5-5 - 6_topik: kata topik dari kolom bersih berat (slang, stemming)
+- Pemicu: pengguna tanya apakah stopword 6_topik sudah membuang imbuhan + membakukan kata (jawab: tidak, hanya
+  stopword Sastrawi), lalu minta diterapkan + PETUNJUK_AKHIR diperbarui.
+- Dikerjakan: `konfig.py` + `TOPIK_BERAT = True`; `_alat/buat_ulang.py` (ekor konfig `TOPIK` + 2 REPLACEMENTS)
+  -> `6_topik` membangun kata topik dari `<teks>_tfidf` (2_praproses: slang -> baku, stopword, stemming), embedding
+  tetap teks ringan; EXTRA_STOPWORDS + urltoken/mentiontoken/angkatoken/emoji/banget/enggak. Notebook diregenerasi
+  (3m/5m hanya berubah id sel, dikembalikan). PETUNJUK_AKHIR.tex: kotak konfig, baris "Kata topik" di kartu 6,
+  2 baris tabel masalah; PDF dibangun ulang (pdflatex).
+- Lanjutan: pengguna minta petunjuk lengkap dengan nama file. Kartu 6_topik di PETUNJUK_AKHIR ditulis ulang
+  (Masukan, Kata topik, Ubah, Luaran, 6b: path + kolom + sel), 2 baris tabel masalah diperjelas; PDF dibangun ulang
+  dan dilihat (hal. 4). Aturan baru di aturan.md.
+- KONFLIK: perubahan kode ini dibuat atas permintaan pengguna padahal aturan pembekuan (PC panitia beku sejak
+  5e2ed5b). Belum di-commit; di PC panitia `TOPIK_BERAT` tidak ada, perlu suntingan tangan (dijelaskan di chat).
+- Diuji: sel 1-11 6_topik di demo SmSA: kosakata 3388, kata ter-stem (makan, layan). Sisa notebook (NMF/LDA/
+  embedding, figur) belum di-Run All.
+
+## 2026-11-10 claude-fable-5-2 - 9b_slide.py ditulis ulang total: figur gaya paper, bukan kartu
+- Pemicu: pengguna menolak versi kartu pastel VIGNETTE ("template AI banget", "AI slop", "pipeline gak dibikinin",
+  "be creative, be new"; deck-nya hanya contoh).
+- Dikerjakan: `final-pipeline/9b_slide.py` ditulis ulang dari nol (versi kartu dibuang). 6 figur 16:9 ke `slide/`:
+  `see_1_data` (kata pembeda log-odds berprior, komposisi latih vs prediksi uji, raincloud panjang teks, strip
+  kebocoran urutan baris), `see_2_peta` (UMAP dokumen: label / topik / salah prediksi + porsi salah per topik),
+  `did_1_pipeline` (skema: satu teks asli diikuti dari tabel -> praproses -> wordpiece asli -> IndoBERT / LinearSVC
+  -> keyakinan OOF asli -> cara gabung -> submission; jalur NMF di bawah), `found_1_model` (sebaran bootstrap F1,
+  selisih berpasangan ensemble vs tunggal, F1 per kelas, confusion, keandalan + ECE dua model), `found_2_contoh`
+  (tabel contoh asli 3 kelompok dengan batang keyakinan), `found_3_topik` (NPMI vs K, topik x kelas, latih vs uji,
+  kata teratas). Font IBM Plex Sans/Mono (OFL) ditambahkan ke `_alat/fonts`. Semua PNG dilihat dan dirapikan.
+- Temuan dari figur: rata-rata 2 model vs ft_indobert: delta 0,0004, selang 95% bootstrap memuat nol. 196 teks
+  kedua model sepakat melawan label. ECE dihitung ulang 8 bin dari OOF (0,019 dan 0,039).
+- Catatan: semua figur kecuali `found_3_topik` butuh `praproses/train_bersih.csv` + `oof/*.npy` (tidak ada di
+  `bawa_pulang`). Butuh `umap`, `scipy`, `transformers` + `pretrained/indobert` (tokenizer; kalau tak ada, jatuh ke
+  kata). Belum dicoba di data soal asli. Aturan Figur diperbarui.
+
+## 2026-11-10 claude-opus-5-5 - figur slide gaya VIGNETTE (9b_slide.py)
+- Pemicu: pengguna minta visualisasi final pipeline berdasar referensi paper + format laporannya (What We See /
+  What We Did / What We Found), contoh deck `Downloads/VIGNETTE.pdf`.
+- Dikerjakan: `final-pipeline/9b_slide.py` + `.bat` -> `final-pipeline/slide/` (gitignore): S1 data (waffle +
+  contoh teks), S2 panjang teks + kata khas (log-odds), S3 cek bocor (urutan baris/id), D1 alur kartu + cabang topik,
+  D2 fold + pilih K (NPMI), F1 skor vs waktu + ablation ensemble, F2 peta 2 model per teks + kandidat label keliru,
+  F3 confusion + contoh salah paling yakin, F4 kalibrasi (ECE) + akurasi per panjang, F5 topik x kelas, F6 ringkasan.
+  `slide/pratinjau.html` = semua figur dalam bingkai slide dengan sidebar See/Did/Found. Dijalankan di
+  `outputs/final` (demo SmSA), semua PNG dilihat dan diperbaiki (teks keluar kartu, label tumpang tindih).
+- Catatan: S1-S2, F2, F3 (kanan) butuh `praproses/train_bersih.csv` + `oof/*.npy` -> hanya di PC lomba; dari
+  `bawa_pulang` figur itu dilewati/menyusut. Urutan kelas OOF dicek ke akurasi `02_skor_oof`.
+- Bertentangan dengan aturan pembekuan (2026-11-11): file baru ini untuk laptop; instruksi chat menang.
+
+## 2026-11-10 claude-opus-5-5 - referensi figur paper untuk memperbaiki figur PPT
+- Pemicu: pengguna menilai `figur_ppt/` "ampas, tabel blaa blaa doang", minta paper dengan visual training + EDA
+  bagus, lalu minta ditambah "biar fable nanti punya referensi".
+- Dikerjakan: `final-pipeline/referensi_figur/README.md` (tabel per kelompok: file, paper + arXiv, isi figur,
+  versi kita, data yang dibutuhkan, 5 pelajaran umum) + `index.html` (galeri, dibuat dari README) + `img/`
+  (24 PNG dari ar5iv/arXiv, 15 paper). `img/` masuk `.gitignore`: repo publik, gambar milik penulis paper.
+- Diagnosis figur lama: semua satu angka ringkasan per titik; `02_model` (b) beda 0,001 tampak besar; ensemble =
+  ft_indobert (0,9269) tidak dikatakan; `01_data` (b) urutan baris/id skor 1,000 (bocor) tidak disorot.
+- Belum: belum cek apakah `4_finetune` menyimpan prob per epoch (syarat data map/forgetting). Belum ada figur baru.
+- Lanjutan (pengguna: "kok bisa cuma segini doang", lalu minta `hf download josancamon/paperbench`):
+  `referensi_figur/katalog.py` (`unduh` = figur + caption dari arxiv html/ar5iv, cadangan halaman PDF; tanpa
+  argumen = `katalog.md` + `galeri.html` dengan filter/cari, buang gambar kembar). `paperbench/` (213 MB, 23
+  paper ICML) + `arxiv/` (53 paper) = 624 figur dari 76 paper, semua di `.gitignore`. README ditambah ~40 pilihan
+  yang kulihat lewat contact sheet; semua path di README dicek ada.
+
+## 2026-11-11 claude-fable-5-2 - pembekuan: PC panitia tidak bisa ditambah file
+- Pemicu: pengguna: sejak commit terakhir tidak bisa menambah file; hanya bisa lihat laptop lalu crosscheck ke PC
+  panitia; agen hanya boleh memindahkan, menyalin, memberi petunjuk.
+- Dicek (tanpa mengubah kode): `origin/new-gen` = `5e2ed5b`. Di sana semua notebook `final-pipeline` (termasuk
+  3m/4m/5m dan sel topik x label) SAMA dengan laptop. Beda: `konfig.py` di origin masih keadaan uji CASA (empat
+  baris demo multilabel AKTIF di bagian bawah, menimpa TRAIN_MENTAH/TEST_MENTAH/LABEL_COLS/HASIL); PETUNJUK versi
+  origin belum memuat bagian multilabel; `9_figur_ppt` + font hanya ada di laptop (3 commit lokal belum di-push).
+- Dikoreksi pengguna: aturan pembekuan masuk `aturan.md` (bagian paling atas).
+- Berikutnya: pengguna memberi `#` pada empat baris itu di `konfig.py` PC panitia sebelum mengisi path soal.
+
 ## 2026-11-10 claude-fable-5-2 - figur gaya paper untuk PPT (9_figur_ppt.py)
 - Pemicu: pengguna minta visualisasi PPT final "kayak paper-paper", contoh format `Downloads/VIGNETTE.pdf` (5 bagian
   Why It Matters .. What's Next), tata letak di Figma lewat `npx figma-console-mcp-cli`, chart dari Python supaya

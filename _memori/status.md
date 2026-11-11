@@ -1,6 +1,6 @@
 # Status repo
 
-Terakhir diperbarui: 2026-11-10.
+Terakhir diperbarui: 2026-11-11.
 
 ## Tujuan
 
@@ -146,19 +146,24 @@ F1 makro val 0,427; kelas ke-2 F1 0).
 
 ## Pekerjaan terbuka
 
+- **Figur slide gaya paper (2026-11-10, versi kartu VIGNETTE ditolak pengguna): `final-pipeline/9b_slide.py`** (+ `.bat`) -> `slide/*.png|svg` + `slide/pratinjau.html`, 6 figur 16:9 multi-panel (see_1_data, see_2_peta, did_1_pipeline, found_1_model, found_2_contoh, found_3_topik). 5 dari 6 butuh teks latih + OOF npy (bukan `bawa_pulang`). Menunggu penilaian pengguna; belum dicoba di data soal asli.
 - **Figur PPT gaya paper (2026-11-10 malam): `final-pipeline/9_figur_ppt.py`** (+ `.bat`). 10 figur PNG + SVG ke
   `final-pipeline/figur_ppt/` (di dalam repo, diabaikan git) dari CSV hasil pipeline; bisa dijalankan di laptop
   pada `../../outputs/bawa_pulang`. Lint 0, jalan di data demo. Belum: MCP Figma (pengguna harus menjalankan
   `npx figma-console-mcp-cli` sendiri), impor SVG ke Figma, data > 8 topik / multilabel.
+  Serah terima sesi ini: bagian teratas `HANDOFF.md` (lokal, diabaikan git).
+  Pengguna menilai figur itu "ampas" (tabel jadi titik). Referensi perbaikan: `final-pipeline/referensi_figur/`
+  (README = ~65 figur pilihan + versi kita + data yang dibutuhkan; `galeri.html`/`katalog.md` = 624 figur dari
+  76 paper termasuk PaperBench; gambar hanya lokal, bangun ulang lewat `katalog.py`). Belum ada figur baru dibuat.
 
 - **Jalur lomba siap pakai (2026-11-10 malam): `final-pipeline/`** di root repo (awalnya di luar repo, dipindah
   masuk atas permintaan pengguna; path `../../pretrained`, `../../outputs/final`). Notebook `1_eda` .. `7_laporan_model` + `6b_topik_bertopic` = salinan
-  `contoh/text` yang membaca `konfig.py`; `8_ekspor.bat`; `PETUNJUK_AKHIR.pdf`. Hasil ke `../outputs/final`.
+  `contoh/text`, tiap notebook MANDIRI: blok NILAI SOAL di awal sel Konfigurasi (konfig.py dihapus 2026-11-11, isi sama di semua notebook; tabel per notebook di PETUNJUK bagian 2); `8_ekspor.bat`; `PETUNJUK_AKHIR.pdf`. Hasil ke `../outputs/final`.
   Run All berurutan lulus di SmSA (finetune hanya 1 epoch). Bangun ulang dari repo: `python _alat/buat_ulang.py`
   di folder itu (menimpa notebook). Belum diuji: metrik lain, banyak kolom teks, sample panitia nyata.
-  **Multilabel** (2026-11-10 malam): isi `LABEL_COLS` di `konfig.py`, lalu `3m_baseline_multilabel` →
+  **Multilabel** (2026-11-10 malam): isi `LABEL_COLS` di blok NILAI SOAL tiap notebook, `1_eda` bagian 7f multilabel (2026-11-11, diuji di CASA), lalu `3m_baseline_multilabel` →
   `4m_finetune_multilabel` → `5m_ensemble_multilabel` (3m dan 5m kode baru, sumber `final-pipeline/_alat/*.py`);
-  `6_topik` menambah "topik x label". Lulus Run All di demo CASA. Commit lokal belum di-push (izin ditolak).
+  `6_topik` menambah "topik x label". `6_topik` memakai kata bersih berat (`TOPIK_BERAT`, 2026-11-11; Run All penuh belum). Lulus Run All di demo CASA. Commit lokal belum di-push (izin ditolak).
 
 - Dokumentasi presentasi aman NDA (2026-11-10, di-push): `topik_lengkap`, `laporan_model`, saklar `AMAN_NDA` di
   `eda_lengkap`/`eda_presentasi`, `ekspor_hasil.bat` → `../outputs/bawa_pulang/` + MANIFEST. Semua lint 0 dan lulus

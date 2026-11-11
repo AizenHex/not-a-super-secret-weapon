@@ -2,9 +2,26 @@
 
 Koreksi terbaru pengguna di chat menang atas isi file ini; setelah itu perbarui file ini.
 
+## Pembekuan hari lomba (paling atas, menang atas aturan lain)
+
+- **Sejak commit `5e2ed5b` ("tidor"), PC panitia tidak bisa ditambah file lagi.** Pengguna hanya bisa melihat
+  folder di laptop lalu mencocokkan dengan PC panitia. Agen DILARANG membuat kode/notebook/alat baru atau
+  mengubah isi kode; yang boleh hanya memindahkan, menyalin, dan memberi petunjuk. Pengguna: "jangan sampai
+  invent sesuatu, yang kamu bisa buatkan hanyalah memindahkan, mengcopy, dan memberikan petunjuk harus gimana."
+  Petunjuk harus merujuk isi `origin/new-gen` (= PC panitia), bukan file yang hanya ada di laptop. (2026-11-11)
+- Petunjuk (PETUNJUK_AKHIR, kartu notebook) harus lengkap dan jelas: tiap langkah menyebut file yang dipakai
+  (masukan dengan path `<HASIL>/...`, kolom, file/sel tempat mengubah nilai, file luaran). Pengguna: "pentunjuknya
+  harus lengkap dan jelas. jadi di mention file apa yang digunakan". (2026-11-11)
+- final-pipeline TIDAK memakai `konfig.py` (pengguna: "jangan pakai konfig.py", 2026-11-11). Nilai soal ada di blok
+  NILAI SOAL tiap notebook; ubah lewat `SOAL` di `final-pipeline/_alat/buat_ulang.py` lalu jalankan skrip itu,
+  jangan menambah file konfigurasi bersama lagi.
+
 ## Komunikasi
 
 - Bahasa Indonesia. Jawab inti dulu (1–3 kalimat), detail hanya kalau diminta. (2026-10-24)
+- Kalau diminta mengumpulkan referensi/contoh (paper, figur), kumpulkan banyak dan luas (puluhan sumber, lintas
+  subbidang), baru dikurasi; jangan berhenti di belasan. Pengguna: "emngnya agent itu bisa lazy. kok bisa cuma
+  segini doang". Contoh yang sudah benar: `final-pipeline/referensi_figur/`. (2026-11-10)
 - Pengguna paham konsep ML (latar OSN Informatika, C++) tapi tidak hafal sintaks Python. Notebook harus
   lengkap dan bisa Run All; yang diubah cukup sel Konfigurasi / baris `# UBAH`. (2026-10-23)
 - "Mode latihan" hanya kalau pengguna menyalakannya: saat itu jangan menulis kode, hanya arahan dan
@@ -142,6 +159,16 @@ Koreksi terbaru pengguna di chat menang atas isi file ini; setelah itu perbarui 
 - Tanya dulu sebelum memasang paket pip.
 
 ## Figur (PPT/laporan)
+
+- **Koreksi pengguna 2026-11-10 (menang atas butir kartu/kanvas di bawah):** kartu pastel bernomor + chevron + angka
+  besar ala deck VIGNETTE ditolak ("template AI banget", "AI slop", "pipeline bahkan gak dibikinin"). Deck contoh
+  pengguna hanya contoh urutan bagian (See/Did/Found), BUKAN gaya yang harus ditiru; jangan mempertahankan detail
+  kecilnya. Yang diminta: figur seperti paper penelitian, dan agen bebas membuat hal baru / memasang alat lain.
+  Yang dipakai sekarang (`final-pipeline/9b_slide.py`): kanvas 16:9 penuh, figur multi-panel berhuruf a/b/c, data
+  per teks (bukan satu angka ringkasan), contoh teks asli, IBM Plex Sans + Mono, tanpa kartu/pastel/bayangan.
+  Figur pipeline = skema dengan satu teks asli yang diikuti dari tabel sampai submission (token asli, keyakinan
+  OOF asli). Ini membatalkan butir 2026-11-07 "jangan tambah jalur contoh di figur pipeline".
+- Sebelum menunjukkan figur: lihat PNG-nya sendiri; jangan mengulang gaya yang sudah ditolak dengan tambalan kecil.
 
 - Satu pesan per figur, 16:9, huruf besar; tidak ada label/klaim tebakan di figur. (2026-10-30)
 - Daftar cek sebelum figur dianggap selesai (diadaptasi dari kritik PaperBanana, 2026-10-30):

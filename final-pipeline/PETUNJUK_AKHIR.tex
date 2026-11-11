@@ -74,7 +74,7 @@
   {\color{white}{\LARGE\bfseries Petunjuk Akhir: final-pipeline}\\[3pt]
   {\large GEMASTIK XIX Penambangan Data \textbullet\ Rabu, 11 November 2026 \textbullet\ 13.00--18.00}\\[6pt]
   \small Tebakan soal: \textbf{klasifikasi teks} (skor di Kaggle), single label atau multilabel, dan
-  \textbf{topic modeling} (dipresentasikan). Langkah bernomor, satu file konfigurasi.}
+  \textbf{topic modeling} (dipresentasikan). Langkah bernomor; nilai soal diisi di sel Konfigurasi tiap notebook.}
 \end{tcolorbox}
 
 \begin{gambar}{Lima jam dalam satu garis (rencana, bukan aturan panitia)}
@@ -96,7 +96,7 @@
 
 \vspace{2pt}
 {\scriptsize\raggedright
-\pil{biru}{1} soal, \f{konfig.py}, EDA\quad
+\pil{biru}{1} soal, isi NILAI SOAL, EDA\quad
 \pil{hijau}{2} praproses\quad
 \pil{kuning}{3} baseline + submission pertama di disk\quad
 \pil{jingga}{4} fine-tune (1--2 model)\quad
@@ -108,14 +108,14 @@
 \section{Peta pipeline}
 
 Folder \f{final-pipeline} berisi salinan tujuh notebook repo yang sudah teruji, diberi nomor urut.
-Kodenya sama dengan \f{contoh/text/}; yang berbeda hanya path dan sel Konfigurasi, yang sekarang
-membaca \f{konfig.py}. Jalankan menurut nomor.
+Kodenya sama dengan \f{contoh/text/}; yang berbeda hanya path dan sel Konfigurasi, yang diawali
+blok \textbf{NILAI SOAL}. Tidak ada \f{konfig.py}: tiap notebook berdiri sendiri. Jalankan menurut nomor.
 
 \begin{gambar}{Alur file dari soal sampai bahan presentasi}
 \begin{tikzpicture}
   \node[fill=black!80,text=white,rounded corners=2pt,font=\footnotesize,minimum width=15.5cm,
         minimum height=6mm,anchor=north west] (k) at (0,1.5)
-    {\textbf{\texttt{konfig.py}}\quad path file soal, nama kolom, folder hasil: diubah sekali, dibaca semua notebook};
+    {\textbf{NILAI SOAL}\quad awal sel Konfigurasi tiap notebook: file soal, kolom, folder hasil (isi sama di semua)};
   \node[kartu={biru}{2.45cm},anchor=north west] (n1) at (0,0)
     {\jdl{\f{1_eda}}\nodepart{two}kenali data, cek bocor, train vs test\\ \ket{temuan.md}};
   \node[kartu={hijau}{2.45cm},anchor=north west] (n2) at (3.2,0)
@@ -150,7 +150,6 @@ membaca \f{konfig.py}. Jalankan menurut nomor.
 C:/GEMASTIK/\\
 \quad not-a-super-secret-weapon/\quad\ket{\rmfamily repo}\\
 \quad\quad \textbf{final-pipeline/}\quad\ket{\rmfamily folder ini}\\
-\quad\quad\quad konfig.py\\
 \quad\quad\quad 1\_eda.ipynb \dots\ 7\_laporan\_model.ipynb\\
 \quad\quad\quad 3m\_, 4m\_, 5m\_ \dots\ \ket{\rmfamily multilabel}\\
 \quad\quad\quad 8\_ekspor.bat, jupyter.bat\\
@@ -169,7 +168,14 @@ Folder ini \textbf{ada di dalam repo}, jadi ikut \f{git clone} / \f{git pull}.
 % ================= 2 =================
 \section{Yang diubah saat soal dibuka}
 
-Hanya \f{konfig.py}. Sesudah menyimpan, di tiap notebook pilih \emph{Restart Kernel and Run All}.
+Blok \textbf{NILAI SOAL} di awal sel Konfigurasi (sel kode pertama sesudah judul ``Konfigurasi'')
+di \textbf{setiap} notebook yang dijalankan. Tidak ada \f{konfig.py}; tiap notebook menyimpan nilainya
+sendiri, jadi \textbf{isi nilai yang sama di semua notebook}, terutama \f{HASIL}: notebook 3--7 membaca
+\f{<HASIL>/praproses/train_bersih.csv} buatan \f{2_praproses}, dan \f{HASIL} yang beda membuat file itu
+tidak ketemu. Ubah baris yang ada saja; jangan menyalin blok utuh dari notebook lain, karena tiap
+notebook hanya memuat variabel yang dipakainya (Tabel di bawah). Sesudah mengubah: \emph{Restart
+Kernel and Run All}. Di bawah blok ada bagian ``jalur final-pipeline'' (path dari \f{HASIL}): tidak
+perlu diubah.
 
 \begin{tcolorbox}[enhanced,colback=black!3,colframe=black!25,boxrule=0.5pt,arc=2pt,
   left=8pt,right=8pt,top=5pt,bottom=5pt,fontupper=\small\ttfamily]
@@ -181,11 +187,32 @@ Hanya \f{konfig.py}. Sesudah menyimpan, di tiap notebook pilih \emph{Restart Ker
 \textcolor{hijau}{SUBMIT\_COL} = TARGET\hfill\pil{abu}{bila nama di sample beda}\\[3pt]
 \textcolor{jingga}{HASIL} = "../../outputs/lomba"\hfill\pil{jingga}{ganti dari "final"}\\
 \textcolor{abu}{LANGUAGE}, \textcolor{abu}{DATE\_COL}, \textcolor{abu}{GROUP\_COL},
-\textcolor{abu}{TFIDF\_BERAT}\hfill\pil{abu}{bila perlu}
+\textcolor{abu}{TFIDF\_BERAT}, \textcolor{abu}{TOPIK\_BERAT}\hfill\pil{abu}{bila perlu}
 \end{tcolorbox}
 
+{\small\renewcommand{\arraystretch}{1.15}
+\noindent\begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}p{4.1cm}X@{}}
+\toprule
+\textbf{notebook} & \textbf{baris di blok NILAI SOAL} \\ \midrule
+\f{1_eda} & \f{TRAIN_MENTAH TEST_MENTAH ID_COL TEXT_COLS TARGET SUBMIT_COL LABEL_COLS DATE_COL LANGUAGE HASIL SCORING} \\
+\f{2_praproses} & \f{TRAIN_MENTAH TEST_MENTAH ID_COL TEXT_COLS TARGET SUBMIT_COL LABEL_COLS HASIL SCORING} \\
+\f{3_baseline} & \f{SAMPLE_PANITIA ID_COL TEXT_COLS TARGET SUBMIT_COL LABEL_COLS GROUP_COL DATE_COL HASIL TFIDF_BERAT} \\
+\f{4_finetune} & \f{SAMPLE_PANITIA ID_COL TEXT_COLS TARGET SUBMIT_COL LABEL_COLS GROUP_COL HASIL} \\
+\f{5_ensemble} & \f{SAMPLE_PANITIA ID_COL TEXT_COLS TARGET SUBMIT_COL LABEL_COLS HASIL} \\
+\f{6_topik} & \f{ID_COL TEXT_COLS TARGET SUBMIT_COL LABEL_COLS DATE_COL LANGUAGE HASIL TOPIK_BERAT} \\
+\f{6b_topik_bertopic} & \f{TEXT_COLS TARGET SUBMIT_COL LABEL_COLS LANGUAGE HASIL} \\
+\f{7_laporan_model} & \f{TEXT_COLS TARGET SUBMIT_COL LABEL_COLS HASIL} \\
+\f{3m_baseline_multilabel} & \f{SAMPLE_PANITIA ID_COL TEXT_COLS TARGET SUBMIT_COL LABEL_COLS HASIL TFIDF_BERAT} \\
+\f{4m_finetune_multilabel} & \f{SAMPLE_PANITIA ID_COL TEXT_COLS TARGET SUBMIT_COL LABEL_COLS HASIL} \\
+\f{5m_ensemble_multilabel} & \f{SAMPLE_PANITIA ID_COL TARGET SUBMIT_COL LABEL_COLS HASIL} \\
+\f{9_figur_ppt.py} & \f{HASIL} (baris atas file, bagian ``Konfigurasi'') \\
+\f{9b_slide.py} & \f{HASIL ID_COL TEXT_COLS TARGET} (baris atas file, bagian ``Konfigurasi'') \\
+\f{8_ekspor.bat} & baris \f{set "HASIL=..."} \\
+\bottomrule
+\end{tabularx}}
+
 \begin{awas}
-\textbf{Tiga hal yang tidak ada di \f{konfig.py}.}
+\textbf{Tiga hal di luar blok NILAI SOAL.}
 \begin{enumerate}
   \item \textbf{Metrik.} Bawaannya F1 makro. Kalau soal memakai metrik lain, pindahkan \texttt{\#} di
   baris \f{return} sel ``Metrik'' pada \f{3_baseline}, \f{4_finetune}, dan \f{5_ensemble}
@@ -211,7 +238,8 @@ lama.
 Tujuan & Tahu bentuk data sebelum memilih apa pun. Tidak mengubah file.\\
 Lihat & Sebaran kelas, panjang teks, teks kembar dan kembar beda label, kekuatan tiap kolom
 (tanda bocor), AUC adversarial train vs test.\\
-Luaran & \f{eda/temuan.md} dan PNG. \f{AMAN_NDA = True}: tidak mencetak teks asli.
+Luaran & \f{<HASIL>/eda/temuan.md} dan PNG. \f{AMAN_NDA = True}: tidak mencetak teks asli.
+Soal multilabel: bagian 7f (lihat bagian ``Kalau soalnya multilabel'').
 \end{isi}
 \end{nb}
 
@@ -283,12 +311,29 @@ Luaran & \f{ensemble/submission.csv}, \f{ablation.csv} (bahan slide).
 Tujuan & Topic modeling untuk presentasi. \f{6_topik} membandingkan NMF, LDA, dan
 embedding+KMeans pada beberapa jumlah topik dengan koherensi NPMI, keragaman, dan kestabilan,
 lalu memilih sendiri.\\
-Ubah & \f{EXTRA_STOPWORDS} (kata umum yang mengotori topik), lalu \f{TOPIC_NAMES} sesudah
-membaca kata teratas. \f{TOPIC_COUNTS} bila jumlah topik yang wajar jauh dari 4--15.\\
+Masukan & \f{<HASIL>/praproses/train_bersih.csv} dan \f{test_bersih.csv} (dari \f{2_praproses};
+belum ada = jalankan \f{2_praproses} dulu). Dua kolom dipakai: \f{text} (bersih ringan) untuk
+embedding MiniLM \f{../../pretrained/minilm}, dan \f{text_tfidf} (bersih berat) untuk kata topik.
+Nama kolom mengikuti \f{TEXT_COLS} di blok NILAI SOAL \f{6_topik.ipynb}.\\
+Kata topik & Saklar \f{TOPIK_BERAT} di blok NILAI SOAL \f{6_topik.ipynb}. \f{True} (bawaan): kata dari kolom
+\f{text_tfidf}, jadi slang sudah baku, imbuhan dibuang (stemming), dan ``gak''/``tidak'' atau
+``makanannya''/``makan'' jadi satu kata. Kata jadi bentuk dasar (``layan'', bukan ``pelayanan'').
+\f{False}: kata dari kolom \f{text}, hanya stopword dibuang; pakai untuk teks baku atau Inggris,
+atau bila stemming merusak nama. Isi kamus slang: \f{kamus/kamus_alay_salsabila.csv} dan
+\f{kamus/kamus_slang.csv}. Urutan langkah berat: \f{HEAVY_STEPS} di sel bagian 4
+\f{2_praproses.ipynb}; diubah = jalankan ulang \f{2_praproses} lalu \f{6_topik}.\\
+Ubah & Di sel ``Konfigurasi'' \f{6_topik.ipynb}: \f{EXTRA_STOPWORDS} (kata umum yang mengotori
+topik, mis.\ \f{"sih"}), \f{TOPIC_COUNTS} bila jumlah topik yang wajar jauh dari 4--15,
+\f{METHODS}. Lalu di sel ``Beri nama topik'': \f{TOPIC_NAMES} sesudah membaca kata teratas
+(tulis bentuk wajar, mis.\ ``pelayanan''), jalankan ulang dari sel itu ke bawah.\\
 Kapan & Selagi \f{4_finetune} berjalan. NMF dan LDA memakai CPU. Metode \f{"embedding"} dan
 \f{6b} memakai MiniLM di GPU; bila VRAM penuh, hapus \f{"embedding"} dari \f{METHODS} dulu.\\
-Luaran & \f{topik/fakta_topik.md}, grafik kata teratas, topik $\times$ kelas, peta 2D.
-\f{6b} hanya pembanding: BERTopic menentukan jumlah topik sendiri dan menyisakan topik $-1$.
+Luaran & Folder \f{<HASIL>/topik/}: \f{fakta_topik.md} (kalimat untuk slide), \f{01_}..\f{09_*.png}
++ \f{.csv} (pemilihan K, ukuran, kata teratas, awan kata, kemiripan, topik $\times$ kelas,
+train vs test, tren, peta 2D), \f{info_topik.csv}. \f{topik_dokumen.csv} (topik per baris)
+tetap di komputer lomba.\\
+\f{6b} & Hanya pembanding, membaca \f{train_bersih.csv} kolom \f{text} (tanpa \f{TOPIK_BERAT}).
+BERTopic menentukan jumlah topik sendiri dan menyisakan topik $-1$. Luaran: \f{<HASIL>/bertopic/}.
 \end{isi}
 \end{nb}
 
@@ -303,7 +348,7 @@ Luaran & \f{laporan/fakta_model.md} dan 10 grafik. Jalankan sesudah model terakh
 \begin{nb}{abu}{\f{8_ekspor.bat}}{beberapa detik}
 \begin{isi}
 Tujuan & Menyalin yang boleh keluar ke \f{outputs/bawa_pulang/} dan menolak sisanya.\\
-Ubah & Baris \f{set "HASIL=..."} bila \f{HASIL} di \f{konfig.py} diganti.\\
+Ubah & Baris \f{set "HASIL=..."} di \f{8_ekspor.bat} bila \f{HASIL} di notebook diganti (isi sama).\\
 Lihat & \f{MANIFEST.md}: daftar yang disalin, yang ditolak, dan alasannya.
 \end{isi}
 \end{nb}
@@ -358,8 +403,14 @@ berakhiran \f{m}; EDA, praproses, dan topic modeling tetap notebook yang sama.
   \f{ensemble_multilabel/}, dan OOF ke \f{oof_multilabel/}. \f{8_ekspor.bat} sudah mengambilnya.
   \item \textbf{\f{6_topik}} menambah grafik \f{06b_topik_x_label.png}: porsi teks berlabel di tiap
   topik beserta lift-nya, plus kalimatnya di \f{fakta_topik.md}.
-  \item \textbf{Mencoba dulu:} di bagian bawah \f{konfig.py} ada empat baris ber-\texttt{\#} untuk
-  data demo CASA (6 label).
+  \item \textbf{\f{1_eda}} menjalankan bagian \textbf{7f. Multilabel} (dilewati bila \f{LABEL_COLS = None}):
+  porsi tiap label, jumlah label per teks, label yang sering muncul bersama (P(kolom | baris)),
+  panjang teks per label, teks kembar dengan kombinasi label berbeda. Luaran di \f{<HASIL>/eda/}:
+  \f{07f_multilabel.png}, \f{07f_panjang_per_label.csv}, kalimatnya di \f{temuan.md}. Kolom label
+  yang bukan 0/1 menghentikan bagian ini dengan pesan galat.
+  \item \textbf{Mencoba dulu:} di bagian bawah blok NILAI SOAL tiap notebook ada baris ber-\texttt{\#}
+  untuk data demo CASA (6 label). Buka \texttt{\#} di semua notebook yang dijalankan (baris yang
+  variabelnya tidak ada di notebook itu tidak berpengaruh).
 \end{itemize}
 
 \begin{nb}{kuning}{\f{3m_baseline_multilabel}}{demo CASA 5 s, F1 makro OOF 0,862}
@@ -493,8 +544,13 @@ Prediksi hampir satu kelas & Kelas timpang: \f{CLASS_WEIGHT = True} di \f{4_fine
 sudah memakai \f{class_weight="balanced"} dan pengali kelas.\\
 OOF tinggi, leaderboard rendah & Curigai teks kembar train (isi \f{GROUP_COL} atau lihat temuan
 kembar di \f{1_eda}) dan pergeseran train--test (AUC adversarial di \f{1_eda}).\\
-Topik berisi kata sampah & Tambah ke \f{EXTRA_STOPWORDS}, naikkan \f{MIN_DF}, turunkan
-\f{MAX_DF}.\\
+Topik berisi kata sampah & Di sel ``Konfigurasi'' \f{6_topik.ipynb}: tambah ke
+\f{EXTRA_STOPWORDS}, naikkan \f{MIN_DF}, turunkan \f{MAX_DF}. Kata dasar aneh (stemming salah,
+mis.\ nama tempat terpotong): \f{TOPIK_BERAT = False} di blok NILAI SOAL \f{6_topik.ipynb}, lalu
+Run All \f{6_topik}.\\
+\f{KeyError: 'text_tfidf'} di \f{6_topik} & \f{<HASIL>/praproses/train_bersih.csv} tidak punya
+kolom \f{<teks>_tfidf} (file lama atau \f{TEXT_COLS} berubah): Run All \f{2_praproses.ipynb},
+lalu \f{6_topik.ipynb}.\\
 \bottomrule
 \end{tabularx}}
 

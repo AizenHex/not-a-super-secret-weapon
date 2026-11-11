@@ -2,6 +2,21 @@
 
 Terbaru di atas. Format: `- YYYY-MM-DD: <keputusan>. Alasan: <...>.`
 
+- 2026-11-11: `konfig.py` dihapus atas permintaan pengguna ("jangan pakai konfig.py", pilih "tiap notebook
+  mandiri" dari 3 opsi: gabung 1 notebook / mandiri / hanya topik). `buat_ulang.py` menyalin blok SOAL ke awal sel
+  Konfigurasi, hanya variabel yang dipakai notebook itu (+ TARGET/SUBMIT_COL/LABEL_COLS selalu), dan membuang baris
+  asli yang ditimpa atau tak terpakai. Alasan: blok utuh di tiap notebook terlalu panjang dan menyesatkan; baris demo
+  "GANTI saat lomba" yang ditimpa membingungkan. Risiko: nilai harus diisi sama di semua notebook (HASIL terutama).
+  9_figur_ppt.py / 9b_slide.py punya konstanta sendiri di atas file.
+
+- 2026-11-11: kata topik `6_topik` diambil dari kolom `<teks>_tfidf` 2_praproses (saklar `TOPIK_BERAT` di
+  blok NILAI SOAL, bawaan True), bukan stemming/slang baru di 6_topik. Alasan: langkah berat sudah ada dan terukur di
+  2_praproses; satu tempat untuk diubah. Embedding tetap teks ringan (BERT lebih baik dengan teks asli).
+
+- 2026-11-10: referensi figur paper = `final-pipeline/referensi_figur/README.md` (di-commit, deskripsi + tautan)
+  dan `img/` (lokal, di `.gitignore`). Alasan: repo GitHub publik; gambar paper hak cipta penulis; deskripsi teks
+  cukup bagi agen, gambar tetap ada di laptop untuk dilihat.
+
 - 2026-11-10: figur PPT dibagi dua: chart data = Python (`final-pipeline/9_figur_ppt.py`, satu skrip `.py`, bukan
   notebook) yang hanya membaca CSV agregat dan menulis PNG + SVG; kerangka slide, kartu, dan diagram pipeline =
   Figma. Alasan: chart harus bisa dibuat ulang dalam detik saat data lomba masuk dan tidak boleh memuat angka
@@ -311,3 +326,13 @@ Terbaru di atas. Format: `- YYYY-MM-DD: <keputusan>. Alasan: <...>.`
 - 2026-10-24: arsenal ditulis langsung sebagai `.ipynb`, bukan `.py` bersel `# %%`. Alasan: pengguna
   menyalin sel dari notebook; `.py` sering lupa dikonversi.
 - 2026-10-24: output semua notebook ke `../../outputs/`. Alasan: repo di-push, folder notebook harus bersih.
+
+## 2026-11-10 Figur slide: skrip baru 9b_slide.py, bukan menambal 9_figur_ppt.py
+- `9_figur_ppt.py` menjalankan semua figur saat diimpor dan gayanya titik-dari-tabel; format VIGNETTE butuh kartu,
+  contoh teks asli dan data per teks (OOF). Helper gaya disalin, bukan diimpor. Peta centroid topik (09_peta_dokumen)
+  diganti baris topik x kelas karena label bertumpuk.
+
+## 2026-11-10 Figur slide: gaya paper multi-panel menggantikan kartu VIGNETTE
+- Pengguna menolak kartu pastel. Dipilih: figur komposit berhuruf panel dengan data per teks (bootstrap, UMAP,
+  log-odds, contoh asli) karena itulah yang membedakan figur paper dari "tabel digambar ulang". UMAP dari TF-IDF
+  (bukan embedding IndoBERT) supaya tidak menjalankan ulang model. Peta centroid `09_peta_dokumen` tetap tidak dipakai.

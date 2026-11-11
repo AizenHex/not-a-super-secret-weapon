@@ -1,7 +1,7 @@
 @echo off
 rem Kumpulkan luaran yang BOLEH keluar dari PC lomba ke ..\..\outputs\bawa_pulang\ (PNG, .md, tabel
 rem ringkas, submission). Data per baris / teks asli / OOF ditolak otomatis.
-rem Bila HASIL di konfig.py diganti, ganti juga HASIL di bawah ini.
+rem Bila HASIL di blok NILAI SOAL notebook diganti, ganti juga HASIL di bawah ini (isi sama).
 rem Baca ..\..\outputs\bawa_pulang\MANIFEST.md sebelum menyalin keluar.
 cd /d "%~dp0"
 set PYTHONIOENCODING=utf-8
